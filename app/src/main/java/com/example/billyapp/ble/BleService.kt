@@ -7,23 +7,19 @@ import android.app.Service
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.*
-import android.content.Intent
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.billyapp.core.Constants
 import com.example.billyapp.core.EncounterRepository
 import com.example.billyapp.core.RotatingIdGenerator
-import com.example.billyapp.core.api.MatchReq
-import com.example.billyapp.core.api.Net
 import kotlinx.coroutines.*
 import java.nio.ByteBuffer
 import java.util.UUID
-
-
 
 class BleService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -38,11 +34,16 @@ class BleService : Service() {
 
     private var isActive = true
 
+    private val userSecrets = mapOf(
+        "Person1" to "secretperson1".toByteArray(),
+        "Person2" to "secretperson2".toByteArray()
+    )
+
     override fun onCreate() {
         super.onCreate()
-        startForegroundNoti()
+        startForegroundNoti("Initializing BLE service...")
 
-        val secret = UUID.randomUUID().toString().toByteArray()
+        val secret = "secretperson1".toByteArray()
         generator = RotatingIdGenerator(secret)
 
         val adapter = (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
@@ -61,9 +62,9 @@ class BleService : Service() {
         super.onDestroy()
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    override fun onBind(intent: android.content.Intent?): IBinder? = null
 
-    private fun startForegroundNoti() {
+    private fun startForegroundNoti(contentText: String = "Advertising & scanning") {
         val channelId = "ble_channel"
         if (Build.VERSION.SDK_INT >= 26) {
             val nm = getSystemService(NotificationManager::class.java)
@@ -78,8 +79,8 @@ class BleService : Service() {
             }
         }
         val noti: Notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Nearby attivo")
-            .setContentText("Advertising & scanning")
+            .setContentTitle("BillyApp")
+            .setContentText(contentText)
             .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
             .build()
         startForeground(1, noti)
@@ -92,6 +93,8 @@ class BleService : Service() {
             startAdvertising(idBytes)
             delay(Constants.ROTATION_SECONDS * 1000L)
         }
+        Log.d("BleService", "Stopped advertising due to service inactive")
+        updateNotification("Pubblicazione BLE fermata")
     }
 
     private fun hasBluetoothPermissions(): Boolean {
@@ -105,12 +108,17 @@ class BleService : Service() {
         }
     }
 
-    // SOLO QUESTA VERSIONE DI startAdvertising!
     private fun startAdvertising(idBytes: ByteArray) {
-        if (!hasBluetoothPermissions()) return
+        if (!hasBluetoothPermissions()) {
+            Log.w("BleService", "Permessi Bluetooth non concessi, skip startAdvertising")
+            return
+        }
         try {
             val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
-            if (!adapter.isEnabled) return
+            if (!adapter.isEnabled) {
+                Log.w("BleService", "Bluetooth non abilitato, skip startAdvertising")
+                return
+            }
             val adv = advertiser ?: return
 
             val settings = AdvertiseSettings.Builder()
@@ -119,33 +127,59 @@ class BleService : Service() {
                 .setConnectable(false)
                 .build()
 
+            // Qui aggiungiamo il service UUID e i dati associati
             val data = AdvertiseData.Builder()
                 .addServiceUuid(Constants.SERVICE_UUID)
                 .addServiceData(Constants.SERVICE_UUID, idBytes)
+                .setIncludeDeviceName(true)
                 .build()
 
             adv.startAdvertising(settings, data, advCb)
+            Log.d("BleService", "Inizio pubblicazione BLE con id: ${idBytes.joinToString("") { "%02x".format(it) }}")
+            updateNotification("Pubblicazione BLE attiva")
+
         } catch (e: SecurityException) {
-            // Permesso non concesso a runtime. Gestisci come preferisci.
+            Log.e("BleService", "Errore permessi BLE: ${e.message}")
         }
     }
 
     private fun stopAdvertising() {
-        if (!hasBluetoothPermissions()) return
+        if (!hasBluetoothPermissions()) {
+            Log.w("BleService", "Permessi Bluetooth non concessi, skip stopAdvertising")
+            return
+        }
         try {
             advertiser?.stopAdvertising(advCb)
+            Log.d("BleService", "Stop pubblicazione BLE")
+            updateNotification("Pubblicazione BLE fermata")
 
         } catch (e: SecurityException) {
-            // Gestisci il caso: il permesso BLUETOOTH_ADVERTISE non è concesso
+            Log.e("BleService", "Errore permessi BLE: ${e.message}")
         }
     }
 
+    private fun updateNotification(text: String) {
+        val channelId = "ble_channel"
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle("BillyApp")
+            .setContentText(text)
+            .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
+            .build()
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.notify(1, notification)
+    }
 
     private fun startScan() {
-        if (!hasBluetoothPermissions()) return
+        if (!hasBluetoothPermissions()) {
+            Log.w("BleService", "Permessi Bluetooth non concessi, skip startScan")
+            return
+        }
         try {
             val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
-            if (!adapter.isEnabled) return
+            if (!adapter.isEnabled) {
+                Log.w("BleService", "Bluetooth non abilitato, skip startScan")
+                return
+            }
             val sc = scanner ?: return
 
             val filter = ScanFilter.Builder()
@@ -163,28 +197,40 @@ class BleService : Service() {
                     val idHex = payload.joinToString("") { "%02x".format(it) }
                     if (!repo.shouldProcess(idHex, now)) return
 
-                    scope.launch {
-                        try {
-                            val uuid = bytesToUuid(payload).toString()
-                            Net.api.match(MatchReq(uuid = uuid, timestamp = now))
-                        } catch (_: Exception) { }
-                    }
+                    val resolvedName = resolveNameFromId(idHex, now)
+                    Log.d("BleService", "Rilevato dispositivo: ${resolvedName ?: "Sconosciuto"} UUID: $idHex alle $now")
                 }
             }
             sc.startScan(listOf(filter), settings, scanCb)
         } catch (e: SecurityException) {
-            // Permesso non concesso a runtime.
+            Log.e("BleService", "Errore permessi BLE: ${e.message}")
         }
     }
 
     private fun stopScan() {
-        if (!hasBluetoothPermissions()) return
+        if (!hasBluetoothPermissions()) {
+            Log.w("BleService", "Permessi Bluetooth non concessi, skip stopScan")
+            return
+        }
         try {
             scanner?.stopScan(scanCb)
         } catch (e: SecurityException) {
-            // Permesso non concesso a runtime.
+            Log.e("BleService", "Errore permessi BLE: ${e.message}")
         }
         scanCb = null
+    }
+
+    private fun resolveNameFromId(idHex: String, timestampSec: Long): String? {
+        val window = 10
+        for ((name, secret) in userSecrets) {
+            val generator = RotatingIdGenerator(secret)
+            for (offset in -window..window) {
+                val testTime = timestampSec + offset * Constants.ROTATION_SECONDS
+                val testId = generator.currentIdBytes(testTime).joinToString("") { "%02x".format(it) }
+                if (testId == idHex) return name
+            }
+        }
+        return null
     }
 
     private fun bytesToUuid(bytes: ByteArray): UUID {
