@@ -1,13 +1,11 @@
 package com.example.billyapp.ble
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.Service
+import android.app.*
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.*
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
@@ -62,7 +60,7 @@ class BleService : Service() {
         super.onDestroy()
     }
 
-    override fun onBind(intent: android.content.Intent?): IBinder? = null
+    override fun onBind(intent: Intent?): IBinder? = null
 
     private fun startForegroundNoti(contentText: String = "Advertising & scanning") {
         val channelId = "ble_channel"
@@ -127,7 +125,6 @@ class BleService : Service() {
                 .setConnectable(false)
                 .build()
 
-            // Qui aggiungiamo il service UUID e i dati associati
             val data = AdvertiseData.Builder()
                 .addServiceUuid(Constants.SERVICE_UUID)
                 .addServiceData(Constants.SERVICE_UUID, idBytes)
@@ -152,7 +149,6 @@ class BleService : Service() {
             advertiser?.stopAdvertising(advCb)
             Log.d("BleService", "Stop pubblicazione BLE")
             updateNotification("Pubblicazione BLE fermata")
-
         } catch (e: SecurityException) {
             Log.e("BleService", "Errore permessi BLE: ${e.message}")
         }
@@ -199,6 +195,11 @@ class BleService : Service() {
 
                     val resolvedName = resolveNameFromId(idHex, now)
                     Log.d("BleService", "Rilevato dispositivo: ${resolvedName ?: "Sconosciuto"} UUID: $idHex alle $now")
+
+                    // 🔹 Invia broadcast alla UI
+                    val intent = Intent("com.example.billyapp.ENCOUNTER_FOUND")
+                    intent.putExtra("name", resolvedName ?: "Sconosciuto")
+                    sendBroadcast(intent)
                 }
             }
             sc.startScan(listOf(filter), settings, scanCb)
