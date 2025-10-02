@@ -1,5 +1,6 @@
 package com.example.billyapp
 
+import com.example.billyapp.ui.screens.MyProfileScreen
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -92,6 +94,12 @@ fun MainApp(
             NavigationBar {
                 NavigationBarItem(
                     selected = false,
+                    onClick = { navController.navigate("myprofile") },
+                    icon = { Icon(Icons.Default.Person, contentDescription = "My Profile") },
+                    label = { Text("Profile") }
+                )
+                NavigationBarItem(
+                    selected = false,
                     onClick = { navController.navigate("home") },
                     icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
                     label = { Text("Home") }
@@ -102,6 +110,7 @@ fun MainApp(
                     icon = { Icon(Icons.Default.Favorite, contentDescription = "Chats") },
                     label = { Text("Chats") }
                 )
+
             }
         }
     ) { padding ->
@@ -178,6 +187,15 @@ fun MainApp(
             composable("chat/{userName}") { backStackEntry ->
                 val user = backStackEntry.arguments?.getString("userName") ?: return@composable
                 ChatScreen(userName = user, chatViewModel = chatViewModel)
+            }
+
+            // 🔹 Schermata profilo personale
+            composable("myprofile") {
+                MyProfileScreen(
+                    userName = "Alberto",
+                    age = 23,
+                    bio = "App developer & BLE enthusiast 🔥"
+                )
             }
         }
     }
