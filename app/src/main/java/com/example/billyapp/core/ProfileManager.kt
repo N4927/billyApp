@@ -1,4 +1,4 @@
-package com.example.billyapp.core.api
+package com.example.billyapp.core
 
 import android.content.Context
 import java.util.UUID
@@ -26,5 +26,14 @@ object ProfileManager {
     fun getUserName(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getString(KEY_NAME, "Anonimo") ?: "Anonimo"
+    }
+
+    /**
+     * Secret usato dal RotatingIdGenerator.
+     * Deriviamo un byte array dall’UUID stabile del device.
+     */
+    fun getSecretForBle(context: Context, length: Int = 8): ByteArray {
+        val uuid = getOrCreateUUID(context)
+        return uuid.toByteArray().copyOf(length) // prendiamo i primi N byte
     }
 }

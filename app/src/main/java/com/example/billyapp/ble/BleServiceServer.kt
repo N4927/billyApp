@@ -1,9 +1,6 @@
 package com.example.billyapp.ble
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.Service
+import android.app.*
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.*
@@ -15,23 +12,17 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.billyapp.core.Constants
+import com.example.billyapp.core.Encounter
+import com.example.billyapp.core.EncounterBus
+import com.example.billyapp.core.ProfileManager
 import com.example.billyapp.core.RotatingIdGenerator
 import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.ByteBuffer
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
-
-// MARK: - Encounter
-data class Encounter(
-    var name: String,
-    var count: Int
-)
+import java.util.*
 
 class BleServiceServer : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -45,16 +36,25 @@ class BleServiceServer : Service() {
 
     private var isActive = true
 
-    // 🔹 Encounters salvati (thread-safe)
-    private val encounters = ConcurrentHashMap<String, Encounter>()
-    private val lock = Mutex()
+    // 🔹 Cache slot-based
+    private val slotCache = mutableMapOf<String, SlotEncounter>()
+    private val SLOT_DURATION = Constants.ROTATION_SECONDS // stessa durata ID rotante
+
+    data class SlotEncounter(
+        val idHex: String,
+        var firstSeen: Long,
+        var lastSeen: Long,
+        var count: Int,
+        var rssi: Int
+    )
 
     override fun onCreate() {
         super.onCreate()
         startForegroundNoti("Initializing BLE service...")
 
-        val secret = "public-secret-placeholder".toByteArray()
-        generator = RotatingIdGenerator(secret)
+        // Profilo locale
+        val mySecret = ProfileManager.getSecretForBle(this, length = 8)
+        generator = RotatingIdGenerator(mySecret, lengthBytes = 8)
 
         val adapter = (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
         advertiser = adapter.bluetoothLeAdvertiser
@@ -62,6 +62,7 @@ class BleServiceServer : Service() {
 
         scope.launch { loopRotateAndAdvertise() }
         startScan()
+        startBatchUploader()
     }
 
     override fun onDestroy() {
@@ -74,6 +75,7 @@ class BleServiceServer : Service() {
 
     override fun onBind(intent: android.content.Intent?): IBinder? = null
 
+    // Foreground notification
     private fun startForegroundNoti(contentText: String = "Advertising & scanning") {
         val channelId = "ble_channel"
         if (Build.VERSION.SDK_INT >= 26) {
@@ -99,11 +101,21 @@ class BleServiceServer : Service() {
     private suspend fun loopRotateAndAdvertise() {
         while (isActive) {
             stopAdvertising()
-            val idBytes = generator.currentIdBytes()
-            startAdvertising(idBytes)
+
+            val ts = System.currentTimeMillis() / 1000
+            val rotatingId = generator.currentIdBytes(ts)
+
+            // payload = [timestamp 8B] + [rotatingId 8B]
+            val payload = ByteBuffer.allocate(8 + rotatingId.size)
+                .putLong(ts)
+                .put(rotatingId)
+                .array()
+
+            startAdvertising(payload)
+
             delay(Constants.ROTATION_SECONDS * 1000L)
         }
-        Log.d("BleServiceServer", "Stopped advertising due to service inactive")
+        Log.d("BleServiceServer", "Stopped advertising")
         updateNotification("Pubblicazione BLE fermata")
     }
 
@@ -118,7 +130,7 @@ class BleServiceServer : Service() {
         }
     }
 
-    private fun startAdvertising(idBytes: ByteArray) {
+    private fun startAdvertising(payload: ByteArray) {
         if (!hasBluetoothPermissions()) return
         try {
             val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
@@ -133,12 +145,11 @@ class BleServiceServer : Service() {
 
             val data = AdvertiseData.Builder()
                 .addServiceUuid(Constants.SERVICE_UUID)
-                .addServiceData(Constants.SERVICE_UUID, idBytes)
-                .setIncludeDeviceName(true)
+                .addServiceData(Constants.SERVICE_UUID, payload)
                 .build()
 
             adv.startAdvertising(settings, data, advCb)
-            Log.d("BleServiceServer", "📡 Pubblicazione BLE con id: ${idBytes.joinToString("") { "%02x".format(it) }}")
+            Log.d("BleServiceServer", "📡 Advertising payload size=${payload.size}")
             updateNotification("Pubblicazione BLE attiva")
 
         } catch (e: SecurityException) {
@@ -150,10 +161,10 @@ class BleServiceServer : Service() {
         if (!hasBluetoothPermissions()) return
         try {
             advertiser?.stopAdvertising(advCb)
-            Log.d("BleServiceServer", "Stop pubblicazione BLE")
-            updateNotification("Pubblicazione BLE fermata")
+            Log.d("BleServiceServer", "Stop advertising")
+            updateNotification("Advertising stopped")
         } catch (e: SecurityException) {
-            Log.e("BleServiceServer", "Errore permessi BLE: ${e.message}")
+            Log.e("BleServiceServer", "Errore stop adv: ${e.message}")
         }
     }
 
@@ -183,24 +194,20 @@ class BleServiceServer : Service() {
                 override fun onScanResult(callbackType: Int, result: ScanResult) {
                     val record = result.scanRecord ?: return
                     val payload = record.getServiceData(Constants.SERVICE_UUID) ?: return
-                    val now = System.currentTimeMillis() / 1000
-                    val idHex = payload.joinToString("") { "%02x".format(it) }
+                    if (payload.size < 16) return // 8B ts + 8B id
 
-                    scope.launch {
-                        val resolvedName = resolveNameFromServer(idHex, now)
-                        if (resolvedName != null) {
-                            Log.d("BleServiceServer", "✅ Rilevato: $resolvedName")
-                            saveEncounter(resolvedName)
-                        } else {
-                            Log.d("BleServiceServer", "⚠️ Dispositivo sconosciuto")
-                            saveEncounter("Sconosciuto")
-                        }
-                    }
+                    val bb = ByteBuffer.wrap(payload)
+                    val ts = bb.long
+                    val idBytes = payload.copyOfRange(8, payload.size)
+                    val idHex = idBytes.joinToString("") { "%02x".format(it) }
+
+                    updateSlotCache(idHex, ts, result.rssi)
                 }
             }
             sc.startScan(listOf(filter), settings, scanCb)
+            Log.d("BleServiceServer", "✅ Started scanning")
         } catch (e: SecurityException) {
-            Log.e("BleServiceServer", "Errore permessi BLE: ${e.message}")
+            Log.e("BleServiceServer", "Errore startScan: ${e.message}")
         }
     }
 
@@ -209,49 +216,78 @@ class BleServiceServer : Service() {
         try {
             scanner?.stopScan(scanCb)
         } catch (e: SecurityException) {
-            Log.e("BleServiceServer", "Errore permessi BLE: ${e.message}")
+            Log.e("BleServiceServer", "Errore stopScan: ${e.message}")
         }
         scanCb = null
     }
 
-    // 🔹 Chiamata al server
-    private suspend fun resolveNameFromServer(idHex: String, timestampSec: Long): String? {
-        return withContext(Dispatchers.IO) {
+    // 🔹 Aggiorna la cache slot-based
+    private fun updateSlotCache(idHex: String, ts: Long, rssi: Int) {
+        val currentSlot = ts / SLOT_DURATION
+        val slotKey = "$currentSlot-$idHex"
+
+        val encounter = slotCache[slotKey]
+        if (encounter != null) {
+            encounter.lastSeen = ts
+            encounter.count += 1
+            encounter.rssi = rssi
+        } else {
+            slotCache[slotKey] = SlotEncounter(
+                idHex = idHex,
+                firstSeen = ts,
+                lastSeen = ts,
+                count = 1,
+                rssi = rssi
+            )
+        }
+        Log.d("BleServiceServer", "📥 Cached encounter $idHex slot=$currentSlot")
+    }
+
+    // 🔹 Invia batch al server periodicamente
+    private fun startBatchUploader() {
+        scope.launch {
+            while (isActive) {
+                delay(SLOT_DURATION * 1000L)
+
+                val batch = slotCache.values.toList()
+                slotCache.clear()
+
+                if (batch.isNotEmpty()) {
+                    sendBatchToServer(batch)
+                }
+            }
+        }
+    }
+
+    private suspend fun sendBatchToServer(batch: List<SlotEncounter>) {
+        withContext(Dispatchers.IO) {
             try {
-                val url = URL("https://mockserver.example.com/api/resolve")
+                val url = URL("https://mockserver.example.com/api/batchResolve")
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"
                 conn.setRequestProperty("Content-Type", "application/json")
                 conn.doOutput = true
 
-                val json = JSONObject()
-                json.put("id", idHex)
-                json.put("timestamp", timestampSec)
+                val arr = batch.map {
+                    mapOf(
+                        "id" to it.idHex,
+                        "firstSeen" to it.firstSeen,
+                        "lastSeen" to it.lastSeen,
+                        "count" to it.count,
+                        "rssi" to it.rssi
+                    )
+                }
+                val json = JSONObject(mapOf("encounters" to arr))
 
                 OutputStreamWriter(conn.outputStream).use { it.write(json.toString()) }
 
                 if (conn.responseCode == 200) {
-                    val response = conn.inputStream.bufferedReader().use { it.readText() }
-                    val obj = JSONObject(response)
-                    return@withContext obj.optString("name", null)
+                    Log.d("BleServiceServer", "✅ Batch uploaded (${batch.size} encounters)")
                 } else {
-                    Log.e("BleServiceServer", "❌ Errore server: ${conn.responseCode}")
+                    Log.e("BleServiceServer", "❌ Server error: ${conn.responseCode}")
                 }
             } catch (e: Exception) {
-                Log.e("BleServiceServer", "❌ Errore rete: ${e.message}")
-            }
-            null
-        }
-    }
-
-    // 🔹 Gestione Encounter
-    private suspend fun saveEncounter(name: String) {
-        lock.withLock {
-            val encounter = encounters[name]
-            if (encounter != null) {
-                encounter.count += 1
-            } else {
-                encounters[name] = Encounter(name, 1)
+                Log.e("BleServiceServer", "❌ Network error: ${e.message}")
             }
         }
     }

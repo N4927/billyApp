@@ -21,6 +21,8 @@ import java.util.UUID
 
 import com.example.billyapp.core.Encounter
 import com.example.billyapp.core.EncounterBus
+import com.example.billyapp.core.ProfileManager
+
 
 
 class BleService : Service() {
@@ -48,8 +50,9 @@ class BleService : Service() {
         startForegroundNoti("Initializing BLE service...")
 
         // 🔹 Secret locale (scegli quello del device)
-        val mySecret = userSecrets["bob"] ?: "default-secret".toByteArray()
-        generator = RotatingIdGenerator(mySecret)
+        val mySecret = ProfileManager.getSecretForBle(this, length = 8)
+        generator = RotatingIdGenerator(mySecret, lengthBytes = 8)
+
 
         val adapter = (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
         advertiser = adapter.bluetoothLeAdvertiser
