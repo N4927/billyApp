@@ -2,6 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
+    // 🔹 aggiungi il plugin di serialization
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
 }
 
 android {
@@ -40,9 +43,6 @@ android {
 }
 
 dependencies {
-
-
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -79,4 +79,6 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
+    // 🔹 Aggiungi la libreria per la serializzazione JSON
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.0")
 }

@@ -6,7 +6,7 @@ import java.util.UUID
 object Constants {
     // Service UUID fisso per filtrare advertising/scan
     val SERVICE_UUID: ParcelUuid =
-        ParcelUuid(UUID.fromString("0000FEAA-0000-1000-8000-00805F9B34FB"))
+        ParcelUuid(UUID.fromString("0000feee-0000-1000-8000-00805f9b34fb"))
 
-    const val ROTATION_SECONDS: Long = 120L
+    const val ROTATION_SECONDS: Long = 20L
 }

@@ -9,7 +9,7 @@ class RotatingIdGenerator(
     private val userSecret: ByteArray,
     private val rotationSeconds: Long = Constants.ROTATION_SECONDS,
     private val salt: ByteArray = "nearby-salt-v1".encodeToByteArray(),
-    private val lengthBytes: Int = 16
+    private val lengthBytes: Int = 8
 ) {
     private val digest = MessageDigest.getInstance("SHA-256")
 

@@ -1,18 +1,43 @@
-package com.example.billyapp.core
+package com.example.billyapp.ble
 
+import android.app.Application
 import androidx.compose.runtime.mutableStateListOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.billyapp.core.Encounter
+import com.example.billyapp.core.EncounterBus
+import com.example.billyapp.core.EncounterStore
+import kotlinx.coroutines.launch
 
-class BleViewModel : ViewModel() {
-    val encounters = mutableStateListOf<ResolvedEncounter>()
+class BleViewModel(app: Application) : AndroidViewModel(app) {
 
-    fun addEncounter(name: String) {
-        val existing = encounters.find { it.name == name }
-        if (existing != null) {
-            val idx = encounters.indexOf(existing)
-            encounters[idx] = existing.copy(count = existing.count + 1)
-        } else {
-            encounters.add(ResolvedEncounter(name))
+    val encounters = mutableStateListOf<Encounter>()
+
+    init {
+        // Carica gli encounter salvati
+        encounters.addAll(EncounterStore.loadAll(getApplication()))
+
+        // Ascolta in tempo reale dal bus
+        viewModelScope.launch {
+            EncounterBus.events.collect { encounter ->
+                // Aggiorna lista
+                encounters.add(encounter)
+
+                // Salva su file
+                EncounterStore.append(getApplication(), encounter)
+            }
         }
     }
+    fun addEncounter(name: String) {
+        val encounter = Encounter(
+            idHex = name.lowercase(), // placeholder
+            rssi = -50,
+            timestampSec = System.currentTimeMillis() / 1000,
+            resolvedName = name
+        )
+
+        encounters.add(encounter)
+        EncounterStore.append(getApplication(), encounter)
+    }
+
 }

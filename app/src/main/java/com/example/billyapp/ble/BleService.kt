@@ -19,6 +19,10 @@ import kotlinx.coroutines.*
 import java.nio.ByteBuffer
 import java.util.UUID
 
+import com.example.billyapp.core.Encounter
+import com.example.billyapp.core.EncounterBus
+
+
 class BleService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private lateinit var generator: RotatingIdGenerator
@@ -32,17 +36,20 @@ class BleService : Service() {
 
     private var isActive = true
 
+    // 🔹 Mappa utenti -> secret (segreti condivisi)
     private val userSecrets = mapOf(
-        "Person1" to "secretperson1".toByteArray(),
-        "Person2" to "secretperson2".toByteArray()
+        "Alice" to "secret-alice".toByteArray(),
+        "Bob" to "secret-bob".toByteArray(),
+        "Charlie" to "secret-charlie".toByteArray()
     )
 
     override fun onCreate() {
         super.onCreate()
         startForegroundNoti("Initializing BLE service...")
 
-        val secret = "secretperson1".toByteArray()
-        generator = RotatingIdGenerator(secret)
+        // 🔹 Secret locale (scegli quello del device)
+        val mySecret = userSecrets["bob"] ?: "default-secret".toByteArray()
+        generator = RotatingIdGenerator(mySecret)
 
         val adapter = (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
         advertiser = adapter.bluetoothLeAdvertiser
@@ -87,8 +94,18 @@ class BleService : Service() {
     private suspend fun loopRotateAndAdvertise() {
         while (isActive) {
             stopAdvertising()
-            val idBytes = generator.currentIdBytes()
-            startAdvertising(idBytes)
+
+            val ts = System.currentTimeMillis() / 1000
+            val rotatingId = generator.currentIdBytes(ts)
+
+            // 🔹 Concatena [timestamp 8B] + [rotatingId 16B]
+            val payload = ByteBuffer.allocate(8 + rotatingId.size)
+                .putLong(ts)
+                .put(rotatingId)
+                .array()
+
+            startAdvertising(payload)
+
             delay(Constants.ROTATION_SECONDS * 1000L)
         }
         Log.d("BleService", "Stopped advertising due to service inactive")
@@ -106,7 +123,7 @@ class BleService : Service() {
         }
     }
 
-    private fun startAdvertising(idBytes: ByteArray) {
+    private fun startAdvertising(payload: ByteArray) {
         if (!hasBluetoothPermissions()) {
             Log.w("BleService", "Permessi Bluetooth non concessi, skip startAdvertising")
             return
@@ -126,13 +143,12 @@ class BleService : Service() {
                 .build()
 
             val data = AdvertiseData.Builder()
-                .addServiceUuid(Constants.SERVICE_UUID)
-                .addServiceData(Constants.SERVICE_UUID, idBytes)
-                .setIncludeDeviceName(true)
+                .addServiceUuid(Constants.SERVICE_UUID) // UUID fisso per tutti
+                .addServiceData(Constants.SERVICE_UUID, payload) // timestamp + rotatingId
                 .build()
 
             adv.startAdvertising(settings, data, advCb)
-            Log.d("BleService", "Inizio pubblicazione BLE con id: ${idBytes.joinToString("") { "%02x".format(it) }}")
+            Log.d("BleService", "Advertising BLE payload size=${payload.size}")
             updateNotification("Pubblicazione BLE attiva")
 
         } catch (e: SecurityException) {
@@ -186,21 +202,36 @@ class BleService : Service() {
                 .build()
 
             scanCb = object : ScanCallback() {
+                // dentro BleService, onScanResult
                 override fun onScanResult(callbackType: Int, result: ScanResult) {
                     val record = result.scanRecord ?: return
                     val payload = record.getServiceData(Constants.SERVICE_UUID) ?: return
-                    val now = System.currentTimeMillis() / 1000
-                    val idHex = payload.joinToString("") { "%02x".format(it) }
-                    if (!repo.shouldProcess(idHex, now)) return
+                    if (payload.size < 8) return
 
-                    val resolvedName = resolveNameFromId(idHex, now)
-                    Log.d("BleService", "Rilevato dispositivo: ${resolvedName ?: "Sconosciuto"} UUID: $idHex alle $now")
+                    val bb = ByteBuffer.wrap(payload)
+                    val ts = bb.long
+                    val idBytes = payload.copyOfRange(8, payload.size)
+                    val idHex = idBytes.joinToString("") { "%02x".format(it) }
 
-                    // 🔹 Invia broadcast alla UI
-                    val intent = Intent("com.example.billyapp.ENCOUNTER_FOUND")
-                    intent.putExtra("name", resolvedName ?: "Sconosciuto")
-                    sendBroadcast(intent)
+                    if (!repo.shouldProcess(idHex, ts)) return
+
+                    val resolvedName = resolveNameFromId(idBytes, ts)
+
+                    val encounter = Encounter(
+                        idHex = idHex,
+                        rssi = result.rssi,
+                        timestampSec = ts,
+                        resolvedName = resolvedName
+                    )
+
+                    // Invia al bus
+                    scope.launch {
+                        EncounterBus.emit(encounter)
+                    }
+
+                    Log.d("BleService", "Trovato: ${resolvedName ?: "Sconosciuto"} ($idHex)")
                 }
+
             }
             sc.startScan(listOf(filter), settings, scanCb)
         } catch (e: SecurityException) {
@@ -221,14 +252,15 @@ class BleService : Service() {
         scanCb = null
     }
 
-    private fun resolveNameFromId(idHex: String, timestampSec: Long): String? {
-        val window = 10
+    // 🔹 Reverse lookup del rotatingId
+    private fun resolveNameFromId(idBytes: ByteArray, timestampSec: Long): String? {
+        val window = 2 // +/- 2 bucket di tolleranza
         for ((name, secret) in userSecrets) {
             val generator = RotatingIdGenerator(secret)
             for (offset in -window..window) {
                 val testTime = timestampSec + offset * Constants.ROTATION_SECONDS
-                val testId = generator.currentIdBytes(testTime).joinToString("") { "%02x".format(it) }
-                if (testId == idHex) return name
+                val testId = generator.currentIdBytes(testTime)
+                if (testId.contentEquals(idBytes)) return name
             }
         }
         return null
