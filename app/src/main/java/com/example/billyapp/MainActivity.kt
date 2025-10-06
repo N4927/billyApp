@@ -7,16 +7,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -26,7 +23,12 @@ import com.example.billyapp.ble.BleService
 import com.example.billyapp.ble.BleViewModel
 import com.example.billyapp.core.ChatViewModel
 import com.example.billyapp.core.ResolvedEncounter
+import com.example.billyapp.core.UserManager
 import com.example.billyapp.ui.screens.*
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.filled.Chat
+
 
 
 
@@ -38,9 +40,7 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { perms ->
         val allGranted = perms.entries.all { it.value }
-        if (allGranted) {
-            startBleService()
-        }
+        if (allGranted) startBleService()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,7 +60,6 @@ class MainActivity : ComponentActivity() {
     private fun requestAllPermissions() {
         val permissions = mutableListOf<String>()
 
-        // 🔹 Bluetooth permissions
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             permissions += android.Manifest.permission.BLUETOOTH_ADVERTISE
             permissions += android.Manifest.permission.BLUETOOTH_SCAN
@@ -70,12 +69,10 @@ class MainActivity : ComponentActivity() {
             permissions += android.Manifest.permission.ACCESS_COARSE_LOCATION
         }
 
-        // 🔹 Location (mandatory for FGS with type=location from API 29+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             permissions += android.Manifest.permission.ACCESS_FINE_LOCATION
         }
 
-        // 🔹 Notifications (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions += android.Manifest.permission.POST_NOTIFICATIONS
         }
@@ -85,11 +82,10 @@ class MainActivity : ComponentActivity() {
 
     private fun startBleService() {
         val intent = Intent(this, BleService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             ContextCompat.startForegroundService(this, intent)
-        } else {
+        else
             startService(intent)
-        }
     }
 }
 
@@ -106,12 +102,6 @@ fun MainApp(
             NavigationBar {
                 NavigationBarItem(
                     selected = false,
-                    onClick = { navController.navigate("myprofile") },
-                    icon = { Icon(Icons.Default.Person, contentDescription = "My Profile") },
-                    label = { Text("Profile") }
-                )
-                NavigationBarItem(
-                    selected = false,
                     onClick = { navController.navigate("home") },
                     icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
                     label = { Text("Home") }
@@ -119,8 +109,14 @@ fun MainApp(
                 NavigationBarItem(
                     selected = false,
                     onClick = { navController.navigate("chats") },
-                    icon = { Icon(Icons.Default.Favorite, contentDescription = "Chats") },
+                    icon = { Icon(Icons.Default.Chat, contentDescription = "Chats") },
                     label = { Text("Chats") }
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { navController.navigate("myprofile") },
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+                    label = { Text("Profile") }
                 )
             }
         }
@@ -130,70 +126,26 @@ fun MainApp(
             startDestination = "home",
             modifier = Modifier.padding(padding)
         ) {
+            /* -------------------- 🏠 HOME -------------------- */
             composable("home") {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // 🔹 Start/Stop BLE buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Button(
-                            onClick = onStartService,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Start BLE")
-                        }
-                        Button(
-                            onClick = onStopService,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Stop BLE")
-                        }
-                    }
+                HomeScreen(
+                    encounters = bleViewModel.encounters.map {
+                        ResolvedEncounter(
+                            name = it.encounter.resolvedName ?: "Unknown",
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 🔹 Encounter list
-                    Box(modifier = Modifier.weight(1f)) {
-                        HomeScreen(
-                            encounters = bleViewModel.encounters.map {
-                                ResolvedEncounter(
-                                    name = it.resolvedName ?: "Unknown",
-                                    count = 1
-                                )
-                            },
-                            onSelectProfile = { user ->
-                                navController.navigate("profile/$user")
-                            }
+                            count = it.count
                         )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 🔹 Simulate encounter
-                    Button(
-                        onClick = { simulateEncounter(bleViewModel) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Simulate encounter 🚀")
-                    }
-                }
-            }
-
-            composable("profile/{userName}") { backStackEntry ->
-                val user = backStackEntry.arguments?.getString("userName") ?: return@composable
-                ProfileScreen(
-                    userName = user,
-                    chatViewModel = chatViewModel,
-                    onGoToChat = { navController.navigate("chat/$it") }
+                    },
+                    onSelectProfile = { user ->
+                        navController.navigate("profile/$user")
+                    },
+                    onSimulateEncounter = { simulateEncounter(bleViewModel) },
+                    onStartBle = onStartService,
+                    onStopBle = onStopService
                 )
             }
 
+            /* -------------------- 💬 CHATS -------------------- */
             composable("chats") {
                 ChatsScreen(
                     chats = chatViewModel.getActiveChats(),
@@ -203,25 +155,68 @@ fun MainApp(
                 )
             }
 
+            /* -------------------- 🗣️ CHAT DETAIL -------------------- */
             composable("chat/{userName}") { backStackEntry ->
                 val user = backStackEntry.arguments?.getString("userName") ?: return@composable
                 ChatScreen(userName = user, chatViewModel = chatViewModel)
             }
 
+            /* -------------------- 👥 OTHER PROFILE -------------------- */
+            composable("profile/{userName}") { backStackEntry ->
+                val user = backStackEntry.arguments?.getString("userName") ?: return@composable
+                ProfileScreen(
+                    userName = user,
+                    chatViewModel = chatViewModel,
+                    onGoToChat = { navController.navigate("chat/$it") }
+                )
+            }
+
+            /* -------------------- 👤 MY PROFILE -------------------- */
             composable("myprofile") {
-                MyProfileScreen(
-                    userName = "Alberto",
-                    age = 23,
-                    bio = "App developer & BLE enthusiast 🔥"
+                val context = LocalContext.current
+                val userManager = remember { UserManager(context) }
+                var currentUser by remember { mutableStateOf(userManager.getUser()) }
+
+                if (currentUser == null) {
+                    ProfileSetupScreen(
+                        user = null,
+                        onSave = { newUser ->
+                            userManager.saveUser(newUser)
+                            currentUser = newUser
+                        }
+                    )
+                } else {
+                    MyProfileScreen(
+                        userName = currentUser!!.displayName,
+                        age = currentUser!!.age ?: 0,
+                        bio = currentUser!!.bio ?: "No bio yet",
+                        onEditProfile = {
+                            navController.navigate("profile/setup")
+                        }
+                    )
+                }
+            }
+
+            /* -------------------- ⚙️ EDIT PROFILE -------------------- */
+            composable("profile/setup") {
+                val context = LocalContext.current
+                val userManager = remember { UserManager(context) }
+
+                ProfileSetupScreen(
+                    user = userManager.getUser(),
+                    onSave = { newUser ->
+                        userManager.saveUser(newUser)
+                        navController.popBackStack("myprofile", inclusive = false)
+                    }
                 )
             }
         }
     }
 }
 
-// 🔹 Simulate fake encounters
+/* -------------------- ⚙️ SIMULATED BLE -------------------- */
 fun simulateEncounter(bleViewModel: BleViewModel) {
-    val fakeUsers = listOf("Alice", "Bob", "Charlie")
+    val fakeUsers = listOf("Alice", "Bob", "Charlie", "Diana")
     fakeUsers.shuffled().take(1).forEach { name ->
         bleViewModel.addEncounter(name)
     }
