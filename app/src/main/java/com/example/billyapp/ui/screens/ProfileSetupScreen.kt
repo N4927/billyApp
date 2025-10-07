@@ -79,14 +79,31 @@ fun ProfileSetupScreen(
         Spacer(Modifier.height(32.dp))
 
         // 🔹 Save button
+        // 🔹 Save button
         Button(
             onClick = {
+                // Mappa fissa di ID personali coerente con la parte BLE/Python
+                // ID coerenti con FakeServer (solo 8 caratteri)
+                val userIds = mapOf(
+                    "alice" to "ecb73c72",
+                    "bob" to "33f24d0c",
+                    "charlie" to "bcb37548",
+                    "luca" to "90895e9d",
+                    "marco" to "8b44a291",
+                    "giulia" to "f8507096"
+                )
+
+
+                val cleanName = name.trim().lowercase()
+                val assignedId = userIds[cleanName] ?: UUID.randomUUID().toString()
+
                 val newUser = User(
-                    id = user?.id ?: UUID.randomUUID().toString(),
+                    id = assignedId,
                     displayName = name.trim(),
                     age = age.toIntOrNull(),
                     bio = bio.trim()
                 )
+
                 onSave(newUser)
             },
             shape = RoundedCornerShape(16.dp),
@@ -95,5 +112,6 @@ fun ProfileSetupScreen(
         ) {
             Text("Save Profile", color = Color.White, fontSize = 16.sp)
         }
+
     }
 }

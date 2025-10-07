@@ -45,6 +45,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        testCryptoServerMatch()
+
         setContent {
             val navController = rememberNavController()
             MainApp(
@@ -221,3 +224,16 @@ fun simulateEncounter(bleViewModel: BleViewModel) {
         bleViewModel.addEncounter(name)
     }
 }
+
+private fun testCryptoServerMatch() {
+    val timestamp = System.currentTimeMillis() / 1000
+    val secret = "alice".toByteArray().copyOf(16)
+    val crypto = com.example.billyapp.core.CryptographyManager(secret)
+
+    val payload = crypto.encryptRotatingIdentifier("ecb73c72", timestamp)
+    android.util.Log.d("CryptoTest", "Client payload: ${payload.joinToString("") { "%02x".format(it) }}")
+
+    val resolved = com.example.billyapp.core.FakeServer.resolveRotatingId(payload, timestamp)
+    android.util.Log.d("CryptoTest", "Resolved user: ${resolved?.displayName ?: "Unknown"}")
+}
+
