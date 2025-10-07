@@ -18,7 +18,4 @@ data class ResolvedEncounter(
     val count: Int = 1
 )
 
-data class Chat(
-    val userName: String,
-    val messages: MutableList<String> = mutableStateListOf()
-)
+

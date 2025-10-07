@@ -1,29 +1,33 @@
 package com.example.billyapp.core
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 
 class ChatViewModel : ViewModel() {
 
-    // Mappa che contiene tutte le chat attive (userName -> Chat)
-    private val chats = mutableMapOf<String, Chat>()
+    // Stato osservabile di tutte le chat
+    private val chats = mutableStateListOf<Chat>()
 
-    // Avvia una nuova chat se non esiste già
     fun startChat(userName: String) {
-        if (!chats.containsKey(userName)) {
-            chats[userName] = Chat(userName)
+        if (chats.none { it.userName == userName }) {
+            chats.add(Chat(userName))
         }
     }
 
-    // Restituisce tutte le chat attive come lista
-    fun getActiveChats(): List<Chat> = chats.values.toList()
+    fun getActiveChats(): List<Chat> = chats
 
-    // Invia un messaggio a un utente specifico
     fun sendMessage(userName: String, message: String) {
-        chats[userName]?.messages?.add(message)
+        chats.find { it.userName == userName }?.messages?.add(ChatMessage(message, isIncoming = false))
     }
 
-    // Restituisce la chat di un utente specifico (o null se non esiste)
-    fun getChat(userName: String): Chat? {
-        return chats[userName]
+    fun receiveMessage(userName: String, message: String) {
+        chats.find { it.userName == userName }?.messages?.add(ChatMessage(message, isIncoming = true))
     }
+
+    fun getChat(userName: String): Chat? = chats.find { it.userName == userName }
 }
+
+data class Chat(
+    val userName: String,
+    val messages: MutableList<ChatMessage> = mutableStateListOf()
+)

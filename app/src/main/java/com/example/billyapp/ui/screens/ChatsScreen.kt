@@ -21,8 +21,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 
-
-
 @Composable
 fun ChatsScreen(
     chats: List<Chat>,
@@ -31,19 +29,19 @@ fun ChatsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F8FA))
-            .padding(20.dp)
+            .background(Color.White)
+            .padding(8.dp)
     ) {
-        // 🔹 Title
+        // Only one title, at the top
         Text(
             text = "Chats",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = Color.Black
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
         if (chats.isEmpty()) {
-            // 🔹 Empty state
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -52,14 +50,14 @@ fun ChatsScreen(
                     Icon(
                         imageVector = Icons.Default.Chat,
                         contentDescription = null,
-                        tint = Color(0xFFB0B4C0),
-                        modifier = Modifier.size(64.dp)
+                        tint = Color.Gray,
+                        modifier = Modifier.size(56.dp)
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(10.dp))
                     Text(
                         "No active chats yet",
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                        color = Color(0xFF555555)
+                        color = Color.Black
                     )
                     Text(
                         "Start discovering users to begin chatting.",
@@ -69,10 +67,9 @@ fun ChatsScreen(
                 }
             }
         } else {
-            // 🔹 Chat list
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxSize()
             ) {
                 items(chats) { chat ->
                     ChatCard(chat = chat, onSelectChat = onSelectChat)
@@ -89,50 +86,52 @@ fun ChatCard(chat: Chat, onSelectChat: (String) -> Unit) {
             .fillMaxWidth()
             .clickable { onSelectChat(chat.userName) },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F2F2)), // light gray
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(14.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 🔹 Avatar Circle
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(40.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFDADDE6)),
+                    .background(Color(0xFF222222)), // almost black
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = chat.userName.take(1).uppercase(),
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize = 16.sp,
+                    color = Color.White
                 )
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(10.dp))
 
-            // 🔹 Chat content
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = chat.userName,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black
                 )
 
                 if (chat.messages.isNotEmpty()) {
                     Text(
-                        text = chat.messages.last(),
-                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray),
+                        text = chat.messages.last().text,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.DarkGray,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 } else {
                     Text(
                         text = "No messages yet",
-                        style = MaterialTheme.typography.bodySmall.copy(color = Color.LightGray)
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
                     )
                 }
             }
