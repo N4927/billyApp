@@ -7,29 +7,32 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.*
 import com.example.billyapp.ble.BleService
 import com.example.billyapp.ble.BleViewModel
 import com.example.billyapp.core.ChatViewModel
 import com.example.billyapp.core.ResolvedEncounter
 import com.example.billyapp.core.UserManager
 import com.example.billyapp.ui.screens.*
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.filled.Chat
-
-
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 
 
 class MainActivity : ComponentActivity() {
@@ -47,10 +50,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         testCryptoServerMatch()
+        chatViewModel.startChat("Helena Hills")
 
         setContent {
             val navController = rememberNavController()
-            MainApp(
+            BillyApp(
                 navController = navController,
                 bleViewModel = bleViewModel,
                 chatViewModel = chatViewModel,
@@ -62,7 +66,6 @@ class MainActivity : ComponentActivity() {
 
     private fun requestAllPermissions() {
         val permissions = mutableListOf<String>()
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             permissions += android.Manifest.permission.BLUETOOTH_ADVERTISE
             permissions += android.Manifest.permission.BLUETOOTH_SCAN
@@ -71,14 +74,8 @@ class MainActivity : ComponentActivity() {
             permissions += android.Manifest.permission.ACCESS_FINE_LOCATION
             permissions += android.Manifest.permission.ACCESS_COARSE_LOCATION
         }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            permissions += android.Manifest.permission.ACCESS_FINE_LOCATION
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             permissions += android.Manifest.permission.POST_NOTIFICATIONS
-        }
 
         reqPerms.launch(permissions.toTypedArray())
     }
@@ -91,90 +88,98 @@ class MainActivity : ComponentActivity() {
             startService(intent)
     }
 }
-//ciao
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainApp(
+fun BillyApp(
     navController: NavHostController,
     bleViewModel: BleViewModel,
     chatViewModel: ChatViewModel,
     onStartService: () -> Unit,
     onStopService: () -> Unit
 ) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate("home") },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                    label = { Text("Home") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate("chats") },
-                    icon = { Icon(Icons.Default.Chat, contentDescription = "Chats") },
-                    label = { Text("Chats") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { navController.navigate("myprofile") },
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-                    label = { Text("Profile") }
+            if (currentRoute != null && !currentRoute.startsWith("chat/")) {
+                BottomBarFigmaStyle(
+                    currentRoute = currentRoute,
+                    onNavigateHome = { navController.navigate("home") },
+                    onNavigateChats = { navController.navigate("chats") },
+                    onNavigateProfile = { navController.navigate("myprofile") }
                 )
             }
         }
-    ) { padding ->
+    ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = "home",
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.padding(innerPadding)
         ) {
-            /* -------------------- 🏠 HOME -------------------- */
+            // 🔹 Home
             composable("home") {
                 HomeScreen(
                     encounters = bleViewModel.encounters.map {
                         ResolvedEncounter(
                             name = it.encounter.resolvedName ?: "Unknown",
-
                             count = it.count
                         )
                     },
-                    onSelectProfile = { user ->
-                        navController.navigate("profile/$user")
-                    },
+                    onSelectProfile = { user -> navController.navigate("profile/$user") },
                     onSimulateEncounter = { simulateEncounter(bleViewModel) },
                     onStartBle = onStartService,
                     onStopBle = onStopService
                 )
             }
 
-            /* -------------------- 💬 CHATS -------------------- */
+            // 🔹 Lista chat
             composable("chats") {
                 ChatsScreen(
                     chats = chatViewModel.getActiveChats(),
-                    onSelectChat = { user ->
-                        navController.navigate("chat/$user")
+                    onSelectChat = { userName ->
+                        chatViewModel.startChat(userName)
+                        navController.navigate("chat/$userName")
                     }
                 )
             }
 
-            /* -------------------- 🗣️ CHAT DETAIL -------------------- */
+            // 🔹 Chat singola
             composable("chat/{userName}") { backStackEntry ->
-                val user = backStackEntry.arguments?.getString("userName") ?: return@composable
-                ChatScreen(userName = user, chatViewModel = chatViewModel)
+                val userName = backStackEntry.arguments?.getString("userName") ?: return@composable
+                ChatScreen(
+                    userName = userName,
+                    chatViewModel = chatViewModel,
+                    onBack = { navController.popBackStack() }
+                )
             }
 
-            /* -------------------- 👥 OTHER PROFILE -------------------- */
+            // 🔹 Profilo di un altro utente
             composable("profile/{userName}") { backStackEntry ->
-                val user = backStackEntry.arguments?.getString("userName") ?: return@composable
+                val userName = backStackEntry.arguments?.getString("userName") ?: return@composable
                 ProfileScreen(
-                    userName = user,
+                    userName = userName,
                     chatViewModel = chatViewModel,
                     onGoToChat = { navController.navigate("chat/$it") }
                 )
             }
 
-            /* -------------------- 👤 MY PROFILE -------------------- */
+            // 🔹 Setup profilo
+            composable("profile/setup") {
+                val context = LocalContext.current
+                val userManager = remember { UserManager(context) }
+
+                ProfileSetupScreen(
+                    user = userManager.getUser(),
+                    onSave = { newUser ->
+                        userManager.saveUser(newUser)
+                        navController.popBackStack("myprofile", inclusive = false)
+                    }
+                )
+            }
+
+            // 🔹 Mio profilo (✅ FIX QUI)
             composable("myprofile") {
                 val context = LocalContext.current
                 val userManager = remember { UserManager(context) }
@@ -193,47 +198,77 @@ fun MainApp(
                         userName = currentUser!!.displayName,
                         age = currentUser!!.age ?: 0,
                         bio = currentUser!!.bio ?: "No bio yet",
-                        onEditProfile = {
-                            navController.navigate("profile/setup")
-                        }
+                        onEditProfile = { navController.navigate("profile/setup") },
+                        onNavigateHome = { navController.navigate("home") },
+                        onNavigateChats = { navController.navigate("chats") },
+                        onNavigateProfile = { navController.navigate("myprofile") }
                     )
                 }
             }
+        }
+    }
+}
 
-            /* -------------------- ⚙️ EDIT PROFILE -------------------- */
-            composable("profile/setup") {
-                val context = LocalContext.current
-                val userManager = remember { UserManager(context) }
-
-                ProfileSetupScreen(
-                    user = userManager.getUser(),
-                    onSave = { newUser ->
-                        userManager.saveUser(newUser)
-                        navController.popBackStack("myprofile", inclusive = false)
-                    }
+@Composable
+fun BottomBarFigmaStyle(
+    currentRoute: String?,
+    onNavigateHome: () -> Unit,
+    onNavigateChats: () -> Unit,
+    onNavigateProfile: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp),
+        color = Color.White,
+        shadowElevation = 6.dp,
+        shape = RoundedCornerShape(40.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 36.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onNavigateHome) {
+                Icon(
+                    Icons.Default.Home,
+                    contentDescription = "Home",
+                    tint = if (currentRoute == "home") Color.Black else Color.Gray
+                )
+            }
+            IconButton(onClick = onNavigateChats) {
+                Icon(
+                    Icons.Default.Chat,
+                    contentDescription = "Chats",
+                    tint = if (currentRoute == "chats") Color.Black else Color.Gray
+                )
+            }
+            IconButton(onClick = onNavigateProfile) {
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = "Profile",
+                    tint = if (currentRoute == "myprofile") Color.Black else Color.Gray
                 )
             }
         }
     }
 }
 
-/* -------------------- ⚙️ SIMULATED BLE -------------------- */
+// 🔹 Simulazione incontri BLE
 fun simulateEncounter(bleViewModel: BleViewModel) {
     val fakeUsers = listOf("Alice", "Bob", "Charlie", "Diana")
-    fakeUsers.shuffled().take(1).forEach { name ->
-        bleViewModel.addEncounter(name)
-    }
+    fakeUsers.shuffled().take(1).forEach { name -> bleViewModel.addEncounter(name) }
 }
 
+// 🔹 Test cifratura
 private fun testCryptoServerMatch() {
     val timestamp = System.currentTimeMillis() / 1000
     val secret = "alice".toByteArray().copyOf(16)
     val crypto = com.example.billyapp.core.CryptographyManager(secret)
-
     val payload = crypto.encryptRotatingIdentifier("ecb73c72", timestamp)
     android.util.Log.d("CryptoTest", "Client payload: ${payload.joinToString("") { "%02x".format(it) }}")
-
     val resolved = com.example.billyapp.core.FakeServer.resolveRotatingId(payload, timestamp)
     android.util.Log.d("CryptoTest", "Resolved user: ${resolved?.displayName ?: "Unknown"}")
 }
-

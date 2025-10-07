@@ -7,17 +7,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bluetooth
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.billyapp.core.ResolvedEncounter
@@ -30,134 +26,155 @@ fun HomeScreen(
     onStartBle: (() -> Unit)? = null,
     onStopBle: (() -> Unit)? = null
 ) {
+    var isOnline by remember { mutableStateOf(true) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F8FA))
-            .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(Color.White)
+            .padding(horizontal = 20.dp, vertical = 10.dp)
     ) {
-
-
-        // 🔹 BLE buttons
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
-                onClick = { onStartBle?.invoke() },
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE6EBFF))
-            ) {
-                Text("Start BLE", color = Color(0xFF4A6FFF))
-            }
-
-            Button(
-                onClick = { onStopBle?.invoke() },
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A6FFF))
-            ) {
-                Text("Stop BLE", color = Color.White)
-            }
-        }
-
-        Spacer(Modifier.height(20.dp))
+        // 🔹 Header
         Text(
-            "Nearby Encounters",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+            text = "People",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.padding(vertical = 8.dp)
         )
 
-        Spacer(Modifier.height(12.dp))
+        // 🔹 Online / Offline toggle
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(bottom = 16.dp)
+        ) {
+            ToggleButton(
+                text = "online",
+                isSelected = isOnline,
+                onClick = {
+                    isOnline = true
+                    onStartBle?.invoke()
+                }
+            )
+            ToggleButton(
+                text = "offline",
+                isSelected = !isOnline,
+                onClick = {
+                    isOnline = false
+                    onStopBle?.invoke()
+                }
+            )
+        }
 
-        // 🔹 List of encounters
+        // 🔹 People list (encounters)
         if (encounters.isEmpty()) {
-            Spacer(Modifier.height(60.dp))
-            Icon(
-                Icons.Default.Person,
-                contentDescription = null,
-                tint = Color(0xFFB0B4C0),
-                modifier = Modifier.size(60.dp)
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "No one nearby yet",
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = Color(0xFF555555)
-            )
-            Text(
-                text = "Keep the app open to discover people around you.",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
-                textAlign = TextAlign.Center
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No one nearby yet",
+                    style = MaterialTheme.typography.bodyLarge.copy(color = Color.Gray)
+                )
+            }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(encounters) { encounter ->
-                    EncounterCard(encounter, onSelectProfile)
+                    PersonCard(encounter, onSelectProfile)
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // 🔹 Simulate button
-        Button(
-            onClick = { onSimulateEncounter?.invoke() },
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A6FFF))
-        ) {
-            Text("+ Simulate Encounter", color = Color.White)
+        // 🔹 Simulate Encounter button
+        if (onSimulateEncounter != null) {
+            Spacer(Modifier.height(20.dp))
+            Button(
+                onClick = { onSimulateEncounter.invoke() },
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+            ) {
+                Text("+ Simulate Encounter", color = Color.White)
+            }
         }
     }
 }
 
 @Composable
-fun EncounterCard(encounter: ResolvedEncounter, onSelectProfile: (String) -> Unit) {
-    Card(
+fun ToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        colors = if (isSelected)
+            ButtonDefaults.buttonColors(containerColor = Color.Black)
+        else
+            ButtonDefaults.buttonColors(containerColor = Color(0xFFF2F2F2))
+    ) {
+        Text(
+            text = text,
+            color = if (isSelected) Color.White else Color.Black,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+fun PersonCard(encounter: ResolvedEncounter, onSelectProfile: (String) -> Unit) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onSelectProfile(encounter.name) },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .clickable { onSelectProfile(encounter.name) }
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // 🔹 Avatar circle
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFDADDE6)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = encounter.name.take(1).uppercase(),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Spacer(Modifier.width(12.dp))
-
-                Column {
-                    Text(encounter.name, fontWeight = FontWeight.Bold)
-                    Text("Seen ${encounter.count} ${if (encounter.count == 1) "time" else "times"}", color = Color.Gray, fontSize = 13.sp)
-                }
+        // Left side: Avatar + info
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Avatar
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFEAEAEA)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = encounter.name.take(1).uppercase(),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
             }
 
-            Icon(
-                Icons.Filled.Bluetooth,
-                contentDescription = null,
-                tint = Color(0xFF4A6FFF)
-            )
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
+                Text(
+                    text = encounter.name,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
+                Text(
+                    text = "near you at 12:00",
+                    color = Color.Gray,
+                    fontSize = 13.sp
+                )
+            }
+        }
+
+        // Right side: Chat button
+        Button(
+            onClick = { onSelectProfile(encounter.name) },
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp)
+        ) {
+            Text("chat", color = Color.White, fontSize = 14.sp)
         }
     }
 }
