@@ -1,6 +1,7 @@
 package com.example.billyapp
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -22,18 +23,14 @@ import androidx.navigation.compose.*
 import com.example.billyapp.ble.BleService
 import com.example.billyapp.ble.BleViewModel
 import com.example.billyapp.core.ChatViewModel
-import com.example.billyapp.core.ResolvedEncounter
 import com.example.billyapp.core.UserManager
 import com.example.billyapp.ui.screens.*
+import com.example.billyapp.ui.theme.BillyAppTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
-import androidx.compose.material3.IconButton
-import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-
 
 class MainActivity : ComponentActivity() {
     private val bleViewModel: BleViewModel by viewModels()
@@ -48,19 +45,20 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         testCryptoServerMatch()
         chatViewModel.startChat("Helena Hills")
 
         setContent {
-            val navController = rememberNavController()
-            BillyApp(
-                navController = navController,
-                bleViewModel = bleViewModel,
-                chatViewModel = chatViewModel,
-                onStartService = { requestAllPermissions() },
-                onStopService = { stopService(Intent(this, BleService::class.java)) }
-            )
+            BillyAppTheme {
+                val navController = rememberNavController()
+                BillyApp(
+                    navController = navController,
+                    bleViewModel = bleViewModel,
+                    chatViewModel = chatViewModel,
+                    onStartService = { requestAllPermissions() },
+                    onStopService = { stopService(Intent(this, BleService::class.java)) }
+                )
+            }
         }
     }
 
@@ -81,11 +79,19 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startBleService() {
-        val intent = Intent(this, BleService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            ContextCompat.startForegroundService(this, intent)
-        else
-            startService(intent)
+        if (ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            val intent = Intent(this, BleService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                ContextCompat.startForegroundService(this, intent)
+            else
+                startService(intent)
+        } else {
+            requestAllPermissions()
+        }
     }
 }
 
@@ -104,7 +110,7 @@ fun BillyApp(
     Scaffold(
         bottomBar = {
             if (currentRoute != null && !currentRoute.startsWith("chat/")) {
-                BottomBarFigmaStyle(
+                BottomBarMinimal(
                     currentRoute = currentRoute,
                     onNavigateHome = { navController.navigate("home") },
                     onNavigateChats = { navController.navigate("chats") },
@@ -118,23 +124,22 @@ fun BillyApp(
             startDestination = "home",
             modifier = Modifier.padding(innerPadding)
         ) {
-            // 🔹 Home
+            // 🏠 Home (reattiva)
             composable("home") {
                 HomeScreen(
-                    encounters = bleViewModel.encounters.map {
-                        ResolvedEncounter(
-                            name = it.encounter.resolvedName ?: "Unknown",
-                            count = it.count
-                        )
-                    },
+                    encounters = bleViewModel.resolvedEncounters, // ✅ lista aggiornata in tempo reale
                     onSelectProfile = { user -> navController.navigate("profile/$user") },
+                    onOpenChat = { userName ->
+                        chatViewModel.startChat(userName)
+                        navController.navigate("chat/$userName")
+                    },
                     onSimulateEncounter = { simulateEncounter(bleViewModel) },
                     onStartBle = onStartService,
                     onStopBle = onStopService
                 )
             }
 
-            // 🔹 Lista chat
+            // 💬 Lista chat
             composable("chats") {
                 ChatsScreen(
                     chats = chatViewModel.getActiveChats(),
@@ -145,7 +150,7 @@ fun BillyApp(
                 )
             }
 
-            // 🔹 Chat singola
+            // 🗨️ Chat singola
             composable("chat/{userName}") { backStackEntry ->
                 val userName = backStackEntry.arguments?.getString("userName") ?: return@composable
                 ChatScreen(
@@ -155,7 +160,7 @@ fun BillyApp(
                 )
             }
 
-            // 🔹 Profilo di un altro utente
+            // 👤 Profilo utente
             composable("profile/{userName}") { backStackEntry ->
                 val userName = backStackEntry.arguments?.getString("userName") ?: return@composable
                 ProfileScreen(
@@ -165,7 +170,7 @@ fun BillyApp(
                 )
             }
 
-            // 🔹 Setup profilo
+            // ⚙️ Setup profilo
             composable("profile/setup") {
                 val context = LocalContext.current
                 val userManager = remember { UserManager(context) }
@@ -179,7 +184,7 @@ fun BillyApp(
                 )
             }
 
-            // 🔹 Mio profilo (✅ FIX QUI)
+            // 👤 Mio profilo
             composable("myprofile") {
                 val context = LocalContext.current
                 val userManager = remember { UserManager(context) }
@@ -210,7 +215,7 @@ fun BillyApp(
 }
 
 @Composable
-fun BottomBarFigmaStyle(
+fun BottomBarMinimal(
     currentRoute: String?,
     onNavigateHome: () -> Unit,
     onNavigateChats: () -> Unit,
@@ -219,10 +224,10 @@ fun BottomBarFigmaStyle(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp),
+            .height(70.dp),
         color = Color.White,
-        shadowElevation = 6.dp,
-        shape = RoundedCornerShape(40.dp)
+        shadowElevation = 8.dp,
+        shape = RectangleShape
     ) {
         Row(
             modifier = Modifier
@@ -256,13 +261,13 @@ fun BottomBarFigmaStyle(
     }
 }
 
-// 🔹 Simulazione incontri BLE
+// 🧩 Simulazione BLE
 fun simulateEncounter(bleViewModel: BleViewModel) {
-    val fakeUsers = listOf("Alice", "Bob", "Charlie", "Diana")
+    val fakeUsers = listOf("Alice", "Bob", "Charlie", "Diana", "Luca")
     fakeUsers.shuffled().take(1).forEach { name -> bleViewModel.addEncounter(name) }
 }
 
-// 🔹 Test cifratura
+// 🔒 Test cifratura (debug)
 private fun testCryptoServerMatch() {
     val timestamp = System.currentTimeMillis() / 1000
     val secret = "alice".toByteArray().copyOf(16)

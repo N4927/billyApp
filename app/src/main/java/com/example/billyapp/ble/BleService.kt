@@ -13,14 +13,15 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.billyapp.core.Constants
-import com.example.billyapp.core.EncounterRepository
 import com.example.billyapp.core.Encounter
 import com.example.billyapp.core.EncounterBus
+import com.example.billyapp.core.EncounterRepository
 import com.example.billyapp.core.FakeServer
 import com.example.billyapp.core.UserManager
 import kotlinx.coroutines.*
 
 class BleService : Service() {
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val repo = EncounterRepository()
     private lateinit var userManager: UserManager
@@ -61,6 +62,7 @@ class BleService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    // 🔹 Foreground notification to keep BLE alive
     private fun startForegroundNoti(contentText: String = "Advertising & scanning") {
         val channelId = "ble_channel"
         if (Build.VERSION.SDK_INT >= 26) {
@@ -83,16 +85,15 @@ class BleService : Service() {
         startForeground(1, noti)
     }
 
+    // 🔹 Periodically rotate and advertise encrypted ID
     private suspend fun loopRotateAndAdvertise() {
         while (isActive) {
             stopAdvertising()
 
             val ts = System.currentTimeMillis() / 1000
             val personalId = userManager.getPersonalIdentifier()
-
-            // Encrypt the personal identifier with timestamp
             val cryptoManager = userManager.getCryptographyManager()
-            val encryptedPayload = cryptoManager.encryptRotatingIdentifier (personalId, ts)
+            val encryptedPayload = cryptoManager.encryptRotatingIdentifier(personalId, ts)
 
             Log.d("BleService", "🧩 Advertising name=${userManager.getUserName()}")
             Log.d("BleService", "🧩 Personal ID=$personalId")
@@ -118,6 +119,7 @@ class BleService : Service() {
         }
     }
 
+    // 🔹 Advertising logic
     private fun startAdvertising(payload: ByteArray) {
         if (!hasBluetoothPermissions()) {
             Log.w("BleService", "⚠️ Permessi Bluetooth non concessi, skip startAdvertising")
@@ -171,6 +173,7 @@ class BleService : Service() {
         nm.notify(1, notification)
     }
 
+    // 🔹 Scanning logic
     private fun startScan() {
         if (!hasBluetoothPermissions()) {
             Log.w("BleService", "⚠️ Permessi Bluetooth non concessi, skip startScan")
@@ -187,6 +190,7 @@ class BleService : Service() {
             val filter = ScanFilter.Builder()
                 .setServiceUuid(Constants.SERVICE_UUID)
                 .build()
+
             val settings = ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build()
@@ -195,7 +199,7 @@ class BleService : Service() {
                 override fun onScanResult(callbackType: Int, result: ScanResult) {
                     val record = result.scanRecord ?: return
                     val payload = record.getServiceData(Constants.SERVICE_UUID) ?: return
-                    if (payload.size != 16) return  // Accept exact 16-byte payloads
+                    if (payload.size != 16) return  // Only accept full payloads
 
                     val timestampBytes = payload.copyOfRange(0, 8)
                     val ts = bytesToLong(timestampBytes)
@@ -213,21 +217,23 @@ class BleService : Service() {
                         resolvedName = resolvedName
                     )
 
-                    scope.launch { EncounterBus.emit(encounter) }
+                    scope.launch {
+                        EncounterBus.emit(encounter)
+                        Log.d("BleService", "🟢 Emitted encounter for ${encounter.resolvedName}")
+                    }
 
                     Log.d("BleService", "📡 Found: $resolvedName (encrypted: ${payloadHex.take(16)}...)")
                 }
 
-
                 private fun bytesToLong(bytes: ByteArray): Long {
                     var result = 0L
                     for (i in 0 until 8) {
-                        result = result shl 8
-                        result = result or (bytes[i].toLong() and 0xFF)
+                        result = (result shl 8) or (bytes[i].toLong() and 0xFF)
                     }
                     return result
                 }
             }
+
             sc.startScan(listOf(filter), settings, scanCb)
         } catch (e: SecurityException) {
             Log.e("BleService", "❌ Errore startScan: ${e.message}")

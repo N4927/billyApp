@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,8 +21,9 @@ import com.example.billyapp.core.ResolvedEncounter
 
 @Composable
 fun HomeScreen(
-    encounters: List<ResolvedEncounter>,
+    encounters: SnapshotStateList<ResolvedEncounter>, // ✅ reattiva
     onSelectProfile: (String) -> Unit,
+    onOpenChat: (String) -> Unit,
     onSimulateEncounter: (() -> Unit)? = null,
     onStartBle: (() -> Unit)? = null,
     onStopBle: (() -> Unit)? = null
@@ -36,9 +38,10 @@ fun HomeScreen(
     ) {
         // 🔹 Header
         Text(
-            text = "People",
+            text = "People nearby",
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier.padding(vertical = 8.dp),
+            color = Color.Black
         )
 
         // 🔹 Online / Offline toggle
@@ -64,7 +67,7 @@ fun HomeScreen(
             )
         }
 
-        // 🔹 People list (encounters)
+        // 🔹 People list
         if (encounters.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -84,8 +87,12 @@ fun HomeScreen(
                     .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(encounters) { encounter ->
-                    PersonCard(encounter, onSelectProfile)
+                items(encounters, key = { it.name }) { encounter ->
+                    PersonCard(
+                        encounter = encounter,
+                        onOpenProfile = onSelectProfile,
+                        onOpenChat = onOpenChat
+                    )
                 }
             }
         }
@@ -95,9 +102,10 @@ fun HomeScreen(
             Spacer(Modifier.height(20.dp))
             Button(
                 onClick = { onSimulateEncounter.invoke() },
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
             ) {
                 Text("+ Simulate Encounter", color = Color.White)
             }
@@ -109,11 +117,12 @@ fun HomeScreen(
 fun ToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        shape = RoundedCornerShape(50),
+        shape = RoundedCornerShape(40.dp),
         colors = if (isSelected)
             ButtonDefaults.buttonColors(containerColor = Color.Black)
         else
-            ButtonDefaults.buttonColors(containerColor = Color(0xFFF2F2F2))
+            ButtonDefaults.buttonColors(containerColor = Color(0xFFF3F3F3)),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
     ) {
         Text(
             text = text,
@@ -124,18 +133,21 @@ fun ToggleButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun PersonCard(encounter: ResolvedEncounter, onSelectProfile: (String) -> Unit) {
+fun PersonCard(
+    encounter: ResolvedEncounter,
+    onOpenProfile: (String) -> Unit,
+    onOpenChat: (String) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onSelectProfile(encounter.name) }
+            .clickable { onOpenProfile(encounter.name) }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Left side: Avatar + info
+        // 🔹 Left side: Avatar + Name + Info
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Avatar
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -157,7 +169,8 @@ fun PersonCard(encounter: ResolvedEncounter, onSelectProfile: (String) -> Unit) 
                 Text(
                     text = encounter.name,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    color = Color.Black
                 )
                 Text(
                     text = "near you at 12:00",
@@ -167,12 +180,13 @@ fun PersonCard(encounter: ResolvedEncounter, onSelectProfile: (String) -> Unit) 
             }
         }
 
-        // Right side: Chat button
+        // 🔹 Right side: Chat button
         Button(
-            onClick = { onSelectProfile(encounter.name) },
-            shape = RoundedCornerShape(12.dp),
+            onClick = { onOpenChat(encounter.name) },
+            shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp)
+            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
         ) {
             Text("chat", color = Color.White, fontSize = 14.sp)
         }
