@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
@@ -15,28 +16,29 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
-    <!-- Location (necessario per lo scan BLE su Android < 12 e foreground service location) -->
+    <!-- Location (necessaria per lo scan BLE su Android < 12 e per FGS location) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
-    <!-- Permesso location in background (necessario per service location in background) -->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <!-- Notifiche Foreground (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Foreground service generico -->
+    <!-- Foreground service base (retrocompatibile Android 10–14) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-    <!-- Tipi specifici (Android 14+/15+) -->
+    <!-- Tipi specifici FGS (Android 14+) -->
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE_LOCATION"
+        android:required="false"
         tools:targetApi="34" />
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"
+        android:required="false"
         tools:targetApi="34" />
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"
+        android:required="false"
         tools:targetApi="34" />
 
     <application
@@ -47,8 +49,10 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.BillyApp">
+        android:theme="@style/Theme.BillyApp"
+        tools:targetApi="34">
 
+        <!-- 🌍 Activity principale -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -60,10 +64,11 @@
             </intent-filter>
         </activity>
 
-        <!-- Foreground BLE Service -->
+        <!-- 📡 Servizio BLE in foreground -->
         <service
             android:name=".ble.BleService"
             android:exported="false"
-            android:foregroundServiceType="location|connectedDevice|dataSync" />
+            android:foregroundServiceType="location|connectedDevice|dataSync"
+            android:stopWithTask="false" />
     </application>
 </manifest>

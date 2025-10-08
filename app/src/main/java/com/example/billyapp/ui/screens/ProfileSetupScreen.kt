@@ -14,6 +14,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.billyapp.core.User
 import java.util.UUID
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.unit.Dp
+import androidx.compose.material3.TextFieldDefaults
+
 
 @Composable
 fun ProfileSetupScreen(
@@ -27,63 +31,55 @@ fun ProfileSetupScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F8FA))
-            .padding(24.dp),
+            .background(Color(0xFFF9F9F9)) // bianco caldo
+            .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
-        // 🔹 Title
+        // 🔹 Titolo minimal
         Text(
-            text = "Set up your profile",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            text = "Create your profile",
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF000000)
+            ),
             textAlign = TextAlign.Center
         )
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(36.dp))
 
-        // 🔹 Name field
-        OutlinedTextField(
+        // 🔹 Campo nome
+        MinimalInputField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Name") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            label = "Name"
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
 
-        // 🔹 Age field
-        OutlinedTextField(
+        // 🔹 Campo età
+        MinimalInputField(
             value = age,
             onValueChange = { age = it },
-            label = { Text("Age") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            label = "Age"
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
 
-        // 🔹 Bio field
-        OutlinedTextField(
+        // 🔹 Campo bio
+        MinimalInputField(
             value = bio,
             onValueChange = { bio = it },
-            label = { Text("Bio") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp),
-            shape = RoundedCornerShape(12.dp)
+            label = "Bio",
+            singleLine = false,
+            height = 100.dp
         )
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(40.dp))
 
-        // 🔹 Save button
-        // 🔹 Save button
+        // 🔹 Pulsante Salva minimal
         Button(
             onClick = {
-                // Mappa fissa di ID personali coerente con la parte BLE/Python
-                // ID coerenti con FakeServer (solo 8 caratteri)
                 val userIds = mapOf(
                     "alice" to "ecb73c72",
                     "bob" to "33f24d0c",
@@ -92,7 +88,6 @@ fun ProfileSetupScreen(
                     "marco" to "8b44a291",
                     "giulia" to "f8507096"
                 )
-
 
                 val cleanName = name.trim().lowercase()
                 val assignedId = userIds[cleanName] ?: UUID.randomUUID().toString()
@@ -103,15 +98,75 @@ fun ProfileSetupScreen(
                     age = age.toIntOrNull(),
                     bio = bio.trim()
                 )
-
                 onSave(newUser)
             },
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A6FFF))
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF000000),
+                contentColor = Color.White
+            ),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
         ) {
-            Text("Save Profile", color = Color.White, fontSize = 16.sp)
+            Text(
+                text = "Save Profile",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
+    }
+}
 
+/**
+ * Campo di input minimalista in bianco e nero
+ */
+@Composable
+fun MinimalInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    singleLine: Boolean = true,
+    height: Dp = 56.dp
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                color = Color(0xFF5C5C5C),
+                fontWeight = FontWeight.Medium
+            )
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(height),
+            shape = RoundedCornerShape(10.dp),
+            color = Color.White,
+            shadowElevation = 0.dp,
+            border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+        ) {
+            TextField(
+                value = value,
+                onValueChange = onValueChange,
+                textStyle = LocalTextStyle.current.copy(
+                    color = Color(0xFF1A1A1A),
+                    fontSize = 16.sp
+                ),
+                singleLine = singleLine,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    cursorColor = Color.Black
+                ),
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }

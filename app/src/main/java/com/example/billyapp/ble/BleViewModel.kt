@@ -7,24 +7,29 @@ import androidx.lifecycle.viewModelScope
 import com.example.billyapp.core.Encounter
 import com.example.billyapp.core.EncounterBus
 import com.example.billyapp.core.EncounterStore
+import com.example.billyapp.core.ResolvedEncounter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class BleViewModel(app: Application) : AndroidViewModel(app) {
 
+    // 🔹 Lista interna con i dati grezzi (Encounter)
     val encounters = mutableStateListOf<EncounterWithCount>()
 
-    // 🔹 Timeout in minutes before removing an old encounter
+    // 🔹 Lista pronta per la UI (ResolvedEncounter)
+    val resolvedEncounters = mutableStateListOf<ResolvedEncounter>()
+
     private val TIMEOUT_MINUTES = 10
     private val TIMEOUT_MS = TIMEOUT_MINUTES * 60 * 1000L
 
     init {
-        // Load saved encounters and merge duplicates
+        // Carica i dati salvati
         val loaded = EncounterStore.loadAll(getApplication())
         encounters.clear()
         encounters.addAll(mergeEncounters(loaded))
+        updateResolvedList()
 
-        // Listen in real time from EncounterBus
+        // Riceve nuovi eventi in tempo reale dal bus
         viewModelScope.launch {
             EncounterBus.events.collect { encounter ->
                 addOrUpdateEncounter(encounter)
@@ -32,15 +37,16 @@ class BleViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
 
-        // 🔹 Periodically cleanup old encounters
+        // Pulisce periodicamente gli incontri vecchi
         viewModelScope.launch {
             while (true) {
                 cleanupOldEncounters()
-                delay(60 * 1000L) // check every minute
+                delay(60 * 1000L)
             }
         }
     }
 
+    // Simulazione manuale (debug)
     fun addEncounter(name: String) {
         val encounter = Encounter(
             idHex = name.lowercase(),
@@ -61,7 +67,6 @@ class BleViewModel(app: Application) : AndroidViewModel(app) {
         }
 
         if (existingIndex != -1) {
-            // Update existing entry
             val existing = encounters[existingIndex]
             val updated = existing.copy(
                 count = existing.count + 1,
@@ -69,12 +74,11 @@ class BleViewModel(app: Application) : AndroidViewModel(app) {
             )
             encounters[existingIndex] = updated
         } else {
-            // Add new one
             encounters.add(EncounterWithCount(encounter, count = 1))
         }
 
-        // 🔹 Cleanup outdated encounters after each new one
         cleanupOldEncounters()
+        updateResolvedList() // ✅ aggiorna la lista per la UI
     }
 
     private fun mergeEncounters(list: List<Encounter>): List<EncounterWithCount> {
@@ -85,13 +89,26 @@ class BleViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // 🔹 Remove encounters older than TIMEOUT_MINUTES
     private fun cleanupOldEncounters() {
         val now = System.currentTimeMillis()
         encounters.removeAll {
             val lastSeen = it.encounter.timestampSec * 1000
             now - lastSeen > TIMEOUT_MS
         }
+        updateResolvedList()
+    }
+
+    // 🔹 Conversione per la UI
+    private fun updateResolvedList() {
+        resolvedEncounters.clear()
+        resolvedEncounters.addAll(
+            encounters.map {
+                ResolvedEncounter(
+                    name = it.encounter.resolvedName ?: "Unknown",
+                    count = it.count
+                )
+            }
+        )
     }
 }
 

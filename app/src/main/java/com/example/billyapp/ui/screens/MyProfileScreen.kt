@@ -31,136 +31,77 @@ fun MyProfileScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F8FA))
+            .background(Color.White)
     ) {
-        // 🔹 Contenuto principale
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 90.dp), // spazio per la bottom bar
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // 🔹 Avatar
+            // Avatar (black background, white text)
             Box(
                 modifier = Modifier
-                    .size(110.dp)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(Color(0xFFDADDE6)),
+                    .size(120.dp)
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(Color.Black),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = userName.take(1).uppercase(),
                     style = MaterialTheme.typography.headlineLarge.copy(
-                        color = Color(0xFF4A4A4A),
+                        color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(22.dp))
 
-            // 🔹 Nome e info
             Text(
                 text = userName,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF1A1A1A)
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
             )
-
             if (age > 0) {
                 Text(
                     text = "Age: $age",
-                    style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray)
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color(0xFF707070)
+                    )
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // 🔹 Bio
             Text(
                 text = bio.ifBlank { "No bio added yet." },
-                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 20.sp),
-                color = Color(0xFF444444),
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    lineHeight = 20.sp,
+                    color = Color(0xFF222222)
+                ),
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 32.dp)
             )
 
-            Spacer(modifier = Modifier.height(36.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
-            // 🔹 Pulsante di modifica profilo
             Button(
                 onClick = onEditProfile,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(30.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A6FFF))
+                    .height(54.dp),
+                shape = RoundedCornerShape(32.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Text(
-                    text = "Edit Profile ✏️",
+                    text = "Edit Profile",
                     color = Color.White,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                )
-            }
-        }
-
-        // 🔹 Barra inferiore in stile Figma
-        BottomBarFigma(
-            currentRoute = "myprofile",
-            onNavigateHome = onNavigateHome,
-            onNavigateChats = onNavigateChats,
-            onNavigateProfile = onNavigateProfile,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
-    }
-}
-
-@Composable
-fun BottomBarFigma(
-    currentRoute: String,
-    onNavigateHome: () -> Unit,
-    onNavigateChats: () -> Unit,
-    onNavigateProfile: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(72.dp)
-            .padding(horizontal = 24.dp, vertical = 12.dp),
-        shape = RoundedCornerShape(40.dp),
-        color = Color.White,
-        shadowElevation = 6.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 28.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onNavigateHome) {
-                Icon(
-                    imageVector = Icons.Default.Home,
-                    contentDescription = "Home",
-                    tint = if (currentRoute == "home") Color.Black else Color(0xFFB0B0B0)
-                )
-            }
-
-            IconButton(onClick = onNavigateChats) {
-                Icon(
-                    imageVector = Icons.Default.Chat,
-                    contentDescription = "Chats",
-                    tint = if (currentRoute == "chats") Color.Black else Color(0xFFB0B0B0)
-                )
-            }
-
-            IconButton(onClick = onNavigateProfile) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Profile",
-                    tint = if (currentRoute == "myprofile") Color.Black else Color(0xFFB0B0B0)
                 )
             }
         }
