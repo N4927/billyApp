@@ -15,7 +15,8 @@ data class Encounter(
 
 data class ResolvedEncounter(
     val name: String,
-    val count: Int = 1
+    val count: Int = 1,
+    val idHex: String
 )
 
 
