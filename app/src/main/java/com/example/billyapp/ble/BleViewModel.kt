@@ -1,6 +1,7 @@
 package com.example.billyapp.ble
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,8 +9,10 @@ import com.example.billyapp.core.Encounter
 import com.example.billyapp.core.EncounterBus
 import com.example.billyapp.core.EncounterStore
 import com.example.billyapp.core.ResolvedEncounter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class BleViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -29,24 +32,29 @@ class BleViewModel(app: Application) : AndroidViewModel(app) {
         encounters.addAll(mergeEncounters(loaded))
         updateResolvedList()
 
-        // Riceve nuovi eventi in tempo reale dal bus
+        // 🔹 Riceve nuovi eventi in tempo reale dal bus
         viewModelScope.launch {
             EncounterBus.events.collect { encounter ->
-                addOrUpdateEncounter(encounter)
-                EncounterStore.append(getApplication(), encounter)
+                Log.d("BleViewModel", "📥 Received encounter in ViewModel: ${encounter.resolvedName}")
+                Log.d("BleViewModel", "🧩 idHex=${encounter.idHex}, rssi=${encounter.rssi}, ts=${encounter.timestampSec}")
+
+                withContext(Dispatchers.Main) {
+                    addOrUpdateEncounter(encounter)
+                    EncounterStore.append(getApplication(), encounter)
+                }
             }
         }
 
-        // Pulisce periodicamente gli incontri vecchi
+        // 🔹 Pulisce periodicamente gli incontri vecchi (disattivato per debug)
         viewModelScope.launch {
             while (true) {
-                cleanupOldEncounters()
+                // cleanupOldEncounters()
                 delay(60 * 1000L)
             }
         }
     }
 
-    // Simulazione manuale (debug)
+    // 🔹 Simulazione manuale (debug)
     fun addEncounter(name: String) {
         val encounter = Encounter(
             idHex = name.lowercase(),
@@ -58,12 +66,15 @@ class BleViewModel(app: Application) : AndroidViewModel(app) {
         EncounterStore.append(getApplication(), encounter)
     }
 
+    // 🔹 Aggiorna o aggiunge un nuovo encounter (deduplica per nome)
     private fun addOrUpdateEncounter(encounter: Encounter) {
+        Log.d("BleViewModel", "🧩 addOrUpdateEncounter for ${encounter.resolvedName}")
+
         val now = System.currentTimeMillis()
+
+        // ✅ Deduplica per nome risolto, non per ID che ruota
         val existingIndex = encounters.indexOfFirst {
-            it.encounter.idHex == encounter.idHex ||
-                    (!encounter.resolvedName.isNullOrBlank() &&
-                            it.encounter.resolvedName == encounter.resolvedName)
+            it.encounter.resolvedName == encounter.resolvedName
         }
 
         if (existingIndex != -1) {
@@ -73,27 +84,29 @@ class BleViewModel(app: Application) : AndroidViewModel(app) {
                 encounter = encounter.copy(timestampSec = now / 1000)
             )
             encounters[existingIndex] = updated
+            Log.d("BleViewModel", "🔁 Updated encounter count=${updated.count} for ${encounter.resolvedName}")
         } else {
             encounters.add(EncounterWithCount(encounter, count = 1))
+            Log.d("BleViewModel", "🆕 Added new encounter: ${encounter.resolvedName}")
         }
 
-        cleanupOldEncounters()
-        updateResolvedList() // ✅ aggiorna la lista per la UI
+        updateResolvedList()
     }
 
+    // 🔹 Unisce eventuali duplicati al caricamento
     private fun mergeEncounters(list: List<Encounter>): List<EncounterWithCount> {
-        val grouped = list.groupBy { it.idHex.ifBlank { it.resolvedName ?: "unknown" } }
+        val grouped = list.groupBy { it.resolvedName ?: "unknown" }
         return grouped.map { (_, encounters) ->
             val last = encounters.maxByOrNull { it.timestampSec }!!
             EncounterWithCount(encounter = last, count = encounters.size)
         }
     }
 
+    // 🔹 Pulisce gli incontri vecchi (disabilitato per debug)
     private fun cleanupOldEncounters() {
-        val now = System.currentTimeMillis()
-        encounters.removeAll {
-            val lastSeen = it.encounter.timestampSec * 1000
-            now - lastSeen > TIMEOUT_MS
+        // ⚠️ Disattivato per debug (timestamp non realistici)
+        if (encounters.isNotEmpty()) {
+            Log.d("BleViewModel", "⏳ Skipping cleanup (debug mode), keeping ${encounters.size} encounters")
         }
         updateResolvedList()
     }
@@ -105,13 +118,20 @@ class BleViewModel(app: Application) : AndroidViewModel(app) {
             encounters.map {
                 ResolvedEncounter(
                     name = it.encounter.resolvedName ?: "Unknown",
-                    count = it.count
+                    count = it.count,
+                    idHex = it.encounter.idHex
                 )
             }
         )
+
+        Log.d("BleViewModel", "🎨 Updated resolved list. Size=${resolvedEncounters.size}")
+        resolvedEncounters.forEach {
+            Log.d("BleViewModel", "➡️ ${it.name} (count=${it.count}, id=${it.idHex.take(8)}...)")
+        }
     }
 }
 
+// 🔹 Modello dati interno
 data class EncounterWithCount(
     val encounter: Encounter,
     val count: Int

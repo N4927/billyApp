@@ -14,19 +14,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.billyapp.core.ChatViewModel
+import com.example.billyapp.ble.BleViewModel   // ✅ import corretto
 
 @Composable
 fun ProfileScreen(
     userName: String,
     chatViewModel: ChatViewModel,
+    bleViewModel: BleViewModel,
     onGoToChat: (String) -> Unit
 ) {
     val existingChat = chatViewModel.getChat(userName)
 
-    // 🔹 Palette minimal: bianco / nero / grigio neutro
+    // ✅ Ottieni il numero di volte che hai incontrato la persona
+    val encounter = bleViewModel.resolvedEncounters.find { it.name == userName }
+    val encounterCount = encounter?.count ?: 0
+
+    // 🔹 Palette minimal
     val background = Color(0xFFF8F8F8)
     val textPrimary = Color(0xFF111111)
-    val textSecondary = Color(0xFF6C6C6C)
     val accent = Color(0xFF000000)
 
     Box(
@@ -72,13 +77,16 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 🔹 Info aggiuntive statiche o di esempio
+            // 🔹 Mostra quante volte lo hai incontrato
             Text(
-                text = "Recently met user",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = textSecondary
-                ),
-                textAlign = TextAlign.Center
+                text = when {
+                    encounterCount > 1 -> "👀 Hai incontrato $userName $encounterCount volte nelle vicinanze"
+                    encounterCount == 1 -> "👀 Hai incontrato $userName una volta nelle vicinanze"
+                    else -> "Nessun incontro recente"
+                },
+                style = MaterialTheme.typography.bodyLarge.copy(color = Color.Gray),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -102,7 +110,7 @@ fun ProfileScreen(
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
             ) {
                 Text(
-                    text = if (existingChat == null) "Start Chat 💬" else "Open Chat 💭",
+                    text = if (existingChat == null) "Avvia chat 💬" else "Apri chat 💭",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )

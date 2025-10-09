@@ -226,12 +226,9 @@ class BleService : Service() {
                 }
 
                 private fun bytesToLong(bytes: ByteArray): Long {
-                    var result = 0L
-                    for (i in 0 until 8) {
-                        result = (result shl 8) or (bytes[i].toLong() and 0xFF)
-                    }
-                    return result
+                    return java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.BIG_ENDIAN).long
                 }
+
             }
 
             sc.startScan(listOf(filter), settings, scanCb)

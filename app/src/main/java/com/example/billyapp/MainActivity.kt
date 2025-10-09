@@ -45,7 +45,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        testCryptoServerMatch()
         chatViewModel.startChat("Helena Hills")
 
         setContent {
@@ -166,9 +165,11 @@ fun BillyApp(
                 ProfileScreen(
                     userName = userName,
                     chatViewModel = chatViewModel,
+                    bleViewModel = bleViewModel,
                     onGoToChat = { navController.navigate("chat/$it") }
                 )
             }
+
 
             // ⚙️ Setup profilo
             composable("profile/setup") {
@@ -267,13 +268,5 @@ fun simulateEncounter(bleViewModel: BleViewModel) {
     fakeUsers.shuffled().take(1).forEach { name -> bleViewModel.addEncounter(name) }
 }
 
-// 🔒 Test cifratura (debug)
-private fun testCryptoServerMatch() {
-    val timestamp = System.currentTimeMillis() / 1000
-    val secret = "alice".toByteArray().copyOf(16)
-    val crypto = com.example.billyapp.core.CryptographyManager(secret)
-    val payload = crypto.encryptRotatingIdentifier("ecb73c72", timestamp)
-    android.util.Log.d("CryptoTest", "Client payload: ${payload.joinToString("") { "%02x".format(it) }}")
-    val resolved = com.example.billyapp.core.FakeServer.resolveRotatingId(payload, timestamp)
-    android.util.Log.d("CryptoTest", "Resolved user: ${resolved?.displayName ?: "Unknown"}")
-}
+
+
