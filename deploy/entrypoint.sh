@@ -34,19 +34,18 @@ fi
 python manage.py migrate --noinput
 
 if [ "${APP_ENV}" = "dev" ]; then
-  python - <<'PY'
+  python manage.py shell -c "
 from django.contrib.auth import get_user_model
 User = get_user_model()
 u, created = User.objects.get_or_create(
-    username="admin",
-    defaults={"email": "admin@example.com", "is_staff": True, "is_superuser": True},
+    username='admin',
+    defaults={'email':'admin@example.com','is_staff':True,'is_superuser':True},
 )
-# Forza sempre la password "admin" in dev (anche se l'utente già esiste)
-u.set_password("admin")
-u.save()
-print("Dev superuser pronto: admin / admin")
-PY
+u.set_password('admin'); u.save()
+print('Dev superuser pronto:', 'CREATED' if created else 'UPDATED')
+"
 fi
+
 
 if [ "${APP_ENV}" = "prod" ]; then
   python manage.py collectstatic --noinput
