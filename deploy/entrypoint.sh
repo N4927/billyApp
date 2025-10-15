@@ -49,7 +49,7 @@ fi
 
 if [ "${APP_ENV}" = "dev" ]; then
   req DJANGO_SERVER_PORT
-  exec python manage.py runserver localhost:${DJANGO_SERVER_PORT}
+  exec python manage.py runserver 0.0.0.0:${DJANGO_SERVER_PORT}
 fi
 
 req GUNICORN_BIND
