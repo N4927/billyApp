@@ -1,20 +1,23 @@
-FROM 3.13.7-trixie
+FROM python:3.12-slim
 
+ARG INSTALL_DEV_DEPS=0
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential libpq-dev \
-  && rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt requirements.txt
+RUN pip install --upgrade pip \
+ && pip install -r requirements.txt
 
 COPY . .
 
-RUN useradd -m appuser
+RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
-EXPOSE 8000
-
-CMD sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:${DJANGO_SERVER_PORT:-8000}"
+ENTRYPOINT ["bash","/app/deploy/entrypoint.sh"]
