@@ -108,6 +108,20 @@ make dev-test
 make prod-test  # uses --no-cache to avoid stale code
 ```
 
+## 👤 Admin (dev only)
+
+On `dev` startup the entrypoint **creates/updates** a superuser:
+
+* **username:** `admin`
+* **password:** `admin`
+
+Login:
+
+* Dev: `http://localhost:8000/admin/`
+* Behind a proxy: `http://localhost/admin/`
+
+> Enabled **only in dev**; do not use this credential in production.
+
 ---
 
 ## 🛠 Make Commands
