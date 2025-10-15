@@ -27,14 +27,13 @@ Django/DRF API to register users, list users, and resolve a **deterministic cryp
 
 ## ⚡ Quick Start
 
-**Prereqs**: Docker Desktop (or Docker Engine + Compose v2), `make`.
+**Prereqs**: Docker Desktop (or Docker Engine + Compose v2) and `make`.
 
-1. Create env files **with real values** (no placeholders committed):
+### 1) Create env files with real values (never commit secrets)
 
-<details>
-<summary><strong>.env.dev</strong> (minimal keys)</summary>
+`.env.dev` (minimal)
 
-```
+```ini
 DJANGO_SETTINGS_MODULE=core.settings.dev
 DEBUG=True
 DJANGO_SECRET_KEY=...
@@ -48,34 +47,31 @@ LOG_LEVEL=DEBUG
 DB_NAME=...
 DB_USER=...
 DB_PASSWORD=...
-DB_HOST=db
-DB_PORT=5432
+DB_HOST=...
+DB_PORT=...
 RID_ROTATION_SECONDS=20
-DJANGO_SERVER_PORT=...
+DJANGO_SERVER_PORT=8000
 APP_ENV=dev
 RUN_TESTS_ON_START=0
 AUTO_MAKEMIGRATIONS=1
 GUNICORN_BIND=0.0.0.0:8000
-GUNICORN_WORKERS=...
-GUNICORN_TIMEOUT=...
+GUNICORN_WORKERS=3
+GUNICORN_TIMEOUT=60
 SECURE_SSL_REDIRECT=False
 SECURE_HSTS_SECONDS=0
 CORS_ALLOW_CREDENTIALS=True
 ```
 
-</details>
+`.env.prod` (minimal)
 
-<details>
-<summary><strong>.env.prod</strong> (minimal keys)</summary>
-
-```
+```ini
 DJANGO_SETTINGS_MODULE=core.settings.prod
 DEBUG=False
 DJANGO_SECRET_KEY=...
-ALLOWED_HOSTS=...
-CSRF_TRUSTED_ORIGINS=...
+ALLOWED_HOSTS=localhost
+CSRF_TRUSTED_ORIGINS=http://localhost
 CORS_ALLOW_ALL_ORIGINS=False
-CORS_ALLOWED_ORIGINS=...
+CORS_ALLOWED_ORIGINS=
 LANGUAGE_CODE=...
 TIME_ZONE=...
 LOG_LEVEL=INFO
@@ -84,35 +80,32 @@ DB_USER=...
 DB_PASSWORD=...
 DB_HOST=...
 DB_PORT=...
-RID_ROTATION_SECONDS=...
+RID_ROTATION_SECONDS=20
 APP_ENV=prod
-RUN_TESTS_ON_START=...
-AUTO_MAKEMIGRATIONS=...
+RUN_TESTS_ON_START=0
+AUTO_MAKEMIGRATIONS=0
 GUNICORN_BIND=...
-GUNICORN_WORKERS=...
-GUNICORN_TIMEOUT=...
-SECURE_SSL_REDIRECT=...
+GUNICORN_WORKERS=3
+GUNICORN_TIMEOUT=60
+SECURE_SSL_REDIRECT=False
 SECURE_HSTS_SECONDS=...
-CORS_ALLOW_CREDENTIALS=...
+CORS_ALLOW_CREDENTIALS=True
 ```
 
-> Notes:
->
-> * Enable `SECURE_SSL_REDIRECT=True` **only** behind real TLS (LB/Ingress); locally it will 301.
-> * Use a long random `DJANGO_SECRET_KEY`.
+> Enable `SECURE_SSL_REDIRECT=True` **only** when there’s real TLS in front (LB/Ingress). Otherwise you’ll see HTTP 301 redirects.
 
-2. Bring services up:
+### 2) Bring stacks up
 
 ```bash
-make dev-up     # dev environment (hot reload)
-make prod-up    # production-like stack (NGINX + Gunicorn)
+make dev-up     # dev (hot reload)
+make prod-up    # production-like (NGINX + Gunicorn)
 ```
 
-3. Run tests:
+### 3) Run tests
 
 ```bash
 make dev-test
-make prod-test  # forces --no-cache to avoid stale code
+make prod-test  # uses --no-cache to avoid stale code
 ```
 
 ---
@@ -126,14 +119,14 @@ make dev-down     # down -v --remove-orphans (dev)
 
 make prod-test    # build --no-cache + pytest (prod)
 make prod-up      # build + up -d (prod)
-make prod-down    # stop + remove all prod containers (see below)
+make prod-down    # stop + remove all prod containers (no orphans)
 
 make ps           # show active services (dev + prod)
 make logs         # tail 'api' logs (auto-detect dev/prod)
 make cleanup      # hard cleanup: down -v --rmi all (dev+prod) + docker system prune
 ```
 
-**No orphan containers**: `prod-down` is implemented to stop the `run --rm` task container used during `prod-test`, then bring the whole prod project down (volumes, networks, orphans).
+> No orphan containers: `prod-down` also handles any `run --rm` task container created by `prod-test`.
 
 ---
 
@@ -144,7 +137,7 @@ make cleanup      # hard cleanup: down -v --rmi all (dev+prod) + docker system p
 
 ### 1) `POST /register/`
 
-Registers a user. If `id_hex` is omitted, a 16-hex value is auto-generated.
+Registers a user. If `id_hex` is omitted, a 16-hex value is generated.
 
 ```bash
 curl -i -X POST http://localhost:8000/api/register/ \
@@ -161,7 +154,7 @@ curl -i http://localhost:8000/api/users/list/
 ### 3) `POST /match/`
 
 Requires `timestamp` (int) and `cipher8_hex` (16 hex).
-Helper to compute `cipher8_hex` **inside the dev container** with project code:
+Helper to compute `cipher8_hex` *inside the dev container* using project code:
 
 ```bash
 TS=1738888800
@@ -181,19 +174,17 @@ curl -i -X POST http://localhost:8000/api/match/ \
   -d "{\"timestamp\": ${TS}, \"cipher8_hex\": \"${C8}\"}"
 ```
 
-> In prod, swap base URL to `http://localhost/api/...`. If you later enable `SECURE_SSL_REDIRECT=True` without TLS, clients will get 301.
+> In prod, switch the base to `http://localhost/api/...`. With `SECURE_SSL_REDIRECT=True` (without TLS) you’ll get 301 redirects.
 
 ---
 
 ## 🔐 Deterministic Crypto (RID)
 
-* **Key derivation**: `username.lower().encode()` → right-padded with `0x00` to 16B, then truncated to 16B.
-* **Plaintext (16B)** = `id_hex(8B)` + `time_window(8B)`
-
-  * `id_hex`: 16 hex → 8 bytes (big-endian)
-  * `time_window`: `timestamp // RID_ROTATION_SECONDS` → 8 bytes (big-endian)
-* **Cipher**: AES-ECB(128). Take **first 8 bytes** → `cipher8_hex` (16 hex).
-* Same `(username, id_hex, timestamp)` ⇒ same output.
+* **Key derivation**: `username.lower().encode()` → right-pad with `0x00` to 16B, then slice `[:16]`.
+* **Plaintext (16B)** = `id_hex (8B big-endian)` + `time_window (8B big-endian)`, where
+  `time_window = timestamp // RID_ROTATION_SECONDS`.
+* **Cipher**: AES-ECB(128). Take the **first 8 bytes** of the encrypted block → `cipher8_hex` (16 hex).
+* Same `(username, id_hex, timestamp)` ⇒ same output (deterministic).
 
 ---
 
@@ -209,17 +200,15 @@ Model `EncounterUser`:
 
 Entrypoint flow:
 
-* Wait for DB (`manage.py check` + connection)
-* Optionally `makemigrations` (`AUTO_MAKEMIGRATIONS=1`)
-* `migrate`
-* In prod: `collectstatic` + `check --deploy`
+* Wait for DB → optional `makemigrations` (`AUTO_MAKEMIGRATIONS=1`) → `migrate`
+* Prod adds: `collectstatic` + `check --deploy`
 
 ---
 
 ## ✅ Tests & Coverage
 
 * `pytest`, `pytest-django`, `pytest-cov`
-* Artifacts (inside container):
+* Artifacts (inside the container):
 
   * HTML: `coverage/htmlcov/index.html`
   * XML:  `coverage/coverage.xml`
@@ -244,77 +233,89 @@ xdg-open coverage/htmlcov/index.html # Linux
 ### Dev
 
 ```mermaid
-flowchart LR
-  A["Browser<br/>http://localhost:8000/api/"] -->|HTTP| B["Django runserver<br/>(api container)"]
-  B -->|SQL| C[(Postgres 16<br/>DB container)]
-  B <-->|Bind mount| D["Source code<br/>.:/app"]
-  B --> E["Entrypoint<br/>check -> (makemigrations?) -> migrate"]
+flowchart TB
+  subgraph DEV["Local Dev Stack"]
+    direction LR
+    A["Browser\nhttp://localhost:8000/api/"]
+    B["Django runserver\n(api container)"]
+    C["Postgres 16\n(db container)"]
+    V1["Volume: pgdata-dev"]
+    M["Bind mount: . → /app"]
+    E["Entrypoint:\ncheck → (makemigrations?) → migrate"]
+    ENV[".env.dev\n(settings, DB, RID, CORS/CSRF)"]
+
+    A -->|HTTP| B
+    B -->|SQL :5432| C
+    V1 --- C
+    M --- B
+    ENV --> B
+    E --> B
+  end
 ```
 
 ### Prod
 
 ```mermaid
-flowchart LR
-  A["Client<br/>http://localhost/api/"] -->|"HTTP :80"| N["NGINX"]
-  N -->|"/static/*"| S[(staticfiles volume)]
-  N -->|"/api/* proxy_pass"| G["Gunicorn<br/>(api:8000)"]
-  G -->|SQL| P[(Postgres 16<br/>DB container)]
-  G --> E["Entrypoint<br/>check -> migrate -> collectstatic -> check --deploy"]
+flowchart TB
+  subgraph PROD["Production-like Stack"]
+    direction LR
+    A["Client\nhttp://localhost/api/"]
+    N["NGINX :80\n(reverse proxy)"]
+    G["Gunicorn :8000\n(api container)"]
+    P["Postgres 16\n(db container)"]
+    VS["Volume: staticfiles"]
+    VP["Volume: pgdata-prod"]
+    EP["Entrypoint:\ncheck → migrate → collectstatic → check --deploy"]
+    ENV[".env.prod\n(ALLOWED_HOSTS, CSRF, SECURE_SSL_REDIRECT, etc.)"]
+    HC1["HC: pg_isready (db)"]
+    HC2["HC: manage.py check --deploy (api)"]
+
+    A -->|HTTP :80| N
+    N -->|/api/* → proxy_pass| G
+    N -->|/static/* → serve| VS
+    G -->|SQL :5432| P
+    VP --- P
+    VS --- N
+    ENV --> G
+    EP --> G
+    HC1 --> P
+    HC2 --> G
+  end
 ```
 
 ---
 
-## 🌍 Share a Public URL (for Frontend Testing)
+## 📦 Project Layout
 
-* **Cloudflare Tunnel** (free, simple):
-
-  ```bash
-  # Dev: expose http://localhost:8000
-  cloudflared tunnel --url http://localhost:8000
-  ```
-
-  Then share `https://<random>.trycloudflare.com/api/`.
-
-* **ngrok**:
-
-  ```bash
-  ngrok http 8000
-  ```
-
-  Share the HTTPS URL it prints (`/api/...`).
-
-* **Prod stack**: expose NGINX on a VM/container platform (Railway/Render/Fly/EC2). Point DNS → NGINX; set `ALLOWED_HOSTS` & `CSRF_TRUSTED_ORIGINS` accordingly; enable `SECURE_SSL_REDIRECT=True` behind TLS.
-
----
-
-## 🧰 Troubleshooting
-
-* **301 on prod**: likely `SECURE_SSL_REDIRECT=True` without TLS. Disable locally or test via HTTPS behind a proper proxy.
-
-* **“Stale code” in prod-test**: `make prod-test` already uses `--no-cache`. For a guaranteed reset:
-
-  ```bash
-  make cleanup && make prod-test
-  ```
-
-* **Containers left running after prod-test / prod-down**: handled by `Makefile` (stops any `run --rm` task container, then `down -v --remove-orphans`). If you still see leftovers, run `make cleanup`.
-
-* **Ports already in use**: change `DJANGO_SERVER_PORT` (dev) or host port mapping for NGINX (prod).
-
-* **Missing envs**: entrypoint requires critical variables; fill `.env.*` before `make up`.
-
----
-
-## 📦 Project Layout (top-level)
-
-```
+```text
 .
-├── api/                 # app: models, serializers, views, urls, tests
-├── core/                # settings (dev/prod), urls, WSGI/ASGI
-├── deploy/              # entrypoint, gunicorn, nginx
-├── docker-compose.*.yml # dev & prod stacks
 ├── Dockerfile
+├── LICENSE.txt
 ├── Makefile
+├── README.md
+├── api
+│   ├── apps.py
+│   ├── crypto.py
+│   ├── migrations/
+│   ├── models.py
+│   ├── serializers.py
+│   ├── urls.py
+│   ├── views.py
+│   └── tests.py
+├── core
+│   ├── asgi.py
+│   ├── settings/
+│   │   ├── dev.py
+│   │   └── prod.py
+│   ├── urls.py
+│   └── wsgi.py
+├── deploy
+│   ├── entrypoint.sh
+│   ├── gunicorn.conf.py
+│   └── nginx.conf
+├── docker-compose.dev.yml
+├── docker-compose.prod.yml
+├── manage.py
 ├── pytest.ini
 └── requirements.txt
 ```
