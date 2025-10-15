@@ -224,21 +224,23 @@ make prod-test
 
 ```mermaid
 flowchart LR
-  A[Browser\nhttp://localhost:8000/api/] -->|HTTP| B[Django runserver\n(api container)]
-  B -->|SQL| C[(Postgres 16\nDB container)]
-  B <-->|Bind mount| D[Source code\n.:/app]
-  B --> E[EntryPoint\ncheck→(makemigrations?)→migrate]
+  A["Browser<br/>http://localhost:8000/api/"] -->|HTTP| B["Django runserver<br/>(api container)"]
+  B -->|SQL| C[(Postgres 16<br/>DB container)]
+  B <-->|Bind mount| D["Source code<br/>.:/app"]
+  B --> E["Entrypoint<br/>check -> (makemigrations?) -> migrate"]
+
 ```
 
 ### Prod
 
 ```mermaid
 flowchart LR
-  A[Client\nhttp://localhost/api/] -->|HTTP :80| N[NGINX]
-  N -->|/static/*| S[(staticfiles volume)]
-  N -->|/api/* proxy_pass| G[Gunicorn\n(api:8000)]
-  G -->|SQL| P[(Postgres 16\nDB container)]
-  G --> E[EntryPoint\ncheck→migrate→collectstatic→check --deploy]
+  A["Client<br/>http://localhost/api/"] -->|"HTTP :80"| N["NGINX"]
+  N -->|"/static/*"| S[(staticfiles volume)]
+  N -->|"/api/* proxy_pass"| G["Gunicorn<br/>(api:8000)"]
+  G -->|SQL| P[(Postgres 16<br/>DB container)]
+  G --> E["Entrypoint<br/>check -> migrate -> collectstatic -> check --deploy"]
+
 ```
 
 ---
