@@ -15,6 +15,7 @@ import com.example.billyapp.core.Constants
 import com.example.billyapp.core.Encounter
 import com.example.billyapp.core.EncounterBus
 import com.example.billyapp.core.EncounterRepository
+import com.example.billyapp.core.FakeServer
 import com.example.billyapp.core.UserManager
 import kotlinx.coroutines.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -38,7 +39,7 @@ class BleServiceServer : Service() {
     private val advCb = object : AdvertiseCallback() {}
     private var scanCb: ScanCallback? = null
 
-    // 🔹 HTTP client (no caching)
+    // 🔹 HTTP client (no caching) - usa il tuo client attuale o sostituisci per test
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(5, TimeUnit.SECONDS)
         .readTimeout(5, TimeUnit.SECONDS)
@@ -210,19 +211,24 @@ class BleServiceServer : Service() {
                     val payload = record.getServiceData(Constants.SERVICE_UUID) ?: return
                     if (payload.size != 16) return // solo payload completi
 
+                    // estrai timestamp raw (secondi epoch)
                     val timestampBytes = payload.copyOfRange(0, 8)
                     val ts = ByteBuffer.wrap(timestampBytes).order(ByteOrder.BIG_ENDIAN).long
                     val payloadHex = payload.joinToString("") { "%02x".format(it) }
 
                     if (!repo.shouldProcess(payloadHex, ts)) return
 
+                    // normalizza al bucket di rotazione — questo è quello che server e FakeServer si aspettano
+                    val windowTimestamp = ts / Constants.ROTATION_SECONDS * Constants.ROTATION_SECONDS
+
                     scope.launch {
-                        val resolvedName = resolveViaServer(payload, ts) ?: "Unknown"
+                        // risolvi prima via server (o fallback locale)
+                        val resolvedName = resolveViaServer(payload, windowTimestamp) ?: "Unknown"
 
                         val encounter = Encounter(
                             idHex = payloadHex,
                             rssi = result.rssi,
-                            timestampSec = ts,
+                            timestampSec = ts, // manteniamo il timestamp reale per log/UI
                             resolvedName = resolvedName
                         )
 
@@ -250,37 +256,54 @@ class BleServiceServer : Service() {
     }
 
     // 🔹 HTTP lookup - nuovo endpoint HTTPS
-    private suspend fun resolveViaServer(payload: ByteArray, timestamp: Long): String? {
+    // Nota: ora riceve `payload` (per estrarre il cipher) e `windowTimestamp` (già normalizzato)
+    private suspend fun resolveViaServer(payload: ByteArray, windowTimestamp: Long): String? {
         return withContext(Dispatchers.IO) {
             try {
-                val cipher8Hex = payload.copyOfRange(0, 8)
-                    .joinToString("") { "%02x".format(it) }
+                // CORRETTO: estrai la parte cifrata (byte 8..15)
+                val cipherBytes = payload.copyOfRange(8, 16)
+                val cipher8Hex = cipherBytes.joinToString("") { "%02x".format(it) }
 
                 val json = JSONObject().apply {
-                    put("timestamp", timestamp)
+                    put("timestamp", windowTimestamp)
                     put("cipher8_hex", cipher8Hex)
                 }
 
                 val request = Request.Builder()
-                    .url("https://19.hackathon.ethz.ch/api/match/") // ✅ nuovo endpoint HTTPS
+                    .url("https://19.hackathon.ethz.ch/api/match/") // endpoint HTTPS reale
                     .post(json.toString().toRequestBody("application/json".toMediaType()))
                     .build()
 
                 httpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
                         Log.w("BleServiceServer", "⚠️ Server returned ${response.code}")
-                        return@withContext null
+                        // fallback locale: ricostruisci come server-side (timestamp + cipher)
+                        val localUser = FakeServer.resolveRotatingId(cipher8Hex, windowTimestamp)
+                        return@withContext localUser?.displayName
                     }
 
                     val body = response.body?.string() ?: return@withContext null
                     Log.d("BleServiceServer", "🌐 Server response: $body")
 
                     val obj = JSONObject(body)
-                    obj.optString("display_name", "Unknown")
+                    val displayName = obj.optString("display_name", null)
+                    if (!displayName.isNullOrBlank()) return@withContext displayName
+
+                    // se il server non ha restituito display_name, prova fallback locale
+                    val localUserFromServerNull = FakeServer.resolveRotatingId(cipher8Hex, windowTimestamp)
+                    return@withContext localUserFromServerNull?.displayName
                 }
             } catch (e: Exception) {
                 Log.e("BleServiceServer", "❌ HTTP error: ${e.message}")
-                null
+                // fallback locale in caso di eccezione (es. DNS/SSL)
+                return@withContext try {
+                    val cipherBytes = payload.copyOfRange(8, 16)
+                    val cipher8Hex = cipherBytes.joinToString("") { "%02x".format(it) }
+                    FakeServer.resolveRotatingId(cipher8Hex, windowTimestamp)?.displayName
+                } catch (ex: Exception) {
+                    Log.e("BleServiceServer", "❌ Local fallback error: ${ex.message}")
+                    null
+                }
             }
         }
     }
