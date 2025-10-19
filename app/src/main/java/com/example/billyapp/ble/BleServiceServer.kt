@@ -25,7 +25,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.*
 
 class BleServiceServer : Service() {
 
@@ -39,11 +42,8 @@ class BleServiceServer : Service() {
     private val advCb = object : AdvertiseCallback() {}
     private var scanCb: ScanCallback? = null
 
-    // 🔹 HTTP client (no caching) - usa il tuo client attuale o sostituisci per test
-    private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(5, TimeUnit.SECONDS)
-        .readTimeout(5, TimeUnit.SECONDS)
-        .build()
+    // 🔧 TEST-ONLY: httpClient that accepts any certificate (unsafe)
+    private val httpClient: OkHttpClient = getUnsafeOkHttpClient()
 
     override fun onCreate() {
         super.onCreate()
@@ -305,6 +305,38 @@ class BleServiceServer : Service() {
                     null
                 }
             }
+        }
+    }
+
+    /**
+     * TEST-ONLY: create an OkHttpClient that accepts all certificates.
+     * DO NOT ship this in production.
+     */
+    private fun getUnsafeOkHttpClient(): OkHttpClient {
+        try {
+            val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+                override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+            })
+
+            val sslContext = SSLContext.getInstance("SSL")
+            sslContext.init(null, trustAllCerts, SecureRandom())
+            val sslSocketFactory = sslContext.socketFactory
+
+            return OkHttpClient.Builder()
+                .sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
+                .hostnameVerifier { _, _ -> true }
+                .connectTimeout(5, TimeUnit.SECONDS)
+                .readTimeout(5, TimeUnit.SECONDS)
+                .build()
+        } catch (e: Exception) {
+            Log.e("BleServiceServer", "❌ Failed to create unsafe http client: ${e.message}")
+            // Fallback to a normal client if something goes wrong creating unsafe client
+            return OkHttpClient.Builder()
+                .connectTimeout(5, TimeUnit.SECONDS)
+                .readTimeout(5, TimeUnit.SECONDS)
+                .build()
         }
     }
 }
