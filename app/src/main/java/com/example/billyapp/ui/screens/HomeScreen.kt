@@ -19,17 +19,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.billyapp.core.ResolvedEncounter
+import com.example.billyapp.core.UserManager
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun HomeScreen(
-    encounters: SnapshotStateList<ResolvedEncounter>, // ✅ reattiva
+    encounters: SnapshotStateList<ResolvedEncounter>,
     onSelectProfile: (String) -> Unit,
     onOpenChat: (String) -> Unit,
     onSimulateEncounter: (() -> Unit)? = null,
     onStartBle: (() -> Unit)? = null,
     onStopBle: (() -> Unit)? = null
 ) {
-    var isOnline by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val userManager = remember { UserManager(context) }
+
+    // ✅ inizializza con lo stato salvato
+    var isOnline by remember { mutableStateOf(userManager.isBleOnline()) }
 
     Column(
         modifier = Modifier
@@ -54,16 +60,22 @@ fun HomeScreen(
                 text = "online",
                 isSelected = isOnline,
                 onClick = {
-                    isOnline = true
-                    onStartBle?.invoke()
+                    if (!isOnline) {
+                        isOnline = true
+                        userManager.setBleOnline(true) // ✅ salva stato
+                        onStartBle?.invoke()
+                    }
                 }
             )
             ToggleButton(
                 text = "offline",
                 isSelected = !isOnline,
                 onClick = {
-                    isOnline = false
-                    onStopBle?.invoke()
+                    if (isOnline) {
+                        isOnline = false
+                        userManager.setBleOnline(false) // ✅ salva stato
+                        onStopBle?.invoke()
+                    }
                 }
             )
         }
@@ -88,7 +100,6 @@ fun HomeScreen(
                     .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // 👇 Usa idHex come chiave unica invisibile alla UI
                 items(encounters, key = { it.idHex }) { encounter ->
                     PersonCard(
                         encounter = encounter,
@@ -115,8 +126,8 @@ fun HomeScreen(
     }
 
     // 👇 LOG: controlla quando la UI si aggiorna
-    LaunchedEffect(encounters.size) {
-        Log.d("HomeScreen", "🖥️ UI refreshed: showing ${encounters.size} encounters")
+    LaunchedEffect(encounters.size, isOnline) {
+        Log.d("HomeScreen", "🖥️ UI refreshed: ${encounters.size} encounters, online=$isOnline")
     }
 }
 
@@ -153,7 +164,6 @@ fun PersonCard(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // 🔹 Left side: Avatar + Name + Info
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
@@ -187,7 +197,6 @@ fun PersonCard(
             }
         }
 
-        // 🔹 Right side: Chat button
         Button(
             onClick = { onOpenChat(encounter.name) },
             shape = RoundedCornerShape(8.dp),

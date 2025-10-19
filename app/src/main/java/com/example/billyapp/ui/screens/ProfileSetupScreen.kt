@@ -81,12 +81,12 @@ fun ProfileSetupScreen(
         Button(
             onClick = {
                 val userIds = mapOf(
-                    "alice" to "ecb73c72",
-                    "bob" to "33f24d0c",
-                    "charlie" to "bcb37548",
-                    "luca" to "90895e9d",
-                    "marco" to "8b44a291",
-                    "giulia" to "f8507096"
+                    "alice" to "ecb73c72d94f1a23",
+                    "bob" to "33f24d0c2ab9e78f",
+                    "charlie" to "bcb375489ee42a6d",
+                    "luca" to "90895e9d21cb8fa6",
+                    "marco" to "8b44a291c7e3d0af",
+                    "giulia" to "f8507096b1c3e79d"
                 )
 
                 val cleanName = name.trim().lowercase()

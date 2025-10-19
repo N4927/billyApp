@@ -14,7 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.billyapp.core.ChatViewModel
-import com.example.billyapp.ble.BleViewModel   // ✅ import corretto
+import com.example.billyapp.ble.BleViewModel
 
 @Composable
 fun ProfileScreen(

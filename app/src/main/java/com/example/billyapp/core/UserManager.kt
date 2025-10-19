@@ -11,6 +11,8 @@ class UserManager(private val context: Context) {
         private const val KEY_NAME = "user_name"
         private const val KEY_AGE = "user_age"
         private const val KEY_BIO = "user_bio"
+
+        private const val KEY_BLE_ONLINE = "ble_online"
     }
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -58,9 +60,6 @@ class UserManager(private val context: Context) {
         return secret
     }
 
-    /**
-     * Get CryptographyManager for this user
-     */
     fun getCryptographyManager(): CryptographyManager {
         if (cryptographyManager == null) {
             initCryptographyManager()
@@ -69,14 +68,20 @@ class UserManager(private val context: Context) {
     }
 
     private fun initCryptographyManager() {
-        val secret = getSecretForBle(16) // 16 bytes for AES-128
+        val secret = getSecretForBle(16)
         cryptographyManager = CryptographyManager(secret)
     }
 
-    /**
-     * Get user's personal identifier (their user ID)
-     */
     fun getPersonalIdentifier(): String {
         return getUser()?.id ?: "anonymous"
+    }
+    fun isBleOnline(): Boolean {
+        return prefs.getBoolean(KEY_BLE_ONLINE, false)
+    }
+
+
+    fun setBleOnline(isOnline: Boolean) {
+        prefs.edit().putBoolean(KEY_BLE_ONLINE, isOnline).apply()
+        Log.i("UserManager", "🌐 BLE online state set to: $isOnline")
     }
 }

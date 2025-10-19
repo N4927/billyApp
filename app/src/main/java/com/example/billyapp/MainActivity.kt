@@ -10,7 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -20,10 +20,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
-import com.example.billyapp.ble.BleService
+import com.example.billyapp.ble.BleServiceServer
 import com.example.billyapp.ble.BleViewModel
 import com.example.billyapp.core.ChatViewModel
 import com.example.billyapp.core.UserManager
+import com.example.billyapp.core.simulateEncounter
 import com.example.billyapp.ui.screens.*
 import com.example.billyapp.ui.theme.BillyAppTheme
 import androidx.compose.foundation.layout.*
@@ -55,7 +56,7 @@ class MainActivity : ComponentActivity() {
                     bleViewModel = bleViewModel,
                     chatViewModel = chatViewModel,
                     onStartService = { requestAllPermissions() },
-                    onStopService = { stopService(Intent(this, BleService::class.java)) }
+                    onStopService = { stopService(Intent(this, BleServiceServer::class.java)) } // ✅ usa BleServiceServer
                 )
             }
         }
@@ -83,7 +84,7 @@ class MainActivity : ComponentActivity() {
                 android.Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            val intent = Intent(this, BleService::class.java)
+            val intent = Intent(this, BleServiceServer::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 ContextCompat.startForegroundService(this, intent)
             else
@@ -125,14 +126,15 @@ fun BillyApp(
         ) {
             // 🏠 Home (reattiva)
             composable("home") {
+                val context = LocalContext.current // ✅ context composable valido
                 HomeScreen(
-                    encounters = bleViewModel.resolvedEncounters, // ✅ lista aggiornata in tempo reale
+                    encounters = bleViewModel.resolvedEncounters,
                     onSelectProfile = { user -> navController.navigate("profile/$user") },
                     onOpenChat = { userName ->
                         chatViewModel.startChat(userName)
                         navController.navigate("chat/$userName")
                     },
-                    onSimulateEncounter = { simulateEncounter(bleViewModel) },
+                    onSimulateEncounter = { simulateEncounter(bleViewModel, context) }, // ✅ usa context
                     onStartBle = onStartService,
                     onStopBle = onStopService
                 )
@@ -169,7 +171,6 @@ fun BillyApp(
                     onGoToChat = { navController.navigate("chat/$it") }
                 )
             }
-
 
             // ⚙️ Setup profilo
             composable("profile/setup") {
@@ -239,21 +240,21 @@ fun BottomBarMinimal(
         ) {
             IconButton(onClick = onNavigateHome) {
                 Icon(
-                    Icons.Default.Home,
+                    Icons.Filled.Home,
                     contentDescription = "Home",
                     tint = if (currentRoute == "home") Color.Black else Color.Gray
                 )
             }
             IconButton(onClick = onNavigateChats) {
                 Icon(
-                    Icons.Default.Chat,
+                    Icons.AutoMirrored.Filled.Chat, // ✅ fix warning
                     contentDescription = "Chats",
                     tint = if (currentRoute == "chats") Color.Black else Color.Gray
                 )
             }
             IconButton(onClick = onNavigateProfile) {
                 Icon(
-                    Icons.Default.Person,
+                    Icons.Filled.Person,
                     contentDescription = "Profile",
                     tint = if (currentRoute == "myprofile") Color.Black else Color.Gray
                 )
@@ -261,12 +262,3 @@ fun BottomBarMinimal(
         }
     }
 }
-
-// 🧩 Simulazione BLE
-fun simulateEncounter(bleViewModel: BleViewModel) {
-    val fakeUsers = listOf("Alice", "Bob", "Charlie", "Diana", "Luca")
-    fakeUsers.shuffled().take(1).forEach { name -> bleViewModel.addEncounter(name) }
-}
-
-
-
