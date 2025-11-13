@@ -14,7 +14,8 @@ struct ResolvedEncounter: Identifiable, Equatable {
 final class BleViewModel: ObservableObject {
     @Published private(set) var encounters: [ResolvedEncounter] = []
 
-    private let logger = AppLogger.make(category: "BleVM")
+    // Usiamo il logger di sistema (Unified Logging) tramite il nostro helper BLELog
+    private let logger = BLELog.logger("BleVM")
     private var bag = Set<AnyCancellable>()
 
     init(center: NotificationCenter = .default) {
@@ -47,7 +48,15 @@ final class BleViewModel: ObservableObject {
                 ResolvedEncounter(name: key, count: 1, idHex: idHex, timestamp: ts)
             )
         }
+
+        // Logging con privacy controls (Unified Logging)
         logger.info("encounters.count=\(self.encounters.count, privacy: .public)")
+
+        if BLELog.verbose {
+            logger.debug(
+                "enc name=\(name, privacy: .public) id=\(idHex, privacy: .public) rssi=\(rssi, privacy: .public) ts=\(ts, privacy: .public)"
+            )
+        }
     }
 
     func clear() {

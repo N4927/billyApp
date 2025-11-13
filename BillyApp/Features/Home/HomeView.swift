@@ -49,18 +49,19 @@ struct HomeView: View {
         .onChange(of: mode) { newValue in
             switch newValue {
             case .online:
-                // Gate: richiedi nome valido prima di avviare BLE
                 guard userManager.hasValidName() else {
                     mode = .offline
                     showNameSheet = true
                     return
                 }
                 userManager.setBleOnline(true)
-                _ = BluetoothManager.shared  // boot effettivo solo quando serve
+                BluetoothManager.shared.goOnline()
             case .offline:
                 userManager.setBleOnline(false)
+                BluetoothManager.shared.goOffline()
             }
         }
+
         .sheet(isPresented: $showNameSheet) {
             NameSetupView(
                 initialName: userManager.getUserName(),

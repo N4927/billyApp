@@ -240,6 +240,7 @@ __attribute__((swift_name("FakeServer")))
 @property (class, readonly, getter=shared) SharedFakeServer *shared __attribute__((swift_name("shared")));
 - (SharedUser * _Nullable)resolveRotatingIdEncryptedPayload:(SharedKotlinByteArray *)encryptedPayload receivedTimestamp:(int64_t)receivedTimestamp __attribute__((swift_name("resolveRotatingId(encryptedPayload:receivedTimestamp:)")));
 - (SharedUser * _Nullable)resolveRotatingIdCipher8Hex:(NSString *)cipher8Hex receivedTimestamp:(int64_t)receivedTimestamp __attribute__((swift_name("resolveRotatingId(cipher8Hex:receivedTimestamp:)")));
+- (NSString * _Nullable)userIdForName:(NSString *)name __attribute__((swift_name("userIdFor(name:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -258,7 +259,7 @@ __attribute__((swift_name("ResolvedEncounter")))
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("RotatingIdGenerator")))
 @interface SharedRotatingIdGenerator : SharedBase
-- (instancetype)initWithUserSecret:(SharedKotlinByteArray *)userSecret rotationSeconds:(int64_t)rotationSeconds salt:(SharedKotlinByteArray *)salt lengthBytes:(int32_t)lengthBytes __attribute__((swift_name("init(userSecret:rotationSeconds:salt:lengthBytes:)"))) __attribute__((objc_designated_initializer));
+- (instancetype)initWithUserName:(NSString *)userName rotationSeconds:(int64_t)rotationSeconds lengthBytes:(int32_t)lengthBytes __attribute__((swift_name("init(userName:rotationSeconds:lengthBytes:)"))) __attribute__((objc_designated_initializer));
 - (SharedKotlinByteArray *)currentIdBytesEpochSeconds:(int64_t)epochSeconds __attribute__((swift_name("currentIdBytes(epochSeconds:)")));
 - (NSString *)currentIdHexEpochSeconds:(int64_t)epochSeconds __attribute__((swift_name("currentIdHex(epochSeconds:)")));
 @end
@@ -305,12 +306,6 @@ __attribute__((swift_name("UserResolver")))
 + (instancetype)userResolver __attribute__((swift_name("init()")));
 @property (class, readonly, getter=shared) SharedUserResolver *shared __attribute__((swift_name("shared")));
 - (NSString * _Nullable)resolveNameIdHex:(NSString *)idHex __attribute__((swift_name("resolveName(idHex:)")));
-@end
-
-__attribute__((objc_subclassing_restricted))
-__attribute__((swift_name("Sha256_iosKt")))
-@interface SharedSha256_iosKt : SharedBase
-+ (SharedKotlinByteArray *)sha256Input:(SharedKotlinByteArray *)input __attribute__((swift_name("sha256(input:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))

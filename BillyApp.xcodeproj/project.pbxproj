@@ -13,6 +13,7 @@
 		57103A7A695080E775FC254F /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BC93FFD698A9CF81D0C6DA /* Logging.swift */; };
 		5F257137DAF6F1F4F1318E20 /* KMMFacade.swift in Sources */ = {isa = PBXBuildFile; fileRef = E39BD075ABEB4560B9A69234 /* KMMFacade.swift */; };
 		6AF2DDDE7DC7BFC16F6959D8 /* CompositionRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 772752FDC032FAEAFF5A6094 /* CompositionRoot.swift */; };
+		8B943CA8586B61D9F8B809C5 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AA8CDC9F4F8DE4F11694F63 /* Notifications.swift */; };
 		9D0305136887BD31B52DF4AD /* KMMInterop.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61408C79A22BDEEA6BF27B3 /* KMMInterop.swift */; };
 		9FB23B7A9727159CEB67AAB9 /* NameSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2560FD94F6C4EC756DADE498 /* NameSetupView.swift */; };
 		A8519583FBB9A5F25A7EDA11 /* CentralClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A502CC86415F2006D687BC /* CentralClient.swift */; };
@@ -44,6 +45,7 @@
 		61FA7AFB45E34803352948CD /* BillyAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillyAppApp.swift; sourceTree = "<group>"; };
 		6C099C591503748E5FC98BC8 /* BillyAppTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BillyAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		772752FDC032FAEAFF5A6094 /* CompositionRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompositionRoot.swift; sourceTree = "<group>"; };
+		7AA8CDC9F4F8DE4F11694F63 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		8209F318CB03942445FC0164 /* BillyApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BillyApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8436B1B11B945753696428FE /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/Localizable.strings; sourceTree = "<group>"; };
 		84A9A4AB016F391E14EAEC02 /* BleViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleViewModelTests.swift; sourceTree = "<group>"; };
@@ -139,6 +141,7 @@
 			children = (
 				EC0E3E69D4C94E82D840DD37 /* Data+Ext.swift */,
 				61BC93FFD698A9CF81D0C6DA /* Logging.swift */,
+				7AA8CDC9F4F8DE4F11694F63 /* Notifications.swift */,
 				BA786C73E2BF5B65C044885E /* UserManager.swift */,
 			);
 			path = Utils;
@@ -294,6 +297,7 @@
 				9D0305136887BD31B52DF4AD /* KMMInterop.swift in Sources */,
 				57103A7A695080E775FC254F /* Logging.swift in Sources */,
 				9FB23B7A9727159CEB67AAB9 /* NameSetupView.swift in Sources */,
+				8B943CA8586B61D9F8B809C5 /* Notifications.swift in Sources */,
 				519AC486FBA2D0F1A359C5D6 /* PeripheralServer.swift in Sources */,
 				B27A6FA235C729AE8550BFA6 /* UserManager.swift in Sources */,
 			);

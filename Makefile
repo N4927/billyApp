@@ -3,7 +3,7 @@
 # ---- iOS project config (Makefile in ios/) ----
 IOS_PROJ       := BillyApp.xcodeproj
 IOS_SCHEME     := BillyApp
-DEST_SIM      ?= platform=iOS Simulator,name=iPhone 16
+DEST_SIM      ?= platform=iOS Simulator,name=iPhone 17
 
 # Artefatti locali per stabilità e velocità
 DERIVED_DATA   := build/DerivedData

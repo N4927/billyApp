@@ -27,4 +27,11 @@ struct KMMFacade {
         let arr = sharedSecret.toKotlinByteArray()
         return CryptographyManager(sharedSecret: arr)
     }
+
+    /// Get personal ID (MD5(secret).copyOf(8)) as hex string
+    static func getPersonalId(from secret: [UInt8]) -> String {
+        let crypto = makeCrypto(sharedSecret: secret)
+        let personalIdBytes = crypto.getPersonalId()
+        return personalIdBytes.toData().toHex()
+    }
 }
