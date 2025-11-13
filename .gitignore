@@ -66,4 +66,6 @@ fastlane/test_output
 
 # For Tests
 build/
+build/*
+build
 *.xcresult
