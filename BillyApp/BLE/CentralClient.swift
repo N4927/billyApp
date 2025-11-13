@@ -30,8 +30,10 @@ final class CentralClient: NSObject, CBCentralManagerDelegate, CBPeripheralDeleg
     }
 
     func centralManager(
-        _ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
-        advertisementData: [String: Any], rssi RSSI: NSNumber
+        _ central: CBCentralManager,
+        didDiscover peripheral: CBPeripheral,
+        advertisementData: [String: Any],
+        rssi RSSI: NSNumber
     ) {
         guard !seen.contains(peripheral.identifier) else { return }
         seen.insert(peripheral.identifier)
@@ -56,7 +58,9 @@ final class CentralClient: NSObject, CBCentralManagerDelegate, CBPeripheralDeleg
     }
 
     func peripheral(
-        _ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?
+        _ peripheral: CBPeripheral,
+        didDiscoverCharacteristicsFor service: CBService,
+        error: Error?
     ) {
         guard
             let ch = service.characteristics?.first(where: {
@@ -70,7 +74,8 @@ final class CentralClient: NSObject, CBCentralManagerDelegate, CBPeripheralDeleg
     }
 
     func peripheral(
-        _ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic,
+        _ peripheral: CBPeripheral,
+        didUpdateValueFor characteristic: CBCharacteristic,
         error: Error?
     ) {
         defer { central.cancelPeripheralConnection(peripheral) }
@@ -78,12 +83,14 @@ final class CentralClient: NSObject, CBCentralManagerDelegate, CBPeripheralDeleg
             data.count == PeripheralServer.payloadLength
         else { return }
 
-        // Resolve via KMM
         if let user = KMMFacade.resolveUser(from: data) {
             let ts = Int64.fromBigEndianBytes(Array(data.prefix(8)))
             sink?.onEncounter(
-                name: user.displayName, idHex: peripheral.identifier.uuidString, rssi: -99,
-                timestamp: ts)
+                name: user.displayName,
+                idHex: peripheral.identifier.uuidString,
+                rssi: -99,
+                timestamp: ts
+            )
             log.info("[Central] Encounter resolved: \(user.displayName, privacy: .public)")
         }
     }

@@ -1,0 +1,128 @@
+{
+  "" : {
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BillyApp-master.dia",
+    "emit-module-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BillyApp-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BillyApp-master-emit-module.dia",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BillyApp-master.swiftdeps"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/App/BillyAppApp.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BillyAppApp.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BillyAppApp.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BillyAppApp.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BillyAppApp.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BillyAppApp.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BillyAppApp.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BillyAppApp.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BillyAppApp~partial.swiftmodule"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/App/CompositionRoot.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CompositionRoot.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CompositionRoot.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CompositionRoot.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CompositionRoot.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CompositionRoot.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CompositionRoot.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CompositionRoot.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CompositionRoot~partial.swiftmodule"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/BLE/BluetoothManager.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BluetoothManager.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BluetoothManager.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BluetoothManager.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BluetoothManager.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BluetoothManager.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BluetoothManager.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BluetoothManager.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BluetoothManager~partial.swiftmodule"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/BLE/CentralClient.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CentralClient.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CentralClient.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CentralClient.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CentralClient.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CentralClient.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CentralClient.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CentralClient.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/CentralClient~partial.swiftmodule"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/BLE/PeripheralServer.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/PeripheralServer.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/PeripheralServer.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/PeripheralServer.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/PeripheralServer.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/PeripheralServer.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/PeripheralServer.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/PeripheralServer.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/PeripheralServer~partial.swiftmodule"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/Features/Home/BleViewModel.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BleViewModel.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BleViewModel.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BleViewModel.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BleViewModel.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BleViewModel.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BleViewModel.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BleViewModel.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/BleViewModel~partial.swiftmodule"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/Features/Home/HomeView.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/HomeView.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/HomeView.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/HomeView.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/HomeView.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/HomeView.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/HomeView.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/HomeView.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/HomeView~partial.swiftmodule"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/SharedBridge/KMMFacade.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMFacade.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMFacade.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMFacade.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMFacade.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMFacade.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMFacade.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMFacade.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMFacade~partial.swiftmodule"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/SharedBridge/KMMInterop.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMInterop.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMInterop.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMInterop.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMInterop.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMInterop.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMInterop.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMInterop.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/KMMInterop~partial.swiftmodule"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/Utils/Data+Ext.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Data+Ext.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Data+Ext.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Data+Ext.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Data+Ext.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Data+Ext.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Data+Ext.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Data+Ext.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Data+Ext~partial.swiftmodule"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/Utils/Logging.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Logging.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Logging.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Logging.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Logging.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Logging.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Logging.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Logging.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/Logging~partial.swiftmodule"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/Utils/UserManager.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/UserManager.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/UserManager.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/UserManager.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/UserManager.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/UserManager.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/UserManager.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/UserManager.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyApp.build/Objects-normal/x86_64/UserManager~partial.swiftmodule"
+  }
+}

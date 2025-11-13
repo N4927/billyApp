@@ -1,72 +1,163 @@
 import SwiftUI
 
+private enum PresenceMode: String, CaseIterable, Identifiable {
+    case online, offline
+    var id: String { rawValue }
+    var title: String { NSLocalizedString(rawValue, comment: "") }
+}
+
 struct HomeView: View {
     @EnvironmentObject var bleVM: BleViewModel
-    @StateObject private var userManager = UserManager()
-    @State private var isOnline = false
+    @EnvironmentObject var userManager: UserManager
+
+    @State private var mode: PresenceMode = .offline
 
     let onOpenChat: (String) -> Void
     let onOpenProfile: (String) -> Void
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("People nearby").font(.title2.bold()).padding(.vertical, 8)
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color(UIColor.systemBackground), Color(UIColor.secondarySystemBackground),
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .ignoresSafeArea()
 
-                HStack(spacing: 8) {
-                    toggle("online", isSelected: isOnline) {
-                        guard !isOnline else { return }
-                        isOnline = true
-                        userManager.setBleOnline(true)
-                        _ = BluetoothManager.shared
-                        BluetoothManager.shared.sink = nil  // già collegato via NotificationCenter
-                    }
-                    toggle("offline", isSelected: !isOnline) {
-                        guard isOnline else { return }
-                        isOnline = false
-                        userManager.setBleOnline(false)
-                    }
-                }
-
-                if bleVM.encounters.isEmpty {
-                    Spacer()
-                    Text("No one nearby yet").foregroundColor(.gray).frame(
-                        maxWidth: .infinity, alignment: .center)
-                    Spacer()
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(bleVM.encounters) { enc in
-                                PersonCard(
-                                    encounter: enc,
-                                    onOpenProfile: onOpenProfile,
-                                    onOpenChat: onOpenChat)
-                            }
-                        }
-                    }
-                }
+                content
+                    .padding(20)
+                    .navigationTitle(NSLocalizedString("Home", comment: ""))
+                    .navigationBarTitleDisplayMode(.inline)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 10)
-            .navigationTitle("Home")
-            .navigationBarTitleDisplayMode(.inline)
         }
-        .onAppear { isOnline = userManager.isBleOnline() }
+        .onAppear {
+            mode = userManager.isBleOnline() ? .online : .offline
+            if userManager.getUserName() == "Anonimo" {
+                // Seed a predictable demo identity for BLE crypto
+                userManager.saveUser(id: "ecb73c72d94f1a23", name: "Alice")
+            }
+        }
+        .onChange(of: mode) { newValue in
+            switch newValue {
+            case .online:
+                userManager.setBleOnline(true)
+                _ = BluetoothManager.shared  // ensure boot
+            case .offline:
+                userManager.setBleOnline(false)
+            }
+        }
     }
 
-    private func toggle(_ text: String, isSelected: Bool, action: @escaping () -> Void) -> some View
-    {
-        Button(action: action) {
-            Text(NSLocalizedString(text, comment: ""))
-                .fontWeight(.medium)
-                .foregroundColor(isSelected ? .white : .black)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .frame(maxWidth: .infinity)
+    @ViewBuilder
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            header
+
+            Picker(selection: $mode) {
+                ForEach(PresenceMode.allCases) { m in
+                    Text(m.title).tag(m)
+                }
+            } label: {
+                Text("presence")
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel(Text("presence"))
+            .padding(.bottom, 4)
+
+            if bleVM.encounters.isEmpty {
+                EmptyStateView(
+                    titleKey: "No one nearby yet",
+                    subtitleKey: mode == .online
+                        ? "Stay online to be discoverable"
+                        : "Switch to online to be discoverable"
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(bleVM.encounters) { enc in
+                            PersonCard(
+                                encounter: enc,
+                                onOpenProfile: onOpenProfile,
+                                onOpenChat: onOpenChat
+                            )
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(Text("\(enc.name), near you"))
+                        }
+                    }
+                    .padding(.top, 8)
+                }
+            }
         }
-        .background(isSelected ? Color.black : Color(UIColor.systemGray5))
-        .cornerRadius(20)
-        .accessibilityLabel(Text(text))
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(NSLocalizedString("People nearby", comment: ""))
+                .font(.title.bold())
+                .accessibilityAddTraits(.isHeader)
+
+            HStack(spacing: 8) {
+                StatusDot(isOn: mode == .online)
+                Text(
+                    mode == .online
+                        ? NSLocalizedString("online", comment: "")
+                        : NSLocalizedString("offline", comment: "")
+                )
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(mode == .online ? .green : .secondary)
+                Spacer()
+                Text(userManager.getUserName())
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            .padding(10)
+            .background(
+                .ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+    }
+}
+
+private struct StatusDot: View {
+    let isOn: Bool
+    var body: some View {
+        Circle()
+            .fill(isOn ? Color.green : Color.gray)
+            .frame(width: 8, height: 8)
+            .accessibilityHidden(true)
+    }
+}
+
+private struct EmptyStateView: View {
+    let titleKey: String
+    let subtitleKey: String
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "person.2")
+                .font(.system(size: 42, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            Text(NSLocalizedString(titleKey, comment: ""))
+                .font(.title3.weight(.semibold))
+
+            Text(NSLocalizedString(subtitleKey, comment: ""))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 10)
+        }
+        .padding(.vertical, 24)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(UIColor.systemBackground))
+                .shadow(color: .black.opacity(0.06), radius: 16, x: 0, y: 6)
+        )
+        .padding(.top, 32)
     }
 }
 
@@ -76,36 +167,48 @@ struct PersonCard: View {
     let onOpenChat: (String) -> Void
 
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
             Button(action: { onOpenProfile(encounter.name) }) {
-                HStack {
+                HStack(spacing: 12) {
                     ZStack {
-                        Circle().fill(Color(UIColor.systemGray5)).frame(width: 48, height: 48)
-                        Text(encounter.name.prefix(1).uppercased())
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.black)
+                        Circle()
+                            .fill(Color(UIColor.secondarySystemBackground))
+                            .frame(width: 48, height: 48)
+                        Text(String(encounter.name.prefix(1)).uppercased())
+                            .font(.system(.title3, design: .rounded).weight(.bold))
+                            .foregroundStyle(.primary)
                     }
-                    Spacer().frame(width: 12)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(encounter.name).font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.black)
-                        Text("near you").font(.system(size: 13)).foregroundColor(.gray)
+                        Text(encounter.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text(NSLocalizedString("near you", comment: ""))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
                 }
-            }.buttonStyle(.plain)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
 
-            Spacer()
+            Spacer(minLength: 8)
 
             Button(action: { onOpenChat(encounter.name) }) {
-                Text("chat")
-                    .font(.system(size: 14))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 6)
-                    .background(Color.black)
-                    .cornerRadius(8)
+                Text(NSLocalizedString("chat", comment: ""))
+                    .font(.callout.weight(.semibold))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(.black, in: Capsule())
+                    .foregroundStyle(.white)
+                    .accessibilityLabel(Text("Chat with \(encounter.name)"))
             }
         }
-        .padding(.vertical, 8)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(UIColor.systemBackground))
+                .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
+        )
     }
 }

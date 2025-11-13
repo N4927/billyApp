@@ -1,0 +1,18 @@
+{
+  "" : {
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyAppTests.build/Objects-normal/x86_64/BillyAppTests-master.dia",
+    "emit-module-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyAppTests.build/Objects-normal/x86_64/BillyAppTests-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyAppTests.build/Objects-normal/x86_64/BillyAppTests-master-emit-module.dia",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyAppTests.build/Objects-normal/x86_64/BillyAppTests-master.swiftdeps"
+  },
+  "/Users/andreazorzi/Desktop/billyApp/ios/BillyApp/Tests/BleViewModelTests.swift" : {
+    "const-values" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyAppTests.build/Objects-normal/x86_64/BleViewModelTests.swiftconstvalues",
+    "dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyAppTests.build/Objects-normal/x86_64/BleViewModelTests.d",
+    "diagnostics" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyAppTests.build/Objects-normal/x86_64/BleViewModelTests.dia",
+    "index-unit-output-path" : "/BillyApp.build/Debug-iphonesimulator/BillyAppTests.build/Objects-normal/x86_64/BleViewModelTests.o",
+    "llvm-bc" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyAppTests.build/Objects-normal/x86_64/BleViewModelTests.bc",
+    "object" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyAppTests.build/Objects-normal/x86_64/BleViewModelTests.o",
+    "swift-dependencies" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyAppTests.build/Objects-normal/x86_64/BleViewModelTests.swiftdeps",
+    "swiftmodule" : "/Users/andreazorzi/Desktop/billyApp/ios/build/DerivedData/Build/Intermediates.noindex/BillyApp.build/Debug-iphonesimulator/BillyAppTests.build/Objects-normal/x86_64/BleViewModelTests~partial.swiftmodule"
+  }
+}

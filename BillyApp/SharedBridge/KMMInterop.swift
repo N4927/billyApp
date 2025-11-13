@@ -35,13 +35,14 @@ extension KotlinByteArray {
     }
 }
 
-// MARK: - Helpers per endian
+// MARK: - Big-endian helpers
 
 extension FixedWidthInteger {
     var bigEndianBytes: [UInt8] {
         var be = self.bigEndian
         return withUnsafeBytes(of: &be) { Array($0) }
     }
+
     static func fromBigEndianBytes(_ bytes: [UInt8]) -> Self {
         precondition(bytes.count == MemoryLayout<Self>.size)
         return bytes.withUnsafeBytes { $0.load(as: Self.self) }.bigEndian

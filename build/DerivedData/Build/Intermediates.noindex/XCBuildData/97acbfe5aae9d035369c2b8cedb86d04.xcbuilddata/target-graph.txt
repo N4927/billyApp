@@ -1,0 +1,4 @@
+Target dependency graph (2 targets)
+Target 'BillyAppTests' in project 'BillyApp'
+➜ Explicit dependency on target 'BillyApp' in project 'BillyApp'
+Target 'BillyApp' in project 'BillyApp' (no dependencies)

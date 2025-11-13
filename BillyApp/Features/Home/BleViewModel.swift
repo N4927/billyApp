@@ -13,6 +13,7 @@ struct ResolvedEncounter: Identifiable, Equatable {
 @MainActor
 final class BleViewModel: ObservableObject {
     @Published private(set) var encounters: [ResolvedEncounter] = []
+
     private let logger = AppLogger.make(category: "BleVM")
     private var bag = Set<AnyCancellable>()
 
@@ -32,13 +33,24 @@ final class BleViewModel: ObservableObject {
     }
 
     private func appendEncounter(name: String, idHex: String, rssi: Int, ts: Int64) {
-        if let idx = encounters.firstIndex(where: { $0.name == name }) {
-            var current = encounters[idx]
+        let key = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let idx = encounters.firstIndex(where: { $0.name == key }) {
+            let current = encounters[idx]
             encounters[idx] = ResolvedEncounter(
-                name: current.name, count: current.count + 1, idHex: idHex, timestamp: ts)
+                name: current.name,
+                count: current.count + 1,
+                idHex: idHex,
+                timestamp: ts
+            )
         } else {
-            encounters.append(ResolvedEncounter(name: name, count: 1, idHex: idHex, timestamp: ts))
+            encounters.append(
+                ResolvedEncounter(name: key, count: 1, idHex: idHex, timestamp: ts)
+            )
         }
-        logger.info("encounters=\(self.encounters.count, privacy: .public)")
+        logger.info("encounters.count=\(self.encounters.count, privacy: .public)")
+    }
+
+    func clear() {
+        encounters.removeAll()
     }
 }

@@ -41,7 +41,7 @@ final class PeripheralServer: NSObject, CBPeripheralManagerDelegate {
         ])
         log.info("[Peripheral] Advertising started")
     }
-    
+
     @MainActor
     func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest)
     {
@@ -62,7 +62,6 @@ final class PeripheralServer: NSObject, CBPeripheralManagerDelegate {
         do {
             let crypto = try UserManager.shared.getCryptographyManager()
             let id = UserManager.shared.getPersonalIdentifier()
-            // KMM returns timestamp(8)+cipher8(8); prendiamo solo gli ultimi 8
             let full = crypto.encryptRotatingIdentifier(personalIdHex: id, timestamp: ts)
             let fullData = full.toData()
             cipher8 = Array(fullData.suffix(8))

@@ -11,7 +11,7 @@ targets:
       - path: BillyApp
         excludes:
           - Tests/**
-          - Frameworks/**   # evitiamo che finisca come "source"
+          - Frameworks/**   # avoid pulling frameworks as sources
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.acme.billyapp
       INFOPLIST_FILE: BillyApp/Resources/Info.plist
@@ -30,7 +30,14 @@ targets:
     sources:
       - path: BillyApp/Tests
     settings:
-      TEST_HOST: ""
+      # ✅ Let Xcode create an Info.plist for the test bundle (Xcode 16+ requires this)
+      GENERATE_INFOPLIST_FILE: YES
+      PRODUCT_BUNDLE_IDENTIFIER: com.acme.billyapp.tests
+      SWIFT_VERSION: 5.9
+      # ✅ Tests on Simulator do NOT need signing
+      CODE_SIGNING_ALLOWED: NO
+      CODE_SIGNING_REQUIRED: NO
+      DEVELOPMENT_TEAM: ""
     dependencies:
       - target: BillyApp
 

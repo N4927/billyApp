@@ -63,3 +63,7 @@ fastlane/test_output
 
 # For IOS
 .DS_Store
+
+# For Tests
+build/
+*.xcresult

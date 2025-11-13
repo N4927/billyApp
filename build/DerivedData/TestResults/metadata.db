@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>FormatVersion</key>
+	<integer>1</integer>
+	<key>Store</key>
+	<dict>
+		<key>BillyAppTests</key>
+		<dict>
+			<key>BleViewModelTests</key>
+			<dict>
+				<key>testAppendEncounterMergesByName</key>
+				<dict>
+					<key>mrnet</key>
+					<real>0.0041139125823974609</real>
+				</dict>
+				<key>testClear</key>
+				<dict>
+					<key>mrnet</key>
+					<real>0.0067870616912841797</real>
+				</dict>
+			</dict>
+		</dict>
+	</dict>
+</dict>
+</plist>

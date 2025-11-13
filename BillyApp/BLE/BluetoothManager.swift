@@ -26,18 +26,17 @@ final class BluetoothManager: NSObject {
 
     private func registerBackgroundTask() {
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: "com.acme.billyapp.bluetooth-processing", using: nil
-        ) { task in
+            forTaskWithIdentifier: "com.acme.billyapp.bluetooth-processing",
+            using: nil
+        ) { [weak self] task in
+            guard let self else { return }
             self.log.info("[BGTask] bluetooth-processing fired")
-            // Reschedule next
             let req = BGProcessingTaskRequest(identifier: "com.acme.billyapp.bluetooth-processing")
             req.requiresNetworkConnectivity = false
             req.requiresExternalPower = false
             req.earliestBeginDate = Date(timeIntervalSinceNow: 60)
             try? BGTaskScheduler.shared.submit(req)
-
-            task.expirationHandler = { /* cleanup if needed */  }
-            // non completiamo: lasciamo a iOS la gestione
+            task.expirationHandler = {}
         }
     }
 }

@@ -5,7 +5,11 @@
 "Loading" = "Caricamento";
 "People nearby" = "Persone nelle vicinanze";
 "No one nearby yet" = "Nessuno nelle vicinanze";
+"Stay online to be discoverable" = "Rimani online per essere visibile";
+"Switch to online to be discoverable" = "Passa online per essere visibile";
+"near you" = "vicino a te";
 "online" = "online";
 "offline" = "offline";
 "Home" = "Home";
 "chat" = "chat";
+"presence" = "Stato";
