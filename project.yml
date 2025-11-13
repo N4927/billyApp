@@ -1,0 +1,48 @@
+name: BillyApp
+options:
+  minimumXcodeGenVersion: 2.38.0
+
+targets:
+  BillyApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: BillyApp
+        excludes:
+          - Tests/**
+          - Frameworks/**   # evitiamo che finisca come "source"
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.acme.billyapp
+      INFOPLIST_FILE: BillyApp/Resources/Info.plist
+      SWIFT_VERSION: 5.9
+      CURRENT_PROJECT_VERSION: 1
+      MARKETING_VERSION: 0.1.0
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - framework: BillyApp/Frameworks/Shared.xcframework
+        embed: false
+        codeSign: false
+
+  BillyAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: BillyApp/Tests
+    settings:
+      TEST_HOST: ""
+    dependencies:
+      - target: BillyApp
+
+schemes:
+  BillyApp:
+    build:
+      targets:
+        BillyApp: [run, archive, profile]
+        BillyAppTests: [test]
+    test:
+      config: Debug
+      targets:
+        - name: BillyAppTests
+          parallelizable: true
+          randomExecutionOrder: true
