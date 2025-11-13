@@ -14,9 +14,12 @@ final class UserManager: ObservableObject {
 
     private var cryptographyManager: CryptographyManager?
 
+    // MARK: - User identity
+
     func saveUser(id: String, name: String, age: Int? = nil, bio: String? = nil) {
+        let sanitized = sanitizeName(name)
         defaults.set(id, forKey: keyId)
-        defaults.set(name, forKey: keyName)
+        defaults.set(sanitized, forKey: keyName)
         if let age {
             defaults.set(age, forKey: keyAge)
         } else {
@@ -26,18 +29,42 @@ final class UserManager: ObservableObject {
         try? initCryptographyManager()
     }
 
+    func updateName(_ name: String) {
+        let sanitized = sanitizeName(name)
+        defaults.set(sanitized, forKey: keyName)
+        try? initCryptographyManager()
+    }
+
     func clearUser() {
         [keyId, keyName, keyAge, keyBio].forEach { defaults.removeObject(forKey: $0) }
         cryptographyManager = nil
     }
 
     func getUserName() -> String {
-        defaults.string(forKey: keyName) ?? "Anonimo"
+        defaults.string(forKey: keyName) ?? ""
+    }
+
+    func hasValidName() -> Bool {
+        let n = getUserName().trimmingCharacters(in: .whitespacesAndNewlines)
+        return !n.isEmpty && n.lowercased() != "anonimo"
     }
 
     func getPersonalIdentifier() -> String {
         defaults.string(forKey: keyId) ?? "anonymous"
     }
+
+    /// Restituisce l'ID esistente, oppure ne genera e persiste uno nuovo (16 hex chars).
+    @discardableResult
+    func ensureUserIdIfNeeded() -> String {
+        if let existing = defaults.string(forKey: keyId), !existing.isEmpty {
+            return existing
+        }
+        let newId = generateHexId(byteCount: 8)  // 8 bytes -> 16 hex
+        defaults.set(newId, forKey: keyId)
+        return newId
+    }
+
+    // MARK: - BLE secret & Crypto
 
     func getSecretForBle(length: Int = 16) -> [UInt8] {
         let name = getUserName().lowercased()
@@ -61,6 +88,23 @@ final class UserManager: ObservableObject {
         cryptographyManager = KMMFacade.makeCrypto(sharedSecret: secret)
     }
 
+    // MARK: - Presence
+
     func isBleOnline() -> Bool { defaults.bool(forKey: keyBleOnline) }
     func setBleOnline(_ value: Bool) { defaults.set(value, forKey: keyBleOnline) }
+
+    // MARK: - Helpers
+
+    private func sanitizeName(_ s: String) -> String {
+        let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        let allowed = CharacterSet.alphanumerics.union(.whitespaces)
+        let filtered = String(trimmed.unicodeScalars.filter { allowed.contains($0) })
+        return String(filtered.prefix(40))
+    }
+
+    private func generateHexId(byteCount: Int) -> String {
+        var bytes = [UInt8](repeating: 0, count: byteCount)
+        _ = SecRandomCopyBytes(kSecRandomDefault, byteCount, &bytes)
+        return bytes.map { String(format: "%02x", $0) }.joined()
+    }
 }

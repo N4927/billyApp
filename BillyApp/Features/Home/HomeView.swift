@@ -11,42 +11,69 @@ struct HomeView: View {
     @EnvironmentObject var userManager: UserManager
 
     @State private var mode: PresenceMode = .offline
+    @State private var showNameSheet = false
 
     let onOpenChat: (String) -> Void
     let onOpenProfile: (String) -> Void
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(UIColor.systemBackground), Color(UIColor.secondarySystemBackground),
-                    ],
-                    startPoint: .top, endPoint: .bottom
-                )
-                .ignoresSafeArea()
-
-                content
-                    .padding(20)
-                    .navigationTitle(NSLocalizedString("Home", comment: ""))
-                    .navigationBarTitleDisplayMode(.inline)
-            }
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(20)
+                .navigationTitle(NSLocalizedString("Home", comment: ""))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showNameSheet = true
+                        } label: {
+                            Label(
+                                userManager.getUserName().isEmpty
+                                    ? "Set name" : userManager.getUserName(),
+                                systemImage: "person.crop.circle"
+                            )
+                            .labelStyle(.titleAndIcon)
+                        }
+                        .accessibilityLabel(Text("Edit your name"))
+                    }
+                }
         }
         .onAppear {
             mode = userManager.isBleOnline() ? .online : .offline
-            if userManager.getUserName() == "Anonimo" {
-                // Seed a predictable demo identity for BLE crypto
-                userManager.saveUser(id: "ecb73c72d94f1a23", name: "Alice")
+            // Se il nome non è valido, apri subito lo sheet di setup
+            if !userManager.hasValidName() {
+                showNameSheet = true
             }
         }
         .onChange(of: mode) { newValue in
             switch newValue {
             case .online:
+                // Gate: richiedi nome valido prima di avviare BLE
+                guard userManager.hasValidName() else {
+                    mode = .offline
+                    showNameSheet = true
+                    return
+                }
                 userManager.setBleOnline(true)
-                _ = BluetoothManager.shared  // ensure boot
+                _ = BluetoothManager.shared  // boot effettivo solo quando serve
             case .offline:
                 userManager.setBleOnline(false)
             }
+        }
+        .sheet(isPresented: $showNameSheet) {
+            NameSetupView(
+                initialName: userManager.getUserName(),
+                onCancel: {
+                    // Se non c'è nome e l'utente cancella, rimani offline
+                    if !userManager.hasValidName() { mode = .offline }
+                },
+                onSaved: { newName in
+                    let id = userManager.ensureUserIdIfNeeded()
+                    userManager.saveUser(id: id, name: newName)
+                    // Non forziamo automaticamente online; lasciamo all’utente la scelta.
+                }
+            )
         }
     }
 
@@ -109,11 +136,13 @@ struct HomeView: View {
                 .font(.callout.weight(.semibold))
                 .foregroundStyle(mode == .online ? .green : .secondary)
                 Spacer()
-                Text(userManager.getUserName())
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                Text(
+                    userManager.getUserName().isEmpty ? "Set your name" : userManager.getUserName()
+                )
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
             }
             .padding(10)
             .background(

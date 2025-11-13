@@ -14,6 +14,7 @@
 		5F257137DAF6F1F4F1318E20 /* KMMFacade.swift in Sources */ = {isa = PBXBuildFile; fileRef = E39BD075ABEB4560B9A69234 /* KMMFacade.swift */; };
 		6AF2DDDE7DC7BFC16F6959D8 /* CompositionRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 772752FDC032FAEAFF5A6094 /* CompositionRoot.swift */; };
 		9D0305136887BD31B52DF4AD /* KMMInterop.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61408C79A22BDEEA6BF27B3 /* KMMInterop.swift */; };
+		9FB23B7A9727159CEB67AAB9 /* NameSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2560FD94F6C4EC756DADE498 /* NameSetupView.swift */; };
 		A8519583FBB9A5F25A7EDA11 /* CentralClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A502CC86415F2006D687BC /* CentralClient.swift */; };
 		B179672738AF81862E9605FE /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E43CEE9C80781871F8C25DAB /* BluetoothManager.swift */; };
 		B27A6FA235C729AE8550BFA6 /* UserManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA786C73E2BF5B65C044885E /* UserManager.swift */; };
@@ -37,6 +38,7 @@
 /* Begin PBXFileReference section */
 		022C6AE422166E0375704A62 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		0BDAD8A16837BBB07530BE62 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		2560FD94F6C4EC756DADE498 /* NameSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameSetupView.swift; sourceTree = "<group>"; };
 		36828C85FAA45FF9331852B9 /* PeripheralServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralServer.swift; sourceTree = "<group>"; };
 		61BC93FFD698A9CF81D0C6DA /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		61FA7AFB45E34803352948CD /* BillyAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillyAppApp.swift; sourceTree = "<group>"; };
@@ -72,6 +74,7 @@
 			isa = PBXGroup;
 			children = (
 				817187BE343A807606FDFE90 /* Home */,
+				BA7CB17317A5C94C3D54CD89 /* Onboarding */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -139,6 +142,14 @@
 				BA786C73E2BF5B65C044885E /* UserManager.swift */,
 			);
 			path = Utils;
+			sourceTree = "<group>";
+		};
+		BA7CB17317A5C94C3D54CD89 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				2560FD94F6C4EC756DADE498 /* NameSetupView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		CCAA4692F2D7AE782063EDA7 /* BLE */ = {
@@ -282,6 +293,7 @@
 				5F257137DAF6F1F4F1318E20 /* KMMFacade.swift in Sources */,
 				9D0305136887BD31B52DF4AD /* KMMInterop.swift in Sources */,
 				57103A7A695080E775FC254F /* Logging.swift in Sources */,
+				9FB23B7A9727159CEB67AAB9 /* NameSetupView.swift in Sources */,
 				519AC486FBA2D0F1A359C5D6 /* PeripheralServer.swift in Sources */,
 				B27A6FA235C729AE8550BFA6 /* UserManager.swift in Sources */,
 			);

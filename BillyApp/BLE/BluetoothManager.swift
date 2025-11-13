@@ -21,23 +21,7 @@ final class BluetoothManager: NSObject {
         super.init()
         advertiser = PeripheralServer(queue: peripheralQueue)
         scanner = CentralClient(queue: centralQueue, sink: self)
-        registerBackgroundTask()
-    }
-
-    private func registerBackgroundTask() {
-        BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: "com.acme.billyapp.bluetooth-processing",
-            using: nil
-        ) { [weak self] task in
-            guard let self else { return }
-            self.log.info("[BGTask] bluetooth-processing fired")
-            let req = BGProcessingTaskRequest(identifier: "com.acme.billyapp.bluetooth-processing")
-            req.requiresNetworkConnectivity = false
-            req.requiresExternalPower = false
-            req.earliestBeginDate = Date(timeIntervalSinceNow: 60)
-            try? BGTaskScheduler.shared.submit(req)
-            task.expirationHandler = {}
-        }
+        // RIMOSSO: la registrazione del BGTask ora è in AppDelegate
     }
 }
 
