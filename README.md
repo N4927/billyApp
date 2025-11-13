@@ -300,29 +300,34 @@ xcodebuild -project BillyApp.xcodeproj \
 
 ```mermaid
 flowchart LR
-  subgraph "iOS App"
-    A[HomeView] --> B[BleViewModel]
-    B -->|.encounterDiscovered| C[BluetoothManager]
-    C --> D[CentralClient]
-    C --> E[PeripheralServer]
+  %% iOS UI layer
+  subgraph IOS["iOS App"]
+    A["HomeView"] --> B["BleViewModel"]
+    B -->|encounterDiscovered| C["BluetoothManager"]
+    C --> D["CentralClient"]
+    C --> E["PeripheralServer"]
   end
 
-  subgraph "Interop"
-    C --> F[KMMFacade]
-    F --> G[Shared.xcframework]
+  %% Bridge verso KMM
+  subgraph BRIDGE["Interop"]
+    C --> F["KMMFacade"]
+    F --> G["Shared.xcframework"]
   end
 
-  subgraph "KMM (xcframework)"
-    G --> H[CryptographyManager]
-    G --> I[FakeServer (dev)]
+  %% Componenti dentro lo XCFramework
+  subgraph KMM["KMM xcframework"]
+    G --> H["CryptographyManager"]
+    G --> I["FakeServer dev"]
   end
 
-  subgraph "Storage / Config"
-    J[UserManager<br/>UserDefaults]
+  %% Storage/Config locali
+  subgraph STORE["Storage / Config"]
+    J["UserManager / UserDefaults"]
   end
 
   J --> F
 ```
+
 
 ---
 
