@@ -299,26 +299,26 @@ xcodebuild -project BillyApp.xcodeproj \
 # 🧱 System Design (Components Map)
 
 ```mermaid
-graph LR
-  subgraph iOS App
+flowchart LR
+  subgraph "iOS App"
     A[HomeView] --> B[BleViewModel]
     B -->|.encounterDiscovered| C[BluetoothManager]
     C --> D[CentralClient]
     C --> E[PeripheralServer]
   end
 
-  subgraph Interop
+  subgraph "Interop"
     C --> F[KMMFacade]
-    F --> G{{Shared.xcframework}}
+    F --> G[Shared.xcframework]
   end
 
-  subgraph KMM (in xcframework)
+  subgraph "KMM (xcframework)"
     G --> H[CryptographyManager]
     G --> I[FakeServer (dev)]
   end
 
-  subgraph Storage/Config
-    J[UserManager\n(UserDefaults)]
+  subgraph "Storage / Config"
+    J[UserManager<br/>UserDefaults]
   end
 
   J --> F
