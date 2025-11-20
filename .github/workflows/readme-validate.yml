@@ -1,9 +1,12 @@
-name: Validate README reports index
+name: Validate README feature index
 
 on:
   pull_request:
     branches:
       - reports
+
+permissions:
+  contents: read    # opzionale ma chiaro
 
 jobs:
   validate-readme:

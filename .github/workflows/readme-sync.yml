@@ -1,10 +1,13 @@
-name: Sync README reports index
+name: Sync README feature index
 
 on:
   push:
     branches:
       - reports
   workflow_dispatch:
+
+permissions:
+  contents: write   # ⬅️ QUESTA È LA PARTE IMPORTANTE
 
 jobs:
   sync-readme:
@@ -21,7 +24,7 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Update README reports index
+      - name: Update README feature index
         run: |
           python .github/scripts/update_readme.py
 
