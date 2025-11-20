@@ -1,0 +1,1297 @@
+\documentclass[a4paper,11pt]{article}
+
+% Fonts and symbols
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{inconsolata}
+\usepackage{wasysym}
+\usepackage{microtype}
+
+% Layout, page setup
+\usepackage[margin=2.5cm,a4paper]{geometry}
+\usepackage{titlesec}
+\usepackage{appendix}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{parskip}
+\usepackage{tabto}
+\usepackage{pdflscape}
+\usepackage{enumitem}
+\usepackage{adjustbox}
+\usepackage[super]{nth}
+
+% Science and language typesetting
+\usepackage{bm}
+\usepackage{physics}
+\usepackage[
+  arc-separator = \,,
+  retain-explicit-plus,
+  inter-unit-product = \cdot,
+  detect-weight=true,
+  detect-family=true,
+  range-phrase=--,
+  range-units=single
+]{siunitx}
+\usepackage[version=4]{mhchem}
+\usepackage{nicematrix}
+\usepackage[makeroom]{cancel}
+\usepackage{circledsteps}
+\usepackage[italian]{babel}
+\usepackage{csquotes}
+
+% Graphics, captions, tables
+\usepackage[table,dvipsnames]{xcolor}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{tikz,tikz-3dplot}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{pdfpages}
+\usepackage[justification=centering, labelfont={small,bf}, font={small}]{caption}
+\usepackage{subcaption}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage[outline]{contour}
+
+% TikZ options setup
+\usetikzlibrary{
+  calc,
+  arrows,
+  arrows.meta,
+  positioning,
+  decorations.pathreplacing,
+  decorations.markings,
+  decorations.text,
+  calligraphy
+}
+\usepgfplotslibrary{dateplot}
+
+% References and links
+\usepackage{hyperref}
+\usepackage[noabbrev]{cleveref}
+\usepackage[nottoc,numbib]{tocbibind}
+\usepackage{biblatex}
+
+% Miscellaneous
+\usepackage{datetime2}
+\usepackage{iftex,etoolbox,expl3,xparse}
+
+
+\title{Architettura BLE lato Client e Server}
+\author{Andrea Zorzi -- BillyApp}
+\date{Versione 1.1.0 \\ \today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+\section{Scopo e perimetro}
+
+Questo documento descrive l’architettura logica e tecnica del sistema BLE lato client e lato server
+
+L'idea è avere un'unica base di riferimento che permetta di:
+\begin{itemize}
+  \item capire come il client genera, ruota e trasmette l'identificativo BLE \(B_{\text{id}}\);
+  \item capire come il backend risolve \(B_{\text{id}}\) in un utente reale;
+  \item avere una vista completa sulle scelte di privacy e sicurezza;
+  \item alternative valutate e perché sono state scartate o mitigate.
+\end{itemize}
+
+Il perimetro è architettuale, non di implementazione. Non sono quindi presenti dettagli di codice, ma solo di logica e flussi.
+L'implementazione sarà trattata in un documento a parte.
+
+\section{Panoramica generale}
+\subsection{Attori Principali}
+Il sistema coinvolge i seguenti attori principali:
+\subsubsection{Client trasmittente}
+Il dispositivo del client trasmette periodicamente via BLE un identificativo cifrato \(B_{\text{id}}\).
+Questo valore non contiene informazioni personali o altri dati personali in chiaro.
+
+\subsubsection{Client ricevente}
+Il dispositivo del client ricevente ascolta i pacchetti BLE nell'area, li filtra per il nostro servizio, raccoglie i \(B_{\text{id}}\) e li invia al backend tramite
+una richiesta autenticata. In cambio riceve i dettagli delle persone vicine.
+
+\subsubsection{API e database}
+Il backend riceve i \(B_{\text{id}}\) dai client riceventi, li risolve in utenti reali e restituisce i dettagli delle persone vicine.
+\begin{itemize}
+  \item conosce tutti gli utenti
+  \item gestisce le chiavi crittografiche
+  \item genera i pacchetti BLE \(B_{\text{id}}\) per i client trasmittenti
+  \item risolve i \(B_{\text{id}}\) per i client riceventi
+  \item comunica con il client ricevente tramite API le informazioni necessarie
+\end{itemize}
+
+\subsection{Principio di base}
+Via radio BLE passa soltanto l'identificativo cifrato \(B_{\text{id}}\).
+Tutto ciò che il client ricevente conosce sugli utenti vicini lo apprende soltanto tramite il backend via API, mai in chiaro su BLE.
+In questo modo il canale radio resta molto povero di informazioni ed i dati sensibili rimangono confinati al backend.
+
+\subsection{Ruolo del client}
+L'app svolge tre funzioni principali:
+
+\subsubsection{Advertising BLE}
+Genera e trasmette periodicamente nei pacchetti BLE l'identificativo cifrato \(B_{\text{id}}\) valido per lo slot temporale corrente.
+Ogni intervallo di tempo viene utilizzato un nuovo \(B_{\text{id}}\). Il client ha con sè in memoria i \(B_{\text{id}}\) generati per le successive
+24 ore, che vengono mandati dal backend in un batch.
+
+\subsubsection{Scanning BLE}
+Ascolta i pacchetti BLE nell'area circostante, filtra quelli rilevanti per il nostro servizio e raccoglie i \(B_{\text{id}}\) visti.
+
+\subsubsection{Risoluzione tramite backend}
+Invia una richiesta al backend con i \(B_{\text{id}}\) raccolti, riceve in risposta i dettagli delle persone vicine e li mostra all'utente.\footnote{Sul dispositivo non esiste un mapping persistente \(B_{\text{id}} \rightarrow\) utente. La risoluzione di informazioni delle persone è sempre centralizzata nel backend.}
+
+\subsection{Flusso logico}
+Il flusso complessivo è il seguente:
+
+\subsubsection{Generazione degli identificativi \(B_{\text{id}}\)}
+Per ogni utente e per ogni intervallo di tempo il backend genera un valore cifrato \(B_{\text{id}}\) usando una cifratura AES-ENC ed una
+chiave master AES-256. Il backend genera i successivi 144 \(B_{\text{id}}\) e li manda al client in un batch.
+
+\subsubsection{Trasmissione via BLE}
+Il client inserisce il \(B_{\text{id}}\) valido per lo slot temporale corrente nei pacchetti BLE e li trasmette periodicamente.
+
+\subsubsection{Raccolta dei \(B_{\text{id}}\)}
+Il client ricevente ascolta i pacchetti BLE nell'area, estrae i \(B_{\text{id}}\) e lo invia al backend per ottenere le informazioni dell'utente vicino.
+
+\subsubsection{Risoluzione lato backend}
+Il backend riceve i \(B_{\text{id}}\) dai client riceventi, e li decifra usando la chiave master AES-256 corretta. Dai \(B_{\text{id}}\) decifrati ottiene \(U_{\text{code}}\) ed il time slot.
+Applica i controlli di validità temporale e restituisce i dettagli degli utenti vicini al client ricevente.
+
+\subsubsection{Presentazione sull'APP}
+Nell'app del client ricevente vengono mostrati i dettagli delle persone vicine ricevuti dal backend.
+
+\section{Requisiti di progetto}
+
+I requisiti principali del sistema sono:
+
+\subsection{Privacy}
+\begin{itemize}
+  \item Nessun dato personale o sensibile deve essere trasmesso in chiaro via BLE;
+  \item Un osservatore esterno che sniffa i pacchetti BLE non deve poter risalire in modo affidabile all'identità di un utente;
+  \item Il mapping \(B_{\text{id}} \rightarrow\) utente deve essere noto solo al backend.
+\end{itemize}
+
+
+\subsection{Non tracciabilità}
+\begin{itemize}
+  \item Un osservatore esterno che sniffa i pacchetti BLE non deve poter seguire gli spostamenti di un utente nel tempo basandosi sull'identificativo \(B_{\text{id}}\);
+  \item Anche disponendo di log storici dei \(B_{\text{id}}\) trasmessi non deve essere possibile risalire agli spostamenti di un utente.
+\end{itemize}
+
+\subsection{Efficienza BLE}
+\begin{itemize}
+  \item I pacchetti BLE devono essere il più piccoli possibile per ridurre il consumo energetico;
+  \item Deve semplificare l'implementazione lato client tra gli stack BLE di iOS e Android.
+\end{itemize}
+
+\subsection{Scalabilità}
+\begin{itemize}
+  \item L'architettura deve poter supportare milioni di utenti attivi;
+  \item La risoluzione di un singolo \(B_{\text{id}}\) deve essere \(\approx O(1)\), ovvero efficiente e non dipendente dal numero di utenti totali.
+  \item Il backend deve poter gestire migliaia di richieste al secondo.
+  \item Il client deve poter gestire centinaia di \(B_{\text{id}}\) raccolti.
+\end{itemize}
+
+\section{Modello dati dell'utente}
+
+\textbf{Definizione (\(U_{\text{code}}\)):}
+Sia \[U_{\text{code}} = \SI{64}{\bit} = \SI{8}{\byte}\] un identificativo univoco per ogni utente, generato casualmente al momento della registrazione.
+Offre un namespace di \(2^{64} \approx \num{1.84e19}\) utenti, sufficiente per l'applicazione.
+Non viene mai trasmesso in chiaro via BLE.
+
+Ogni utente nel sistema è rappresentato dai seguenti dati:
+\begin{itemize}
+  \item identificativo univoco dell'utente \(U_{\text{code}}\);
+  \item nome visualizzato;
+\end{itemize}
+
+Questi dati vengono usati solo nella comunicazione tra client ricevente e backend.
+
+\section{Design crittografico}
+\subsection{Obiettivo della cifratura}
+L'obiettivo principale della cifratura è:
+\begin{itemize}
+  \item semplicità e efficienza di una soluzione AES con crittografia reversibile;
+  \item autonomia del client nella rotazione degli identificativi \(B_{\text{id}}\) senza dover contattare il backend frequentemente;
+\end{itemize}
+
+\subsection{Finestra temporale}
+Il tempo viene discretizzato in slot regolari di durata fissa.
+
+\textbf{Definizione (\(\Delta t_{\text{slot}}\)):} Sia
+\[
+  \Delta t_{\text{slot}} = \SI{600}{\second} = \SI{10}{\minute}
+\]
+la durata di uno slot temporale.
+
+\textbf{Definizione (\(t_{\text{unix}}\)):}
+Sia
+\[
+  t_{\text{unix}} \in \mathbb{N}, \qquad [t_{\text{unix}}] = \si{\second},
+\]
+il tempo corrente in secondi trascorsi dal 1 gennaio 1970.
+
+\textbf{Definizione (\(S_{\text{slot}}\)):}
+Sia
+\[
+  S_{\text{slot}}
+  = \left\lfloor \frac{t_{\text{unix}}}{\Delta t_{\text{slot}}} \right\rfloor
+  \in \mathbb{N}
+\]
+l'indice dello slot temporale corrente.
+
+\(S_{\text{slot}}\) è concettualmente pubblico e non segreto, in quanto può essere calcolato da
+chiunque conoscendo l'ora corrente.
+
+Quando un identificativo \(B_{\text{id}}\) viene decifrato nel backend, si ottiene in particolare un
+indice di slot codificato
+\[
+  S_{\text{slot}}^{\text{dec}} \in \mathbb{N},
+\]
+che rappresenta lo slot temporale a cui il \(B_{\text{id}}\) è destinato.
+
+\textbf{Definizione (\(\delta\)):}
+Sia
+\[
+  \delta = \frac{\Delta t_{\text{slot}}}{5}
+\]
+la tolleranza temporale simmetrica per la risoluzione dei \(B_{\text{id}}\). Il suo valore è quindi
+dinamicamente legato alla durata dello slot: se \(\Delta t_{\text{slot}}\) cambia, cambia
+proporzionalmente anche \(\delta\).
+
+Dallo slot decifrato si ricavano i tempi di inizio e fine dello slot codificato:
+\[
+  t_{\text{start}}^{\text{dec}}
+  = S_{\text{slot}}^{\text{dec}} \cdot \Delta t_{\text{slot}}, \qquad
+  t_{\text{end}}^{\text{dec}}
+  = (S_{\text{slot}}^{\text{dec}} + 1) \cdot \Delta t_{\text{slot}}.
+\]
+
+Un identificativo \(B_{\text{id}}\) ricevuto al tempo \(t_{\text{unix}}\) è temporalmente valido se e
+solo se
+\[
+  t_{\text{start}}^{\text{dec}} - \delta
+  \;\le\;
+  t_{\text{unix}}
+  \;\le\;
+  t_{\text{end}}^{\text{dec}} + \delta.
+\]
+
+In altre parole, il backend accetta un \(B_{\text{id}}\) se il tempo corrente cade all'interno dello
+slot codificato, esteso di una tolleranza \(\delta\) prima dell'inizio e \(\delta\) dopo la fine.
+Questa finestra allargata assorbe il drift di orologio tra client e backend e la latenza di rete,
+senza allargare troppo l'esposizione temporale di un singolo \(B_{\text{id}}\).
+
+\subsection{Chiavi AES e rotazione}
+La generazione dei \(B_{\text{id}}\) si basa su chiavi master AES-256. Le chiavi non sono statiche e vengono ruotate periodicamente.
+
+
+\textbf{Definizione (\(K_i\)):} Sia
+\[
+  K_i \in \{0,1\}^{256}, \quad |K_i| = 256 \,\text{bit} = 32 \,\text{byte}, \quad \forall i \in \mathbb{N}
+\]
+
+una chiave master AES-256 usata per generare i \(B_{\text{id}}\).
+Ogni $K_i$ è generata tramite CSPRNG e memorizzata in modo sicuro nel backend. Le chiavi non derivano da una root comune, ma sono valori casuali forti e indipendenti.
+A ciascun $K_i$ è associato un intervallo di tempo.
+
+\textbf{Definizione (\(T_{K_i}, T_{K_i,\mathrm{grazia}}\)):} Sia
+\[
+  T_{K_i} = \SI{72}{\hour}
+\]
+la durata di validità della chiave master \(K_i\). Rispettivamente, sia
+\[
+  T_{K_i,\mathrm{grazia}} = \frac{T_{K_i}}{5}
+\]
+la durata del periodo di grazia successiva alla scadenza di \(K_i\), durante la quale \(K_i\) è ancora accettata per la risoluzione dei \(B_{\text{id}}\).
+
+
+\textbf{Definizione (\((K_i)_{i\in\mathbb{N}}\)):} Sia
+\[
+  (K_i)_{i\in\mathbb{N}}
+\]
+la sequenza di chiavi master AES-256 usate per generare i \(B_{\text{id}}\). Ogni chiave è valida per un intervallo di tempo fisso.
+
+\textbf{Definizione (\(t_{K_i}^{\text{start}}, t_{K_i}^{\text{end}}, t_{K_i}^{\text{grazia}}\)):} Sia
+\[
+  t_{K_i}^{\text{start}} =
+  \begin{cases}
+    t_{\text{now}},           & i = 1, \\
+    t_{K_{i-1}}^{\text{end}}, & i > 1,
+  \end{cases}
+  \qquad i \in \mathbb{N},\, i \ge 1.
+\]
+il tempo di inizio validità di \(K_i\). Sia inoltre
+\[
+  t_{K_i}^{\text{end}} = t_{K_i}^{\text{start}} + T_{K_i}, \qquad \forall i \in \mathbb{N}.
+\]
+il tempo di fine validità di \(K_i\). Infine, sia
+\[
+  t_{K_i}^{\text{grazia}} = t_{K_i}^{\text{end}} + T_{K_i,\mathrm{grazia}}, \qquad \forall i \in \mathbb{N}.
+\]
+il tempo di grazia, dove \(K_i\) non è più usata per generare nuovi \(B_{\text{id}}\), ma è ancora accettata ed utilizzata per la risoluzione.
+
+\subsubsection{Politica di rotazione}
+La rotazione delle chiavi è periodica, e l'intervallo tra l'attivazione di chiavi consecutive è costante
+\[
+  T_{K_i} = t_{K_i}^{\text{start}} - t_{K_{i-1}}^{\text{start}}, \qquad \forall i > 1.
+\]
+
+$K_i$ è la chiave corrente nel tempo \(t_{\text{now}}\) se e solo se:
+\[
+  t_{K_i}^{\text{start}} \leq t_{\text{now}} < t_{K_i}^{\text{end}}
+\]
+
+
+Mentre $K_{i-1}$ è la chiave precedente ancora accettata nel periodo di grazia se e solo se:
+\[
+  t_{K_{i-1}}^{\text{end}} = t_{K_i}^{\text{start}} < t_{\text{now}} \leq t_{K_{i-1}}^{\text{grazia}}
+\]
+
+La politica di rotazione è progettata in modo che, per ogni $t_{now}$,
+\[
+  \forall t \in \mathbb{R}, \quad
+  \left|
+  \left\{
+  i \in \mathbb{N}
+  \;\middle|\;
+  t_{K_i}^{\text{start}} \le t \le t_{K_i}^{\text{grazia}}
+  \right\}
+  \right| \le 2.
+\]
+
+\subsubsection{Effetti di sicurezza}
+Questa architettura garantisce che:
+\begin{itemize}
+  \item l'impatto temporale di una eventuale compromissione di chiave è limitato a \(T_{K_i} + T_{K_i,\mathrm{grazia}}\);
+  \item un attaccante che compromette \(K_i\) non può risalire ai \(B_{\text{id}}\) generati con chiavi precedenti \(K_{i-1}\), \(i-1 < i\);
+  \item la rotazione delle chiavi \(K_i\), il periodo di grazia \(T_{K_i,\mathrm{grazia}}\) e la tolleranza temporale \(\delta\) sono gestiti in modo centralizzato e configurabile solo nel backend;
+  \item tutto il materiale crittografico resta confinato nel backend.
+\end{itemize}
+
+\section{Flusso del client}
+Descriviamo in modo più formale cosa fa il client, sia quando trasmette sia quando ascolta i pacchetti BLE \(B_{\text{id}}\)
+
+\textbf{Definizione (\(T_{batch}\)):} Sia
+\[
+  T_{batch} = \SI{24}{\hour}
+\]
+la durata di validità di un batch di \(B_{\text{id}}\) inviato dal backend al client trasmittente.
+Rappresenta l'intevallo di tempo in cui il client è in grado di generare i \(B_{\text{id}}\) localmente senza dover contattare il backend (offline).
+
+\textbf{Definizione (\(N_{batch}\)):} Sia
+\[
+  N_{batch} = \frac{T_{batch}}{\Delta t_{\text{slot}}}
+\]
+il numero di \(B_{\text{id}}\) contenuti in un batch inviato dal backend al client trasmittente.
+
+\subsection{Gestione advertising BLE}
+\textbf{Definizione (\(\bigl(B_{\text{id},k}\bigr)_{k=1}^{N_{batch}}\)):} Sia
+\[
+  \mathbf{B}
+  = \bigl(B_{\text{id},k}\bigr)_{k=1}^{N_{batch}},
+  \qquad B_{\text{id},k} \in \{0,1\}^{128},\ \forall k \in \{1,\dots,N_{batch}\}.
+\]
+una sequenza ordinata di identificativi $B_{\text{id}}$
+
+Il client trasmittente mantiene in memoria locale un batch di identificativi \(B_{\text{id}}\) fornito dal backend, valida per $N_{batch}$ di $S_{slot}$ consecutivi.
+
+\textbf{Definizione (\(S_j\)):} Sia l'indice del primo slot del batch \(S_1 \in \mathbb{N}\) con
+\[
+  S_j = S_1 + (j-1), \qquad \forall j \in \{1,\dots,N_{batch}\},
+\]
+l'indice dello slot temporale coperto dal batch a cui è destinato l'identificativo \(B_{\text{id},j}\).
+
+Nell'istante di advertising BLE, il client calcola lo slot corrente
+\[
+  S_{\text{slot}}^{\text{curr}}
+  = \left\lfloor \frac{t_{\text{unix}}}{\Delta t_{\text{slot}}} \right\rfloor.
+\]
+
+\[
+  j^\ast = S_{\text{slot}}^{\text{curr}} - S_1 + 1,
+\]
+ed usa l'identificativo \(B_{\text{id},j^\ast}\) da mandare a condizione che
+\[
+  1 \le j^\ast \le N_{batch}.
+\]
+
+Il ciclo operativo si può riassumere così:
+\begin{enumerate}
+  \item Il backend genera un batch di identificativi
+        \[
+          \mathbf{B} = \bigl(B_{\text{id},j}\bigr)_{j=1}^{N_{batch}}
+        \]
+        e l'indice del primo slot del batch \(S_1\), e li invia al client trasmittente.
+
+  \item Il client memorizza localmente \(\mathbf{B}\) e \(S_1\), validi per \(N_{batch}\) slot temporali consecutivi.
+
+  \item Ogni volta che deve trasmettere un pacchetto BLE, il client misura il tempo corrente \(t_{\text{unix}}\) e calcola
+        \[
+          S_{\text{slot}}^{\text{curr}}
+          = \left\lfloor \frac{t_{\text{unix}}}{\Delta t_{\text{slot}}} \right\rfloor.
+        \]
+
+  \item Dal valore di \(S_{\text{slot}}^{\text{curr}}\) ricava l’indice nel batch
+        \[
+          j^\ast = S_{\text{slot}}^{\text{curr}} - S_1 + 1.
+        \]
+
+  \item Se
+        \[
+          1 \le j^\ast \le N_{batch},
+        \]
+        il client inserisce \(B_{\text{id},j^\ast}\) nel pacchetto BLE e lo trasmette.
+
+  \item Se invece \(j^\ast < 1\) oppure \(j^\ast > N_{batch}\), il batch corrente non copre più lo slot attuale e il client deve ottenere un nuovo batch dal backend eliminando quello attuale.
+\end{enumerate}
+
+\subsection{Gestione scanning BLE}
+Il client ricevente si occupa di ascoltare e registrare i $B_{\text{id}}$ degli altri dispositivi. Per ogni istante
+
+La logica, per ogni pacchetto BLE ricevuto, è:
+\begin{enumerate}
+  \item filtrare solo i pacchetti BLE del nostro servizio ed ignorare gli altri;
+  \item estrarre il $B_{\text{id}}$ dal pacchetto;
+  \item inviare al backend la richiesta di risoluzione del pacchetto $B_{\text{id}}$
+\end{enumerate}
+Ogni $B_{\text{id}}$ viene quindi risolto al massimo una volta.
+
+\subsection{Gestione batch e condizioni di errore}
+Il client deve gestire alcuni casi particolari legati alla disponibilità di un batch valido e alla risposta del backend.
+
+Un batch
+\[
+  \mathbf{B}
+  = \bigl(B_{\text{id},j}\bigr)_{j=1}^{N_{batch}},
+  \qquad B_{\text{id},j} \in \{0,1\}^{128},
+\]
+con primo slot \(S_1 \in \mathbb{N}\) è \emph{valido} all'istante \(t_{\text{unix}}\) se e solo se
+\[
+  S_{\text{slot}}^{\text{curr}}
+  = \left\lfloor \frac{t_{\text{unix}}}{\Delta t_{\text{slot}}} \right\rfloor
+\]
+soddisfa
+\[
+  S_1 \le S_{\text{slot}}^{\text{curr}} \le S_1 + N_{batch} - 1.
+\]
+Equivalentemente, esiste un indice
+\[
+  j^\ast = S_{\text{slot}}^{\text{curr}} - S_1 + 1
+\]
+tale che
+\[
+  1 \le j^\ast \le N_{batch},
+\]
+e l'identificativo da usare è \(B_{\text{id},j^\ast}\).
+
+\subsubsection{Primo avvio o nuovo login}
+Al primo avvio il client non dispone di un batch valido, richiede immediatamente al backend un nuovo batch che copre le prossime $T_{batch}$
+
+\subsubsection{Batch scaduto}
+Se il batch corrente è scaduto, cioè
+\[
+  S_{\text{slot}}^{\text{curr}} > S_1 + N_{batch} - 1
+\]
+
+ed il client non riesce ad ottenere un nuovo batch dal backend (assenza di connettività o errore), allora:
+\begin{itemize}
+  \item il client sospende l'advertising BLE;
+  \item riprenderà l'advertising solo dopo aver ricevuto un nuovo batch valido, per evitare di trasmettere $B_{\text{id}}$ non più risolvibili dal backend
+\end{itemize}
+
+In condizioni normali, finché esiste un batch valido e l'orologio del dispositivo resta sufficientemente sincronizzato, l'app può operare in modo autonomo per una durata pari a $T_{batch}$, riallineandosi al backend non appena necessario.
+
+\section{Flusso di risoluzione lato server}
+\subsection{Raccolta del \(B_{\text{id}}\) dal client}
+Quando il client ha raccolto un $B_{\text{id}}$, invia una richiesta al backend.
+Formalmente, una richiesta tipica contiene:
+\begin{itemize}
+  \item il pacchetto BLE \(B_{\text{id}}\) da risolvere
+\end{itemize}
+
+Una singola chiamata permette di risolvere un solo $B_{\text{id}}$
+
+\subsection{Decifratura, selezione chiave e condizione di accettazione}
+\textbf{Definizione (\(K_{\text{curr}}(t_{\text{unix}})\)):} Per ogni istante \(t_{\text{unix}}\) esiste al più un indice \(i \in \mathbb{N}\) tale che
+\[
+  t_{K_i}^{\text{start}} \le t_{\text{unix}} < t_{K_i}^{\text{end}}.
+\]
+Quando tale indice esiste, lo denotiamo con \(i^\ast\) e definiamo
+\[
+  K_{\text{curr}}(t_{\text{unix}}) := K_{i^\ast}.
+\]
+
+\textbf{Definizione (\(K_{\text{prev}}(t_{\text{unix}})\)):} Dato \(i^\ast\) come sopra, se \(i^\ast > 1\) e
+\[
+  t_{K_{i^\ast-1}}^{\text{end}} = t_{K_{i^\ast}}^{\text{start}}
+  \quad\text{e}\quad
+  t_{K_{i^\ast}}^{\text{start}} < t_{\text{unix}} \le t_{K_{i^\ast-1}}^{\text{grazia}},
+\]
+allora definiamo
+\[
+  K_{\text{prev}}(t_{\text{unix}}) := K_{i^\ast-1}.
+\]
+
+\textbf{Definizione (\(\mathcal{K}_{\mathrm{cand}}(t_{\text{unix}})\)):} Sia
+\[
+  \mathcal{K}_{\mathrm{cand}}(t_{\text{unix}})
+  = \left\{
+  K_i \;\middle|\;
+  i \in \mathbb{N},\;
+  t_{K_i}^{\text{start}} \le t_{\text{unix}} \le t_{K_i}^{\text{grazia}}
+  \right\}.
+\]
+l'insieme delle chiavi candidate al tempo \(t_{\text{unix}}\)
+
+Quindi le chiavi a disposizione per il backend sono:
+\[
+  \mathcal{K}_{\mathrm{cand}}(t_{\text{unix}}) =
+  \begin{cases}
+    \{K_{\text{curr}}(t_{\text{unix}})\},                                   &
+    \text{se \(K_{\text{prev}}(t_{\text{unix}})\) non è definita},            \\[4pt]
+    \{K_{\text{curr}}(t_{\text{unix}}), K_{\text{prev}}(t_{\text{unix}})\}, &
+    \text{altrimenti}.
+  \end{cases}
+\]
+
+Riassumendo il backend dispone di:
+\begin{itemize}
+  \item la chiave corrente sempre utilizzabile \(K_{\text{curr}}(t_{\text{unix}})\);
+  \item la chiave precedente, utilizzabile se ancora nel suo periodo di grazia \(K_{\text{prev}}(t_{\text{unix}})\).
+\end{itemize}
+
+Ogni \(B_{\text{id}}\) è il risultato della cifratura AES-ENC di una coppia
+\((U_{\text{code}}, S_{\text{slot}}^{(64)})\), dove \(S_{\text{slot}}^{(64)}\) è la
+rappresentazione a 64 bit dell'indice di slot temporale.
+
+Dal valore \(S_{\text{slot}}^{(64)}\) decifrato il backend ricava l'indice di slot
+\[
+  S_{\text{slot}}^{\text{dec}} \in \mathbb{N}.
+\]
+
+Al tempo di risoluzione \(t_{\text{unix}}\), il backend calcola lo slot corrente
+\[
+  S_{\text{slot}}^{\text{curr}}
+  = \left\lfloor \frac{t_{\text{unix}}}{\Delta t_{\text{slot}}} \right\rfloor.
+\]
+
+
+\subsubsection{Algoritmo di risoluzione per un singolo $B_{\text{id}}$}
+Dato un \(B_{\text{id}}\) ricevuto in un istante \(t_{\text{unix}}\), il backend esegue i passi seguenti.
+
+\paragraph{Scelta delle chiavi da provare}
+In base all'istante corrente \(t_{\text{unix}}\), il backend determina l'insieme delle chiavi candidate
+\[
+  \mathcal{K}_{\mathrm{cand}}(t_{\text{unix}})
+  = \left\{
+  K_i \;\middle|\;
+  i \in \mathbb{N},\;
+  t_{K_i}^{\text{start}} \le t_{\text{unix}} \le t_{K_i}^{\text{grazia}}
+  \right\}.
+\]
+
+Per costruzione della politica di rotazione, vale
+\[
+  1 \le \bigl|\mathcal{K}_{\mathrm{cand}}(t_{\text{unix}})\bigr| \le 2,
+\]
+e le chiavi vengono considerate in ordine di priorità:
+\[
+  K_{\text{curr}}(t_{\text{unix}}) \quad\text{prima}, \qquad
+  K_{\text{prev}}(t_{\text{unix}}) \quad\text{poi (se definita)}.
+\]
+
+\paragraph{Tentativi di decifratura}
+Per ciascuna chiave \(K \in \mathcal{K}_{\mathrm{cand}}(t_{\text{unix}})\), il backend tenta la decifratura
+\[
+  \bigl(U_{\text{code}}^{(K)},\, S_{\text{slot}}^{(64),(K)}\bigr)
+  = \mathrm{AES\text{-}DEC}_{K}\bigl(B_{\text{id}}\bigr),
+\]
+dove \(U_{\text{code}}^{(K)} \in \{0,1\}^{64}\) e \(S_{\text{slot}}^{(64),(K)} \in \{0,1\}^{64}\).
+
+Se la decifratura fallisce (blocco non valido, padding errato o formato non coerente), la chiave \(K\) viene scartata per quel \(B_{\text{id}}\).
+Tutte le coppie \(\bigl(U_{\text{code}}^{(K)}, S_{\text{slot}}^{(64),(K)}\bigr)\) ottenute da decifrature riuscite vengono trattate come
+\emph{candidate} e passano ai passi di verifica successivi.
+
+Se nessuna chiave in \(\mathcal{K}_{\mathrm{cand}}(t_{\text{unix}})\) produce una decifratura valida, il \(B_{\text{id}}\) viene scartato come invalido.
+
+\paragraph{Verifica della finestra temporale}
+Da ciascun valore \(S_{\text{slot}}^{(64),(K)}\) decifrato, il backend ricava l'indice di slot
+\[
+  S_{\text{slot}}^{\text{dec},(K)} \in \mathbb{N}.
+\]
+
+Dallo slot decifrato costruisce i tempi di inizio e fine dello slot codificato:
+\[
+  t_{\text{start}}^{\text{dec},(K)}
+  = S_{\text{slot}}^{\text{dec},(K)} \cdot \Delta t_{\text{slot}}, \qquad
+  t_{\text{end}}^{\text{dec},(K)}
+  = \bigl(S_{\text{slot}}^{\text{dec},(K)} + 1\bigr) \cdot \Delta t_{\text{slot}}.
+\]
+
+All'istante di risoluzione \(t_{\text{unix}}\), la coppia decifrata con chiave \(K\) è
+temporalmente valida se e solo se
+\[
+  t_{\text{start}}^{\text{dec},(K)} - \delta
+  \;\le\;
+  t_{\text{unix}}
+  \;\le\;
+  t_{\text{end}}^{\text{dec},(K)} + \delta.
+\]
+
+Solo le coppie \(\bigl(U_{\text{code}}^{(K)}, S_{\text{slot}}^{\text{dec},(K)}\bigr)\) che soddisfano
+la condizione di finestra temporale vengono considerate per la fase di verifica utente. Se nessuna
+delle decifrature valide soddisfa la finestra temporale, il backend rifiuta il
+\(B_{\text{id}}\) come scaduto o troppo distante nel tempo.
+
+
+\paragraph{Verifica utente}
+Per ciascuna coppia temporalmente valida \(\bigl(U_{\text{code}}^{(K)}, S_{\text{slot}}^{\text{dec},(K)}\bigr)\), il backend esegue un lookup sul proprio database
+per verificare l'esistenza di un utente associato a \(U_{\text{code}}^{(K)}\).
+
+In forma concettuale, il backend cerca \(U_{\text{code}}^{(K)}\) tale che \(U_{\text{code}}^{(K)}\) corrisponda a un utente registrato;
+
+\paragraph{Risultato}
+Se esiste esattamente una decifratura che supera sia la verifica temporale sia la verifica utente, allora il \(B_{\text{id}}\) viene considerato
+risolto e il backend restituisce al client ricevente i dettagli dell'utente associato.
+
+Se nessuna decifratura supera entrambe le verifiche, il \(B_{\text{id}}\) viene rifiutato. Per costruzione del modello (spazio delle chiavi e
+disegno del formato), la probabilità che più decifrature diverse producano coppie coerenti e riferite a utenti validi è:
+
+\[
+  \Pr[\text{collisione di decifratura valida}] \le \varepsilon,
+  \qquad \varepsilon \approx 2^{-128}.
+\]
+
+\paragraph{Sintesi}
+In forma compatta, un \(B_{\text{id}}\) ricevuto al tempo \(t_{\text{unix}}\) viene accettato se e solo se
+esiste almeno una chiave \(K \in \mathcal{K}_{\mathrm{cand}}(t_{\text{unix}})\) tale che
+\[
+  \exists\, U_{\text{code}} \in \{0,1\}^{64},\;
+  S_{\text{slot}}^{\text{dec}} \in \mathbb{N} \ \text{tali che}
+\]
+\[
+  \mathrm{AES\text{-}DEC}_{K}\bigl(B_{\text{id}}\bigr)
+  = \bigl(U_{\text{code}}, S_{\text{slot}}^{(64)}\bigr),
+\]
+da cui si ottiene
+\[
+  S_{\text{slot}}^{\text{dec}} \in \mathbb{N}, \qquad
+  t_{\text{start}}^{\text{dec}} =
+  S_{\text{slot}}^{\text{dec}} \cdot \Delta t_{\text{slot}}, \quad
+  t_{\text{end}}^{\text{dec}} =
+  (S_{\text{slot}}^{\text{dec}} + 1) \cdot \Delta t_{\text{slot}}.
+\]
+La condizione temporale richiede che
+\[
+  t_{\text{start}}^{\text{dec}} - \delta
+  \;\le\;
+  t_{\text{unix}}
+  \;\le\;
+  t_{\text{end}}^{\text{dec}} + \delta,
+\]
+\[
+  \text{e che \(U_{\text{code}\!}\) identifichi un utente valido/attivo nel backend al tempo } t_{\text{unix}}.
+\]
+
+Se nessuna chiave candidata soddisfa tutte le condizioni sopra, il \(B_{\text{id}}\) viene rifiutato.
+
+\subsubsection{Risposta al client}
+Per ogni \(B_{\text{id}}\) decifrato, il backend restituisce un risultato sintetico, senza esporre dettagli interni sulla causa di eventuali rifiuti.
+In generale:
+\begin{itemize}
+  \item se tutti i controlli sono superati, il backend restituisce:
+        \subitem un nome visualizzato
+  \item se uno o più controlli falliscono, il backend restituisce una risposta neutra o un errore generico, senza fornire indizi aggiuntivi.
+\end{itemize}
+
+L'app lato client usa solo queste risposte aggregate per comporre gli utenti vicino a lui, senza mai accedere direttamente ai dettagli del processo di risoluzione interno al backend.
+
+\section{Threat model e mitigazioni}
+\subsection{Sniffing BLE passivo}
+\paragraph{Rischio}
+Un attaccante ascolta passivamente il traffico BLE in un’area e prova a ricostruire quali utenti
+sono presenti o a costruire uno storico dei loro passaggi nel tempo.
+
+\paragraph{Mitigazioni}
+\begin{itemize}
+  \item i pacchetti BLE contengono solo \(B_{\text{id}} \in \{0,1\}^{128}\), dove
+        \[
+          B_{\text{id}} = \mathrm{AES\text{-}ENC}_{K_i}\bigl(U_{\text{code}} \,\|\, S_{\text{slot}}^{(64)}\bigr),
+        \]
+        senza nomi, \(U_{\text{code}}\) in chiaro o altri identificativi stabili;
+  \item per uno stesso utente, il valore \(B_{\text{id}}\) cambia a ogni slot temporale
+        \(\Delta t_{\text{slot}}\), quindi la sequenza
+        \(\bigl(B_{\text{id}}(S_{\text{slot}})\bigr)_{S_{\text{slot}}}\) è una famiglia
+        di valori pseudocasuali dipendenti da \(S_{\text{slot}}\);
+  \item il mapping
+        \[
+          B_{\text{id}} \longrightarrow (U_{\text{code}}, S_{\text{slot}})
+        \]
+        è noto solo al backend e richiede una chiave \(K_i\) valida:
+        per un osservatore che vede solo il traffico radio, invertire AES-256 senza chiave
+        è computazionalmente infattibile.
+\end{itemize}
+
+\subsection{Tracciamento nel tempo}
+\paragraph{Rischio}
+Seguire il percorso di un utente nel tempo basandosi su un identificativo fisso o correlabile.
+
+\paragraph{Mitigazioni}
+\begin{itemize}
+  \item per un utente con identificativo \(U_{\text{code}}\) fissato, i valori
+        \[
+          B_{\text{id}}(S_{\text{slot}}) =
+          \mathrm{AES\text{-}ENC}_{K_i}\bigl(U_{\text{code}} \,\|\, S_{\text{slot}}^{(64)}\bigr)
+        \]
+        sono diversi per slot diversi \(S_{\text{slot}}\);
+  \item senza conoscere \(K_i\) e \(U_{\text{code}}\), un attaccante che osserva
+        \(B_{\text{id}}(S_{\text{slot}_1})\) e \(B_{\text{id}}(S_{\text{slot}_2})\) non ha
+        un criterio praticabile per stabilire se provengono dallo stesso utente o da utenti diversi;
+  \item la correlazione tra slot diversi è possibile solo nel backend, dove è noto sia
+        \(U_{\text{code}}\) sia la chiave \(K_i\).
+\end{itemize}
+
+\subsection{Replay e spoofing di \(B_{\text{id}}\)}
+\paragraph{Rischio}
+Un attaccante ripete (replay) un \(B_{\text{id}}\) osservato in passato o in un luogo diverso per
+simulare la presenza di un altro utente in un istante o in un’area diversa.
+
+\paragraph{Mitigazioni}
+\begin{itemize}
+  \item ogni \(B_{\text{id}}\) incorpora uno slot temporale \(S_{\text{slot}}^{\text{dec}}\); al tempo
+        \(t_{\text{unix}}\) il backend calcola lo slot corrente
+        \[
+          S_{\text{slot}}^{\text{curr}}
+          = \left\lfloor \frac{t_{\text{unix}}}{\Delta t_{\text{slot}}} \right\rfloor;
+        \]
+  \item la condizione di finestra temporale impone che un \(B_{\text{id}}\) sia accettato solo se
+        il tempo corrente \(t_{\text{unix}}\) cade nell'intervallo
+        \[
+          t_{\text{start}}^{\text{dec}} - \delta
+          \;\le\;
+          t_{\text{unix}}
+          \;\le\;
+          t_{\text{end}}^{\text{dec}} + \delta,
+        \]
+        dove
+        \(t_{\text{start}}^{\text{dec}} =
+        S_{\text{slot}}^{\text{dec}} \cdot \Delta t_{\text{slot}}\),
+        \(t_{\text{end}}^{\text{dec}} =
+        (S_{\text{slot}}^{\text{dec}} + 1) \cdot \Delta t_{\text{slot}}\)
+        e \(\delta = \Delta t_{\text{slot}}/5\);
+  \item un \(B_{\text{id}}\) osservato in passato smette di essere risolvibile non appena
+        \(t_{\text{unix}} < t_{\text{start}}^{\text{dec}} - \delta\) oppure
+        \(t_{\text{unix}} > t_{\text{end}}^{\text{dec}} + \delta\);
+
+  \item il replay di \(B_{\text{id}}\) fuori dalla sua finestra di validità viene quindi rifiutato
+        dal backend come temporalmente invalido.
+\end{itemize}
+
+\subsection{Compromissione di chiavi o sistemi backend}
+\paragraph{Rischio}
+Accesso non autorizzato alle chiavi AES \(K_i\) o ai sistemi che le gestiscono e le usano per
+generare e risolvere i \(B_{\text{id}}\).
+
+\paragraph{Mitigazioni}
+\begin{itemize}
+  \item le chiavi \(K_i \in \{0,1\}^{256}\) sono generate tramite CSPRNG, indipendenti tra loro e
+        non derivate da una chiave root comune;
+  \item ogni chiave \(K_i\) è valida per un intervallo temporale limitato
+        \[
+          T_{K_i},
+          \qquad
+          T_{K_i,\mathrm{grazia}} = \frac{T_{K_i}}{5},
+        \]
+        per un’esposizione complessiva massima \(T_{K_i} + T_{K_i,\mathrm{grazia}}\);
+  \item la compromissione di una singola chiave \(K_i\) permette, nel caso peggiore, di risolvere
+        solo i \(B_{\text{id}}\) generati con quella chiave e nel relativo intervallo temporale;
+        non consente di recuperare chiavi \(K_j\) con \(j \neq i\);
+  \item l’accesso alle chiavi è confinato al backend, e nessuna chiave viene mai distribuita ai client.
+\end{itemize}
+
+\subsection{Compromissione o furto del dispositivo utente}
+\paragraph{Rischio}
+Un attaccante ottiene accesso al dispositivo dell’utente e può leggere il batch locale di
+identificativi \(B_{\text{id}}\) memorizzato per l’advertising.
+
+\paragraph{Mitigazioni}
+\begin{itemize}
+  \item il batch locale
+        \[
+          \mathbf{B}
+          = \bigl(B_{\text{id},j}\bigr)_{j=1}^{N_{batch}}
+        \]
+        copre al più un orizzonte temporale di durata
+        \[
+          T_{batch},
+          \qquad
+          N_{batch} = \frac{T_{batch}}{\Delta t_{\text{slot}}},
+        \]
+        quindi l’attaccante può riutilizzare (replay) questi \(B_{\text{id},j}\) solo entro
+        quella finestra temporale;
+  \item i \(B_{\text{id},j}\) sono comunque valori cifrati
+        \(\in \{0,1\}^{128}\): senza le chiavi \(K_i\), l’attaccante non può risalire a
+        \(U_{\text{code}}\) né agli slot \((S_{\text{slot}}^{\text{dec}})\) in chiaro;
+  \item le chiavi AES \(K_i\) non risiedono mai sul dispositivo: la compromissione di un singolo
+        telefono non compromette il resto del sistema, né permette di derivare chiavi o
+        identificativi futuri;
+  \item l’impatto della compromissione di un device è quindi limitato alla possibilità di replay
+        dei \(B_{\text{id}}\) contenuti nel batch corrente, per una durata massima pari a
+        \(T_{batch}\), ed è considerato accettabile rispetto al beneficio di autonomia del client.
+\end{itemize}
+
+\section{Alternative considerate e modelli mitigati}
+\subsection{Nome in chiaro via BLE}
+
+\textbf{Idea}
+Trasmettere direttamente un campo testuale \texttt{name} nei pacchetti
+BLE come identificativo dell'utente.
+
+\textbf{Motivi di scarto}
+
+\begin{itemize}[nosep]
+  \item esporrebbe un dato personale direttamente in chiaro a chiunque nel raggio BLE, cioè
+        \[
+          \texttt{name} \longrightarrow \text{persona reale}
+        \]
+        tramite un mapping banale e stabile;
+  \item renderebbe immediato il tracciamento nel tempo: lo stesso \texttt{name} verrebbe osservato
+        in luoghi e istanti diversi, permettendo di costruire una traiettoria temporale per utente;
+  \item soffrirebbe dei limiti di payload BLE per nomi lunghi o caratteri Unicode complessi;
+  \item è in contrasto con il principio di minimizzazione dei dati: il canale radio veicolerebbe
+        più informazione del necessario rispetto all’obiettivo (\(B_{\text{id}}\) opaco è sufficiente).
+\end{itemize}
+
+\subsection{Identificativo statico non rotante}
+
+\textbf{Idea}
+
+Assegnare a ogni utente un identificativo fisso
+\[
+  U_{\text{static}} \in \{0,1\}^{128}
+\]
+e trasmettere sempre e solo \(U_{\text{static}}\) nei pacchetti BLE.
+
+\textbf{Motivi di scarto}
+
+\begin{itemize}[nosep]
+  \item permetterebbe tracciamento perfetto: per uno stesso utente la sequenza
+        \(\bigl(U_{\text{static}}(t_k)\bigr)_k\) è costante nel tempo, quindi un attaccante può
+        costruire una funzione
+        \[
+          t \longmapsto \text{posizione}(U_{\text{static}}, t)
+        \]
+        a partire dagli sniffing;
+  \item anche se \(U_{\text{static}}\) è pseudonimo, è un identificatore permanente e linkabile:
+        una volta correlato a un utente reale, tutte le osservazioni passate e future diventano
+        immediatamente attribuibili;
+  \item non rispetta il requisito di non tracciabilità tra slot temporali.
+\end{itemize}
+
+\subsection{Identificativi random rotanti con mapping esplicito}
+
+\textbf{Idea}
+
+Per ogni utente e per ogni slot \(S_{\text{slot}} \in \mathbb{N}\), il backend genera un token casuale
+\[
+  B_{\text{id}}^{\mathrm{rand}} \gets \text{Random}_{128\text{-bit}}() \in \{0,1\}^{128}
+\]
+e salva una riga in una tabella di mapping esplicita
+\[
+  B_{\text{id}}^{\mathrm{rand}} \longrightarrow
+  \bigl(U_{\text{code}}, S_{\text{slot}}\bigr).
+\]
+
+Il client trasmette \(B_{\text{id}}^{\mathrm{rand}}\) via BLE; alla risoluzione il backend esegue una
+lookup su questa tabella.
+
+\textbf{Motivi di scarto}
+
+\begin{itemize}[nosep]
+  \item il mapping esplicito
+        \[
+          B_{\text{id}}^{\mathrm{rand}} \longrightarrow (U_{\text{code}}, S_{\text{slot}})
+        \]
+        esiste nel database: se la tabella viene compromessa, un attaccante che ha sniffato
+        \(B_{\text{id}}^{\mathrm{rand}}\) nel tempo può ricostruire in chiaro coppie
+        \((U_{\text{code}}, S_{\text{slot}})\);
+  \item richiede di generare e \emph{persistere} un nuovo token per ogni utente e per ogni slot:
+        lo spazio cresce come
+        \[
+          O\bigl(|\mathcal{U}| \cdot N_{\text{slot}}\bigr),
+        \]
+        dove \(|\mathcal{U}|\) è il numero di utenti e \(N_{\text{slot}}\) il numero di slot coperti
+        dallo storico; ciò implica tabelle molto grandi e job di purge frequenti;
+  \item a parità di comportamento radio (identificativi opachi e rotanti), introduce più stato e
+        complessità rispetto alla soluzione AES corrente, in cui il mapping è \emph{implicito}
+        nel blocco cifrato:
+        \[
+          B_{\text{id}} = \mathrm{AES\text{-}ENC}_{K_i}\bigl(U_{\text{code}} \,\|\, S_{\text{slot}}^{(64)}\bigr),
+        \]
+        e viene ricostruito al volo con una sola AES-DEC.
+\end{itemize}
+
+\subsection{Modello HMAC-SHA-256 con tabelle di lookup}
+
+\textbf{Idea}
+
+Per ogni utente si definisce una chiave HMAC
+\[
+  k_{\text{HMAC}} \in \{0,1\}^{\ell}
+\]
+e per ogni slot \(S_{\text{slot}}\) si calcola un token
+\[
+  T = \text{HMAC-SHA-256}\bigl(k_{\text{HMAC}},\, U_{\text{code}} \,\|\, S_{\text{slot}}^{(64)}\bigr),
+\]
+che viene poi troncato a 16 byte per poter essere inserito nei pacchetti BLE:
+\[
+  B_{\text{id}}^{\mathrm{HMAC}} = \text{Trunc}_{128}(T) \in \{0,1\}^{128}.
+\]
+
+Il backend pre-calcola, per ogni utente e slot, i token \(B_{\text{id}}^{\mathrm{HMAC}}\) e mantiene
+una tabella di mapping
+\[
+  B_{\text{id}}^{\mathrm{HMAC}} \longrightarrow (U_{\text{code}}, S_{\text{slot}}).
+\]
+
+\textbf{Vantaggi}
+
+\begin{itemize}[nosep]
+  \item se \(k_{\text{HMAC}}\) viene fornita al client, i \(B_{\text{id}}^{\mathrm{HMAC}}\) possono
+        essere generati direttamente sul dispositivo a partire da \(U_{\text{code}}\) e
+        \(S_{\text{slot}}\);
+  \item la risoluzione lato backend diventa una lookup \(O(1)\) su tabella chiave–valore;
+  \item HMAC-SHA-256 è considerato crittograficamente robusto (PRF) con chiave segreta.
+\end{itemize}
+
+\textbf{Svantaggi}
+
+\begin{itemize}[nosep]
+  \item richiede tabelle di lookup per slot (o per finestre di slot) da tenere in memoria o su
+        storage molto veloce:
+        \[
+          O\bigl(|\mathcal{U}| \cdot N_{\text{slot}}\bigr) \text{ entries};
+        \]
+  \item impone job periodici che generano token per tutti gli utenti a ogni slot, con costo
+        computazionale e I/O significativo al crescere di \(|\mathcal{U}|\);
+  \item se \(k_{\text{HMAC}}\) viene distribuita al device, la compromissione del dispositivo
+        espone la chiave per quell’utente, permettendo di generare \(B_{\text{id}}^{\mathrm{HMAC}}\)
+        arbitrari per slot futuri;
+  \item un database che contenga il mapping
+        \[
+          B_{\text{id}}^{\mathrm{HMAC}} \longrightarrow (U_{\text{code}}, S_{\text{slot}})
+        \]
+        e venga compromesso insieme a \(k_{\text{HMAC}}\) o ad altri segreti, permette la
+        ricostruzione completa delle identità associate agli ID sniffati.
+\end{itemize}
+
+\textbf{Come è stato mitigato}
+
+Nella soluzione attuale:
+
+\begin{itemize}[nosep]
+  \item manteniamo il vantaggio principale del modello HMAC (autonomia nella rotazione lato
+        client), ma usiamo \(B_{\text{id}}\) generati in batch dal backend con AES:
+        \[
+          B_{\text{id}} = \mathrm{AES\text{-}ENC}_{K_i}\bigl(U_{\text{code}} \,\|\, S_{\text{slot}}^{(64)}\bigr);
+        \]
+  \item non distribuiamo chiavi ai device: il client riceve direttamente i \(B_{\text{id}}\)
+        necessari per un orizzonte \(T_{batch} = \SI{24}{\hour}\), senza conoscere \(K_i\);
+  \item evitiamo tabelle di lookup per slot: la risoluzione richiede solo un numero costante di
+        decifrature AES-256 (una per ciascuna chiave candidata in
+        \(\mathcal{K}_{\mathrm{cand}}(t_{\text{unix}})\)), sempre in \(O(1)\) rispetto al numero di utenti.
+\end{itemize}
+
+\subsection{Modello AES server-centrico precedente}
+
+\textbf{Idea originaria}
+
+Utilizzare una singola chiave master statica \(K_{\text{enc}} \in \{0,1\}^{256}\) lato backend per
+cifrare
+\[
+  \texttt{plaintext\_block}
+  = U_{\text{code}} \,\|\, S_{\text{slot}}^{(64)}.
+\]
+
+Per ogni slot \(S_{\text{slot}}\), il client richiede al backend il corrispondente
+\[
+  B_{\text{id}}(S_{\text{slot}})
+  = \mathrm{AES\text{-}ENC}_{K_{\text{enc}}}
+  \bigl(U_{\text{code}} \,\|\, S_{\text{slot}}^{(64)}\bigr)
+\]
+(e, al più, pochi slot futuri) e lo usa subito per l'advertising BLE. Non sono previsti batch
+ampi, né rotazioni frequenti di chiave.
+
+\textbf{Vantaggi}
+
+\begin{itemize}[nosep]
+  \item logica estremamente semplice lato client: per ogni slot, 1 richiesta \(\to\) 1 \(B_{\text{id}}\);
+  \item risoluzione sempre in \(O(1)\) con una sola AES-DEC usando \(K_{\text{enc}}\);
+  \item nessuna tabella di mapping \(B_{\text{id}} \to\) utente: il mapping è implicito nella
+        decifratura.
+\end{itemize}
+
+\textbf{Svantaggi}
+
+\begin{itemize}[nosep]
+  \item dipendenza costante dalla rete per aggiornare il \(B_{\text{id}}\): in assenza di
+        connettività il client non è in grado di avanzare negli slot e non può trasmettere valori
+        validi;
+  \item presenza di una chiave a lunga vita \(K_{\text{enc}}\): se compromessa, un attaccante può
+        decifrare tutti i \(B_{\text{id}}\) passati e futuri e recuperare
+        \((U_{\text{code}}, S_{\text{slot}})\) per ogni pacchetto sniffato;
+  \item è difficile limitare il raggio d'impatto temporale di una chiave compromessa: l’esposizione
+        non è limitata a una finestra \([t_{K_i}^{\text{start}}, t_{K_i}^{\text{grazia}}]\), ma
+        potenzialmente all’intera storia del sistema.
+\end{itemize}
+
+\textbf{Come è stato mitigato}
+
+La soluzione attuale può essere vista come una versione ``rafforzata'' del modello AES originario:
+
+\begin{itemize}[nosep]
+  \item mantiene la struttura base AES-256:
+        \[
+          B_{\text{id}} = \mathrm{AES\text{-}ENC}_{K_i}
+          \bigl(U_{\text{code}} \,\|\, S_{\text{slot}}^{(64)}\bigr),
+        \]
+        e la risoluzione in \(O(1)\) tramite un numero costante di AES-DEC;
+  \item introduce il batch di durata \(T_{batch} = \SI{24}{\hour}\) inviato al client, che riceve
+        una sequenza
+        \(\mathbf{B} = (B_{\text{id},j})_{j=1}^{N_{batch}}\) e può operare offline finché il batch
+        resta valido;
+  \item sostituisce la singola chiave \(K_{\text{enc}}\) con una sequenza di chiavi master
+        \((K_i)_{i \in \mathbb{N}}\), ciascuna valida per un intervallo temporale limitato
+        \[
+          T_{K_i} = \SI{72}{\hour},
+          \qquad
+          T_{K_i,\mathrm{grazia}} = \frac{T_{K_i}}{5},
+        \]
+        riducendo l’impatto di un’eventuale compromissione a una finestra temporale finita;
+  \item usa chiavi \(K_i\) generate in modo indipendente tramite CSPRNG, memorizzate e versionate
+        in modo sicuro nel backend, senza mai distribuirle ai client.
+\end{itemize}
+
+\section{Sintesi complessiva}
+
+In questa sezione riassumiamo in modo compatto il funzionamento complessivo del sistema, le
+proprietà desiderate e i principali trade-off progettuali.
+
+\subsection{Architettura in sintesi}
+
+\begin{itemize}
+  \item Ogni utente è identificato in modo univoco da
+        \[
+          U_{\text{code}} \in \{0,1\}^{64},
+        \]
+        generato casualmente al momento della registrazione e usato solo nelle comunicazioni
+        sicure tra client e backend.
+
+  \item Il tempo è discretizzato in slot di durata fissata
+        \[
+          \Delta t_{\text{slot}} = \SI{600}{\second} = \SI{10}{\minute},
+        \]
+        con indice di slot
+        \[
+          S_{\text{slot}} = \left\lfloor \frac{t_{\text{unix}}}{\Delta t_{\text{slot}}} \right\rfloor
+          \in \mathbb{N}.
+        \]
+
+  \item Il backend mantiene una sequenza di chiavi master AES-256
+        \[
+          (K_i)_{i\in\mathbb{N}}, \qquad K_i \in \{0,1\}^{256},
+        \]
+        ciascuna valida per una finestra temporale
+        \[
+          [t_{K_i}^{\text{start}},\, t_{K_i}^{\text{end}}],
+          \qquad T_{K_i} = t_{K_i}^{\text{end}} - t_{K_i}^{\text{start}},
+        \]
+        seguita da un periodo di grazia
+        \[
+          [t_{K_i}^{\text{end}},\, t_{K_i}^{\text{grazia}}],
+          \qquad T_{K_i,\mathrm{grazia}} = \frac{T_{K_i}}{5}.
+        \]
+        La politica di rotazione garantisce che, per ogni istante \(t\), siano attive al più due
+        chiavi:
+        \[
+          \left|
+          \left\{
+          i \in \mathbb{N}
+          \;\middle|\;
+          t_{K_i}^{\text{start}} \le t \le t_{K_i}^{\text{grazia}}
+          \right\}
+          \right| \le 2.
+        \]
+
+  \item Ogni identificativo trasmesso via BLE è un blocco AES cifrato:
+        \[
+          B_{\text{id}} =
+          \mathrm{AES\text{-}ENC}_{K_i}\bigl(U_{\text{code}} \,\|\, S_{\text{slot}}^{(64)}\bigr)
+          \in \{0,1\}^{128},
+        \]
+        dove \(S_{\text{slot}}^{(64)}\) è la rappresentazione a 64 bit dell’indice di slot.
+
+  \item Per ogni utente, il backend genera periodicamente un batch
+        \[
+          \mathbf{B} = \bigl(B_{\text{id},j}\bigr)_{j=1}^{N_{batch}},
+          \qquad N_{batch} = \frac{T_{batch}}{\Delta t_{\text{slot}}},
+        \]
+        associato a un primo slot \(S_1\), in modo che ogni elemento sia destinato a uno slot:
+        \[
+          S_j = S_1 + (j-1), \qquad B_{\text{id},j} \longrightarrow S_j.
+        \]
+
+  \item Il client trasmittente conserva localmente \(\mathbf{B}\) e \(S_1\) e, all’istante \(t\),
+        calcola lo slot corrente
+        \[
+          S_{\text{slot}}^{\text{curr}}
+          = \left\lfloor \frac{t_{\text{unix}}}{\Delta t_{\text{slot}}} \right\rfloor
+        \]
+        per ricavare l’indice
+        \[
+          j^\ast = S_{\text{slot}}^{\text{curr}} - S_1 + 1,
+        \]
+        usando \(B_{\text{id},j^\ast}\) se e solo se \(1 \le j^\ast \le N_{batch}\).
+
+  \item Il client ricevente effettua solo scanning passivo dei pacchetti BLE, estrae i
+        \(B_{\text{id}}\) relativi al servizio e li invia al backend per la risoluzione, senza
+        possedere né chiavi né mapping locali persistenti.
+
+  \item Alla risoluzione, il backend:
+        \begin{enumerate}[nosep]
+          \item determina l’insieme di chiavi candidate
+                \(\mathcal{K}_{\mathrm{cand}}(t_{\text{unix}})\) (chiave corrente e, se in grazia,
+                chiave precedente);
+          \item tenta la decifratura di \(B_{\text{id}}\) con ciascuna \(K \in \mathcal{K}_{\mathrm{cand}}\);
+          \item ricava \((U_{\text{code}}, S_{\text{slot}}^{\text{dec}})\) per le decifrature riuscite e
+                calcola
+                \[
+                  t_{\text{start}}^{\text{dec}}
+                  = S_{\text{slot}}^{\text{dec}} \cdot \Delta t_{\text{slot}}, \qquad
+                  t_{\text{end}}^{\text{dec}}
+                  = (S_{\text{slot}}^{\text{dec}} + 1) \cdot \Delta t_{\text{slot}};
+                \]
+          \item verifica la finestra temporale imponendo che
+                \[
+                  t_{\text{start}}^{\text{dec}} - \delta
+                  \;\le\;
+                  t_{\text{unix}}
+                  \;\le\;
+                  t_{\text{end}}^{\text{dec}} + \delta;
+                \]
+
+          \item verifica che \(U_{\text{code}}\) corrisponda a un utente valido/attivo;
+          \item se esiste un’unica soluzione coerente, restituisce i dettagli dell’utente al client
+                ricevente.
+        \end{enumerate}
+\end{itemize}
+
+\subsection{Proprietà di sicurezza e privacy}
+
+Il disegno complessivo soddisfa i requisiti principali:
+
+\begin{itemize}
+  \item \textbf{Minimizzazione sul canale radio}: via BLE transita solo
+        \(B_{\text{id}} \in \{0,1\}^{128}\), ovvero un blocco cifrato. Nessun dato personale
+        (nome, email, ecc.) o identificativo persistente viene trasmesso in chiaro.
+  \item \textbf{Non tracciabilità a livello radio}: per un utente fisso con \(U_{\text{code}}\)
+        costante, la sequenza
+        \[
+          \bigl(B_{\text{id}}(S_{\text{slot}})\bigr)_{S_{\text{slot}}}
+          = \bigl(
+          \mathrm{AES\text{-}ENC}_{K_i}(U_{\text{code}} \,\|\, S_{\text{slot}}^{(64)})
+          \bigr)_{S_{\text{slot}}}
+        \]
+        produce valori diversi per slot diversi; un osservatore esterno non può, in pratica,
+        collegare due \(B_{\text{id}}\) a uno stesso utente senza conoscere chiavi e dati interni.
+  \item \textbf{Limitazione del replay}: ogni \(B_{\text{id}}\) è accettato solo se, dato lo slot
+        decifrato \(S_{\text{slot}}^{\text{dec}}\) e i corrispondenti
+        \[
+          t_{\text{start}}^{\text{dec}}
+          = S_{\text{slot}}^{\text{dec}} \cdot \Delta t_{\text{slot}}, \qquad
+          t_{\text{end}}^{\text{dec}}
+          = (S_{\text{slot}}^{\text{dec}} + 1) \cdot \Delta t_{\text{slot}},
+        \]
+        il tempo corrente \(t_{\text{unix}}\) soddisfa
+        \[
+          t_{\text{start}}^{\text{dec}} - \delta
+          \;\le\;
+          t_{\text{unix}}
+          \;\le\;
+          t_{\text{end}}^{\text{dec}} + \delta.
+        \]
+        Un replay al di fuori di questa finestra viene rifiutato come temporalmente invalido.
+
+  \item \textbf{Impatto limitato di compromissione di chiave}: ogni chiave \(K_i\) governa un
+        intervallo limitato \([t_{K_i}^{\text{start}}, t_{K_i}^{\text{grazia}}]\); la compromissione
+        di \(K_i\) non permette di derivare né chiavi precedenti né successive, limitando il danno
+        temporale a \(T_{K_i} + T_{K_i,\mathrm{grazia}}\).
+  \item \textbf{Assenza di chiavi lato device}: i client non ricevono mai \(K_i\); conservano solo
+        batch di \(B_{\text{id}}\) già cifrati. La compromissione di un device esposto consente
+        al più il replay dei \(B_{\text{id}}\) del batch corrente, ma non la decifratura né la
+        generazione di nuovi valori al di fuori dell’orizzonte \(T_{batch}\).
+  \item \textbf{Mapping centralizzato e implicito}: il mapping
+        \[
+          B_{\text{id}} \longrightarrow (U_{\text{code}}, S_{\text{slot}})
+        \]
+        esiste solo implicitamente tramite la decifratura AES nel backend. Non esistono tabelle
+        persistenti \((B_{\text{id}} \to U_{\text{code}})\) che, se compromesse, rivelerebbero
+        direttamente le identità.
+\end{itemize}
+
+\subsection{Scalabilità e complessità}
+
+Dal punto di vista computazionale:
+
+\begin{itemize}
+  \item la risoluzione di un singolo \(B_{\text{id}}\) richiede al più un numero costante di
+        operazioni AES-DEC, pari a \(|\mathcal{K}_{\mathrm{cand}}(t_{\text{unix}})| \le 2\); la
+        complessità è quindi \(\Theta(1)\) rispetto al numero totale di utenti;
+  \item non sono necessarie tabelle di lookup proporzionali a
+        \( |\mathcal{U}| \cdot N_{\text{slot}} \), come negli approcci puramente random o HMAC
+        con pre-calcolo per slot;
+  \item il carico sul backend cresce linearmente con il numero di \(B_{\text{id}}\) da risolvere
+        nel tempo (numero di richieste), ma non con il numero di utenti registrati.
+\end{itemize}
+
+\subsection{Trade-off e limiti noti}
+
+\begin{itemize}
+  \item \textbf{Dipendenza dal backend per la risoluzione}: il client ricevente non può risolvere
+        localmente i \(B_{\text{id}}\); è richiesta connettività verso il backend per ottenere i
+        dettagli delle persone vicine.
+  \item \textbf{Autonomia limitata lato advertising}: il client trasmittente è autonomo finché
+        dispone di un batch valido. Se il batch scade e non è possibile contattare il backend,
+        l’advertising viene sospeso per non emettere \(B_{\text{id}}\) non risolvibili.
+  \item \textbf{Sincronizzazione temporale}: la correttezza della finestra temporale richiede che
+        l’orologio del dispositivo non derivi eccessivamente nel tempo rispetto al backend; la
+        tolleranza \(\delta\) assorbe drift e latenza, ma non copre derive arbitrarie.
+  \item \textbf{Osservatore fisico}: come in tutti i modelli basati su prossimità radio, un
+        osservatore fisico presente nello stesso ambiente può comunque inferire co-presenze
+        (chi è vicino a chi) a livello di contesto reale, anche se non può invertire
+        crittograficamente i \(B_{\text{id}}\).
+\end{itemize}
+
+Nel complesso, la soluzione proposta combina:
+
+\begin{itemize}
+  \item identificativi BLE opachi e rotanti basati su AES-256;
+  \item rotazione periodica delle chiavi master con periodo finito e grace period;
+  \item batch lato client per autonomia offline limitata e controllata;
+  \item risoluzione centralizzata in \(\Theta(1)\) con un numero costante di decifrature;
+  \item assenza di mapping espliciti persistenti tra \(B_{\text{id}}\) e utenti.
+\end{itemize}
+
+Questi elementi forniscono un compromesso bilanciato tra privacy, non tracciabilità, efficienza
+BLE, scalabilità backend e semplicità di implementazione lato client.
+
+
+\end{document}

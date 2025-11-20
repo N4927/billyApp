@@ -1,0 +1,34 @@
+name: Validate README reports index
+
+on:
+  pull_request:
+    branches:
+      - reports
+
+jobs:
+  validate-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Run README sync script
+        run: |
+          python .github/scripts/update_readme.py
+
+      - name: Fail if README.md is out of date
+        run: |
+          if [[ -n "$(git status --porcelain README.md)" ]]; then
+            echo "::error::README.md is not in sync with the current repository structure."
+            echo "Run: python .github/scripts/update_readme.py and commit the changes."
+            git diff README.md || true
+            exit 1
+          else
+            echo "README.md is up to date."
+          fi

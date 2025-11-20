@@ -1,0 +1,83 @@
+### Core LaTeX - File ausiliari di compilazione ###
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.dvi
+*.ps
+*.synctex.gz
+*.synctex(busy)
+*.synctex
+*.pdfsync
+
+### Bibliografia (BibTeX / Biber) ###
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*-blx.bib
+
+### Glossari, Indici e Acronimi ###
+*.glg
+*.glo
+*.gls
+*.glsdefs
+*.ist
+*.acn
+*.acr
+*.alg
+*.idx
+*.ind
+*.ilg
+
+### Beamer (Presentazioni) ###
+*.nav
+*.snm
+*.vrb
+
+### File specifici di pacchetti avanzati ###
+# Pacchetto 'minted' (code highlighting)
+_minted*
+*.pyg
+
+# TikZ / PGFPlots externalization
+# (Decommenta se usi la libreria "external" di TikZ per generare figure separate)
+# *.dpth
+# *.md5
+# *.dep
+# !figure-*.pdf 
+
+### Editor e IDE ###
+# VS Code (LaTeX Workshop)
+.vscode/
+
+# TeXShop / TeXWorks
+*.tmproj
+*.synctex.gz(busy)
+
+# Overleaf / ShareLaTeX (se scarichi zip)
+chktex
+*.bak
+*.sav
+
+### Sistema Operativo ###
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+### Output finale (Opzionale) ###
+# Generalmente non si committano i PDF perché sono file binari pesanti 
+# che si possono rigenerare dai sorgenti .tex.
+# Se però vuoi mantenere lo storico dei PDF generati, 
+# commenta (metti un # davanti) la riga qui sotto:
+# *.pdf
