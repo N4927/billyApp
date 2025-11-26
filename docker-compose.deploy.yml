@@ -1,0 +1,84 @@
+services:
+  # --- REVERSE PROXY & SSL ---
+  caddy:
+    image: caddy:2.7-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+
+  # --- DATABASE ---
+  db:
+    image: postgres:15-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file: .env
+    expose:
+      - 5432
+
+  # --- CACHE ---
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    expose:
+      - 6379
+
+  # --- BACKEND API ---
+  backend:
+    build:
+      context: .
+      target: runner # USA LO STAGE FINALE OTTIMIZZATO
+    restart: always
+    env_file: .env
+    # Il comando è già nel Dockerfile, ma lo ribadiamo per chiarezza
+    command: >
+      sh -c "python src/manage.py collectstatic --noinput &&
+             python src/manage.py migrate &&
+             python src/manage.py ensure_keys &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 4 --chdir src"
+    volumes:
+      - static_volume:/app/src/staticfiles
+    depends_on:
+      - db
+      - redis
+
+  # --- ASYNC WORKER ---
+  celery_worker:
+    build:
+      context: .
+      target: runner # USA LO STAGE FINALE OTTIMIZZATO
+    restart: always
+    command: celery -A config worker -l info --concurrency=4
+    env_file: .env
+    depends_on:
+      - db
+      - redis
+      - backend
+
+  # --- SCHEDULER ---
+  celery_beat:
+    build:
+      context: .
+      target: runner # USA LO STAGE FINALE OTTIMIZZATO
+    restart: always
+    command: celery -A config beat -l info
+    env_file: .env
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
+  static_volume:
