@@ -44,7 +44,6 @@ The codebase follows a **Modular Monolith** approach using Domain Driven Design 
 
 ### Prerequisites
 * **Docker** & **Docker Compose** (v2.0+)
-* **Make** (Optional, but recommended for shortcuts)
 
 ### Quick Start (Local Development)
 
@@ -57,13 +56,13 @@ The codebase follows a **Modular Monolith** approach using Domain Driven Design 
 2.  **Build and Start the Stack:**
     This command builds the images, applies migrations, and ensures encryption keys exist.
     ```bash
-    make build
-    make up
+    docker-compose build
+    docker-compose up
     ```
 
 3.  **Create an Admin User:**
     ```bash
-    make user
+    docker-compose run --rm backend python src/manage.py createsuperuser
     ```
 
 4.  **Access the System:**
@@ -97,7 +96,7 @@ Our CI/CD pipeline enforces strict quality gates. Code coverage must remain abov
 ### Running Tests
 To run the full suite with `pytest`:
 ```bash
-make test
+docker-compose run --rm backend pytest
 ````
 
 ### Code Coverage Report
@@ -174,6 +173,10 @@ docker-compose run --rm backend python src/manage.py ensure_keys
 | `DATABASE_URL` | Postgres connection string. | `postgres://...` |
 | `REDIS_URL` | Redis connection string. | `redis://redis:6379/1` |
 | `DJANGO_ALLOWED_HOSTS`| Comma-separated hostnames. | `localhost,127.0.0.1` |
+| `THROTTLE_ANON` | Rate limit for unauthenticated requests. | `10/minute` |
+| `THROTTLE_USER` | Rate limit for authenticated users. | `1000/hour` |
+| `THROTTLE_BATCHES`| Rate limit for batch downloads. | `5/hour` |
+| `THROTTLE_RESOLVE`| Rate limit for contact resolution. | `100/minute` |
 
 -----
 
@@ -192,6 +195,3 @@ The project is designed for **Containerized Deployment** (AWS ECS / Kubernetes).
 ### License
 
 Proprietary - BillyApp Inc.
-
-```
-```
