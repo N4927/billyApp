@@ -50,7 +50,7 @@ The codebase follows a **Modular Monolith** approach using Domain Driven Design 
 1.  **Clone the repository:**
     ```bash
     git clone <repository_url>
-    cd billy_backend
+    cd billyApp
     ```
 
 2.  **Build and Start the Stack:**
