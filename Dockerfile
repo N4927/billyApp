@@ -1,23 +1,39 @@
-FROM python:3.12-slim
+# Usa un'immagine leggera e sicura di Python
+FROM python:3.11-slim-bullseye
 
-ARG INSTALL_DEV_DEPS=0
+# Variabili d'ambiente per ottimizzare Python in Docker
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH "${PYTHONPATH}:/app/src"
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
-
+# Workdir
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends tzdata \
- && rm -rf /var/lib/apt/lists/*
+# Installa dipendenze di sistema necessarie per compilare pacchetti C (es. crypto)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc libpq-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt requirements.txt
-RUN pip install --upgrade pip \
- && pip install -r requirements.txt
+# Installa Poetry
+RUN pip install poetry
 
-COPY . .
+# Copia i file di dipendenza
+COPY pyproject.toml poetry.lock ./
 
-RUN useradd -m appuser && chown -R appuser:appuser /app
-USER appuser
+# Installa le dipendenze (senza creare virtualenv, siamo già in un container)
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-interaction --no-ansi --no-root
 
-ENTRYPOINT ["bash","/app/deploy/entrypoint.sh"]
+# Copia il codice sorgente
+COPY src/ src/
+
+COPY tests/ tests/
+
+COPY pytest.ini .
+
+# Espone la porta (Gunicorn userà la 8000)
+EXPOSE 8000
+
+# Comando di default (sarà sovrascritto da docker-compose o entrypoint)
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
