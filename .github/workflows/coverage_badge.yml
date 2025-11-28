@@ -1,0 +1,64 @@
+name: Update Coverage Badge
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  update-badge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Generate Kover Report
+        run: ./gradlew :shared:koverXmlReport
+
+      - name: Generate Badge SVG
+        id: badge
+        run: |
+          # Extract counters from the XML report
+          REPORT_PATH="shared/build/reports/kover/report.xml"
+          
+          # Parse the last INSTRUCTION counter (which is the total summary)
+          # We use tac to reverse the file to find the last occurrence easily, or just grep the last one.
+          # The summary counters are at the end of the file inside <report>
+          
+          MISSED=$(grep -o '<counter type="INSTRUCTION" missed="[0-9]*" covered="[0-9]*"/>' $REPORT_PATH | tail -n 1 | sed -E 's/.*missed="([0-9]+)".*/\1/')
+          COVERED=$(grep -o '<counter type="INSTRUCTION" missed="[0-9]*" covered="[0-9]*"/>' $REPORT_PATH | tail -n 1 | sed -E 's/.*covered="([0-9]+)".*/\1/')
+          
+          TOTAL=$((MISSED + COVERED))
+          PERCENTAGE=$(( 100 * COVERED / TOTAL ))
+          
+          echo "Coverage: $PERCENTAGE% ($COVERED/$TOTAL)"
+          
+          # Determine Color
+          COLOR="red"
+          if [ "$PERCENTAGE" -ge 80 ]; then COLOR="green"; fi
+          if [ "$PERCENTAGE" -ge 90 ]; then COLOR="brightgreen"; fi
+          
+          # Generate SVG using shields.io endpoint
+          curl "https://img.shields.io/badge/Coverage-${PERCENTAGE}%25-${COLOR}?style=flat-square&logo=kotlin" > coverage.svg
+
+      - name: Deploy Badge to Orphan Branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: badges
+          keep_files: false
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          include_files: coverage.svg

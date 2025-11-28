@@ -139,3 +139,21 @@ spotless {
         ktlint("1.0.1")
     }
 }
+
+kover {
+    reports {
+        filters {
+            excludes {
+                // Exclude generated SQLDelight code and Dagger/Hilt if present
+                classes("com.billyapp.shared.cache.*")
+                classes("com.billyapp.shared.BillyDatabase*")
+            }
+        }
+
+        verify {
+            rule {
+                minBound(80) // Enforce 80% coverage
+            }
+        }
+    }
+}

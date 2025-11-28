@@ -1,6 +1,7 @@
 # BillySDK (SpotMi KMM)
 
 ![Build Status](https://img.shields.io/github/actions/workflow/status/billyapp/new_kmm/quality_gate.yml?branch=main&style=flat-square&label=Quality%20Gate)
+![Coverage](https://raw.githubusercontent.com/billyapp/new_kmm/badges/coverage.svg)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0.0-7f52ff?logo=kotlin&style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-lightgrey?style=flat-square)
 ![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)
@@ -192,7 +193,7 @@ We enforce strict quality gates to maintain codebase integrity.
 
 ### Testing Strategy
 *   **Unit Tests**: Business logic must be tested in `commonTest`.
-*   **Coverage**: We aim for >80% code coverage on Domain logic.
+*   **Coverage**: We currently maintain **100% Line Coverage** on Domain logic (Target: >80%).
 *   **Command**: `./gradlew :shared:testDebugUnitTest`
 
 ### Versioning
