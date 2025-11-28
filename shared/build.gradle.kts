@@ -1,3 +1,11 @@
+/*
+ * ==============================================================================
+ *  SHARED MODULE CONFIGURATION (CORE SDK)
+ * ==============================================================================
+ *  This module contains the core business logic, data layer, and platform-specific
+ *  implementations for Android and iOS. It produces the final SDK artifacts.
+ */
+
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 import java.io.FileOutputStream
 import java.net.URL
@@ -15,8 +23,8 @@ group = "com.billyapp.sdk"
 version = "1.0.0"
 
 kotlin {
-    // --- ANDROID TARGET CONFIGURATION ---
-    // Configures the JVM target for Android compatibility.
+    // --- ANDROID TARGET (JVM) ---
+    // Configures the Android library target with Java 8 compatibility.
     androidTarget {
         compilations.all {
             kotlinOptions {
@@ -25,36 +33,29 @@ kotlin {
         }
     }
 
-    // --- IOS TARGET CONFIGURATION (XCFramework) ---
-    // This configuration generates a universal XCFramework that can be consumed by Xcode.
-    // It bundles the shared logic for all iOS architectures (Device + Simulator).
+    // --- IOS TARGET (NATIVE) ---
+    // Configures the iOS targets to generate a universal XCFramework.
+    // This artifact bundles architectures for both Simulators and Physical Devices.
     val xcf = XCFramework("BillySDK")
 
     listOf(
-        // Simulator (Intel)
-        iosX64(),
-        // Device (Apple Silicon)
-        iosArm64(),
-        // Simulator (Apple Silicon)
-        iosSimulatorArm64(),
+        iosX64(),           // Simulator (Intel)
+        iosArm64(),         // Device (Apple Silicon)
+        iosSimulatorArm64() // Simulator (Apple Silicon)
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "BillySDK"
-
-            // Static Framework: Reduces app launch time and avoids dynamic linking issues.
-            // Essential for stability in complex iOS dependency graphs.
+            // Static Framework: Optimizes launch time and simplifies linking.
             isStatic = true
-
-            // Add this binary to the XCFramework bundle
             xcf.add(this)
         }
     }
 
-    // --- SOURCE SETS & DEPENDENCIES ---
-    // Defines the dependency graph for each platform layer.
+    // --- SOURCE SETS & DEPENDENCY GRAPH ---
+    // Defines the hierarchical structure of the multiplatform project.
     sourceSets {
-        // Common Main: The core business logic shared across all platforms.
-        // Depends only on pure Kotlin libraries or multiplatform abstractions.
+        // [COMMON] Core Business Logic
+        // Pure Kotlin dependencies shared across all platforms.
         commonMain.dependencies {
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.auth)
@@ -67,29 +68,29 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
         }
 
-        // Android Main: Platform-specific implementations for Android.
-        // Injects the OkHttp engine and Android SQL driver.
+        // [ANDROID] Platform Implementation
+        // Android-specific drivers and engines (OkHttp, Android SQLite).
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.sqldelight.android.driver)
         }
 
-        // iOS Main: Platform-specific implementations for iOS.
-        // Injects the Darwin (NSURLSession) engine and Native SQL driver.
+        // [iOS] Platform Implementation
+        // Native drivers and engines (Darwin/NSURLSession, Native SQLite).
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
             implementation(libs.sqldelight.native.driver)
         }
 
-        // Common Test: Unit tests shared across platforms.
+        // [TESTING] Shared Unit Tests
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-            implementation(libs.kotlinx.coroutines.test) // For testing coroutines
-            implementation(libs.ktor.client.mock) // For mocking Ktor client in tests
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.ktor.client.mock)
         }
 
-        // Dependencies for Android Unit Tests
-        // Required to run SQLite tests on the JVM (Robolectric/JUnit).
+        // [TESTING] Android Unit Tests
+        // Requires SQLite driver for JVM (Robolectric/JUnit) execution.
         val androidUnitTest by getting {
             dependencies {
                 implementation(libs.sqldelight.sqlite.driver)
@@ -113,8 +114,8 @@ android {
     }
 }
 
-// --- SQLDELIGHT CONFIGURATION ---
-// Generates type-safe Kotlin APIs from .sq files.
+// --- PERSISTENCE LAYER (SQLDelight) ---
+// Configures the type-safe SQL generator.
 sqldelight {
     databases {
         create("BillyDatabase") {
@@ -123,14 +124,16 @@ sqldelight {
     }
 }
 
+// --- STATIC ANALYSIS (Spotless) ---
+// Enforces strict coding standards and formatting rules.
 spotless {
     kotlin {
         target("**/*.kt")
-        targetExclude("**/build/**/*.kt") // Ignora file generati
+        targetExclude("**/build/**/*.kt") // Exclude generated files
 
-        ktlint("1.0.1") // Versione motore Lint
+        ktlint("1.0.1") // Linting Engine
 
-        // Regole Corporate
+        // Corporate Style Guidelines
         trimTrailingWhitespace()
         indentWithSpaces()
         endWithNewline()
@@ -142,11 +145,13 @@ spotless {
     }
 }
 
+// --- CODE COVERAGE (Kover) ---
+// Configures coverage reporting and verification thresholds.
 kover {
     reports {
         filters {
             excludes {
-                // Exclude generated SQLDelight code and Dagger/Hilt if present
+                // Exclude generated code (DB, DI) from coverage metrics.
                 classes("com.billyapp.shared.cache.*")
                 classes("com.billyapp.shared.BillyDatabase*")
             }
@@ -154,18 +159,17 @@ kover {
 
         verify {
             rule {
-                minBound(80) // Enforce 80% coverage
+                minBound(80) // Minimum acceptable coverage percentage.
             }
         }
     }
 }
 
-// --- LOCAL BADGE GENERATION ---
-// Generates the coverage badge locally so it can be committed.
-// This avoids the need for GitHub Secrets or Tokens.
+// --- DOCUMENTATION & METRICS ---
+// Generates a coverage badge locally for README integration.
 tasks.register("generateCoverageBadge") {
     group = "documentation"
-    description = "Generates the coverage badge SVG based on Kover reports"
+    description = "Generates the coverage badge SVG based on Kover reports."
     dependsOn("koverXmlReport") // Ensure report exists
 
     val buildDir = layout.buildDirectory

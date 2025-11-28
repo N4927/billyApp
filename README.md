@@ -1,7 +1,7 @@
 # BillySDK
 
-![Build Status](https://img.shields.io/github/actions/workflow/status/N4927/billyApp/quality_gate.yml?branch=stable/kmm&style=flat-square&label=Quality%20Gate)
 ![Coverage](./coverage.svg)
+![SDK Version](https://img.shields.io/github/v/release/N4927/billyApp?label=SDK%20Version&style=flat-square&color=blue)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0.0-7f52ff?logo=kotlin&style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-lightgrey?style=flat-square)
 ![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)
@@ -276,9 +276,7 @@ A quick map to navigate the codebase:
 
 For technical support, integration assistance, or to report security vulnerabilities:
 
-*   **Technical Lead**: Andrea Zorzi
-*   **Documentation**: [Internal Wiki Link]
-*   **Issue Tracker**: [Jira/GitHub Issues Link]
+*   **Technical Lead**: Andrea Zorzi & Alberto Fasulo
 
 ---
 

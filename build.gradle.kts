@@ -1,37 +1,48 @@
+/*
+ * ==============================================================================
+ *  ROOT BUILD CONFIGURATION
+ * ==============================================================================
+ *  This script configures the build environment for the entire workspace.
+ *  It manages plugin versions, global tasks, and developer experience (DX) automation.
+ */
+
 import org.apache.tools.ant.filters.FixCrLfFilter
 
 plugins {
-    // Android Plugins (Required for androidApp and shared modules)
-    // Applied false here to allow subprojects to apply them with specific versions.
+    // --- ANDROID ECOSYSTEM ---
+    // Plugins required for Android Application and Library modules.
+    // 'apply false' ensures versions are managed here but applied only in subprojects.
     alias(libs.plugins.androidApplication) apply false
     alias(libs.plugins.androidLibrary) apply false
 
-    // Kotlin Multiplatform
-    // The core plugin for KMP development.
+    // --- KOTLIN MULTIPLATFORM ---
+    // The core plugin enabling cross-platform development (JVM, Android, Native).
     alias(libs.plugins.kotlinMultiplatform) apply false
 
-    // Additional Tools (Database & JSON)
-    // SQLDelight for type-safe DB access and Serialization for JSON parsing.
+    // --- DATA & SERIALIZATION ---
+    // SQLDelight: Type-safe database generation.
+    // Serialization: JSON parsing and encoding.
     alias(libs.plugins.sqldelight) apply false
     alias(libs.plugins.kotlinSerialization) apply false
 
-    // Code coverage
-    // Kover provides test coverage reports for Kotlin projects.
+    // --- QUALITY ASSURANCE ---
+    // Kover: Code coverage reporting and verification.
     alias(libs.plugins.kover) apply false
 }
 
-// Optional but recommended configuration to clean the build
-// Registers a root-level 'clean' task to wipe the build directory.
+// --- BUILD MAINTENANCE ---
+// Registers a root-level 'clean' task to sanitize the build environment.
+// Automatically triggers git hook installation to ensure compliance.
 tasks.register("clean", Delete::class) {
     delete(rootProject.layout.buildDirectory)
     dependsOn("installGitHooks")
 }
 
-// --- DEV EXPERIENCE (DX) AUTOMATION ---
-// Installs the Git Pre-Push hook automatically.
-// Run `./gradlew installGitHooks` to set up your local environment.
+// --- DEVOPS & DX AUTOMATION ---
+// Enforces local quality gates by installing Git hooks.
+// This ensures linting and tests run before code is pushed.
 tasks.register("installGitHooks", Copy::class) {
-    description = "Installs the pre-push git hook from scripts/pre-push.sh"
+    description = "Installs the pre-push git hook from scripts/pre-push.sh to enforce quality gates."
     group = "help"
     from(layout.projectDirectory.dir("scripts/pre-push.sh"))
     into(layout.projectDirectory.dir(".git/hooks"))
@@ -41,22 +52,22 @@ tasks.register("installGitHooks", Copy::class) {
     filter(FixCrLfFilter::class, "eol" to FixCrLfFilter.CrLf.newInstance("lf"))
 }
 
-// Ensure hooks are installed when syncing gradle (optional, but aggressive DX)
+// Hook installation into Gradle Sync for seamless onboarding.
 tasks.named("prepareKotlinBuildScriptModel") { dependsOn("installGitHooks") }
 
-// Ensure hooks are installed when running build in any project
+// Enforce hook installation on every build execution across all projects.
 allprojects {
     tasks.matching { it.name == "build" }.configureEach {
         dependsOn(rootProject.tasks.named("installGitHooks"))
     }
 }
 
-// --- RELEASE AUTOMATION ---
-// Automatically creates and pushes a git tag for the current version.
-// Usage: ./gradlew createReleaseTag
+// --- RELEASE ENGINEERING ---
+// Automates the semantic versioning release process.
+// Creates and pushes a git tag matching the current shared module version.
 tasks.register("createReleaseTag") {
     group = "publishing"
-    description = "Creates and pushes a git tag matching the current shared module version"
+    description = "Creates and pushes a git tag matching the current shared module version."
 
     doLast {
         val sharedProject = project(":shared")
