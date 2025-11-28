@@ -15,7 +15,7 @@ dependencyResolutionManagement {
 }
 
 // Defines the root project name, visible in IDEs and build reports.
-rootProject.name = "spotmi-kmm"
+rootProject.name = "billyapp-kmm"
 
 // This is a standalone KMP SDK project. We only include the 'shared' module
 // which produces the artifacts (AAR/Framework) for consumption by client apps.

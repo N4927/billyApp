@@ -1,7 +1,7 @@
 # BillySDK (SpotMi KMM)
 
-![Build Status](https://img.shields.io/github/actions/workflow/status/billyapp/new_kmm/quality_gate.yml?branch=main&style=flat-square&label=Quality%20Gate)
-![Coverage](https://raw.githubusercontent.com/billyapp/new_kmm/badges/coverage.svg)
+![Build Status](https://img.shields.io/github/actions/workflow/status/N4927/billyApp/quality_gate.yml?branch=stable/kmm&style=flat-square&label=Quality%20Gate)
+![Coverage](https://raw.githubusercontent.com/N4927/billyApp/badges/coverage.svg)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0.0-7f52ff?logo=kotlin&style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-lightgrey?style=flat-square)
 ![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)
@@ -113,8 +113,9 @@ Follow these steps to set up your development environment.
 Clone the repository and initialize the project:
 
 ```bash
-git clone https://github.com/billyapp/new_kmm.git
-cd new_kmm
+git clone https://github.com/N4927/billyApp.git
+cd billyApp
+git checkout stable/kmm
 ./gradlew clean build
 ```
 
