@@ -1,0 +1,51 @@
+name: Auto Tag Version
+
+on:
+  push:
+    branches:
+      - stable/kmm
+      - main
+
+jobs:
+  tag-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract Version from Gradle
+        id: get_version
+        run: |
+          # Extract version from shared/build.gradle.kts
+          # Looks for: version = "1.0.0"
+          VERSION=$(grep 'version = "' shared/build.gradle.kts | sed -E 's/.*version = "([^"]+)".*/\1/')
+          echo "Detected version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if Tag Exists
+        id: check_tag
+        run: |
+          TAG="v${{ steps.get_version.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists."
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Tag $TAG does not exist."
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and Push Tag
+        if: steps.check_tag.outputs.exists == 'false'
+        run: |
+          TAG="v${{ steps.get_version.outputs.version }}"
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          git tag -a "$TAG" -m "Release version ${{ steps.get_version.outputs.version }}"
+          git push origin "$TAG"
+          echo "✅ Created and pushed tag: $TAG"

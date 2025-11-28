@@ -1,3 +1,5 @@
+import java.net.URL
+import java.io.FileOutputStream
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
@@ -156,4 +158,63 @@ kover {
             }
         }
     }
+}
+
+// --- LOCAL BADGE GENERATION ---
+// Generates the coverage badge locally so it can be committed.
+// This avoids the need for GitHub Secrets or Tokens.
+tasks.register("generateCoverageBadge") {
+    group = "documentation"
+    description = "Generates the coverage badge SVG based on Kover reports"
+    dependsOn("koverXmlReport") // Ensure report exists
+
+    val buildDir = layout.buildDirectory
+    val rootDir = rootProject.layout.projectDirectory
+
+    doLast {
+        val reportFile = buildDir.file("reports/kover/report.xml").get().asFile
+        if (!reportFile.exists()) {
+            println("Kover report not found. Skipping badge generation.")
+            return@doLast
+        }
+
+        val xml = reportFile.readText()
+        // Parse the last INSTRUCTION counter (summary)
+        val instructionCounterRegex = "<counter type=\"INSTRUCTION\" missed=\"(\\d+)\" covered=\"(\\d+)\"/>".toRegex()
+        val match = instructionCounterRegex.findAll(xml).lastOrNull()
+
+        if (match != null) {
+            val missed = match.groupValues[1].toLong()
+            val covered = match.groupValues[2].toLong()
+            val total = missed + covered
+            val percentage = (covered * 100) / total
+
+            val color = when {
+                percentage >= 90 -> "brightgreen"
+                percentage >= 80 -> "green"
+                else -> "red"
+            }
+
+            // Download badge from shields.io
+            val url = "https://img.shields.io/badge/Coverage-${percentage}%25-${color}?style=flat-square&logo=kotlin"
+            val badgeFile = rootDir.file("coverage.svg").asFile
+            
+            try {
+                val connection = URL(url).openConnection()
+                connection.getInputStream().use { input ->
+                    FileOutputStream(badgeFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                println("✅ Coverage badge updated: ${percentage}% -> ${badgeFile.absolutePath}")
+            } catch (e: Exception) {
+                println("⚠️ Failed to download badge: ${e.message}")
+            }
+        }
+    }
+}
+
+// Hook badge generation into the check task
+tasks.named("check") {
+    finalizedBy("generateCoverageBadge")
 }

@@ -50,3 +50,61 @@ allprojects {
         dependsOn(rootProject.tasks.named("installGitHooks"))
     }
 }
+
+// --- RELEASE AUTOMATION ---
+// Automatically creates and pushes a git tag for the current version.
+// Usage: ./gradlew createReleaseTag
+tasks.register("createReleaseTag") {
+    group = "publishing"
+    description = "Creates and pushes a git tag matching the current shared module version"
+
+    doLast {
+        val sharedProject = project(":shared")
+        val version = sharedProject.version.toString()
+        
+        // Validate version format
+        if (version == "unspecified") {
+            throw GradleException("❌ Version is unspecified in shared/build.gradle.kts")
+        }
+
+        val tagName = "v$version"
+        println("🏷️  Processing Release: $tagName")
+
+        // 1. Check if tag exists locally
+        val checkTag = ProcessBuilder("git", "tag", "-l", tagName)
+            .directory(layout.projectDirectory.asFile)
+            .start()
+        val tagExists = checkTag.inputStream.bufferedReader().readText().trim().isNotBlank()
+        checkTag.waitFor()
+
+        if (tagExists) {
+            println("⚠️  Tag $tagName already exists locally. Skipping creation.")
+        } else {
+            // 2. Create Tag
+            println("🚀 Creating local tag: $tagName")
+            val createTag = ProcessBuilder("git", "tag", "-a", tagName, "-m", "Release $version")
+                .directory(layout.projectDirectory.asFile)
+                .inheritIO()
+                .start()
+            val createResult = createTag.waitFor()
+            
+            if (createResult != 0) {
+                throw GradleException("❌ Failed to create git tag")
+            }
+        }
+
+        // 3. Push Tag
+        println("⬆️  Pushing tag to remote...")
+        val pushTag = ProcessBuilder("git", "push", "origin", tagName)
+            .directory(layout.projectDirectory.asFile)
+            .inheritIO()
+            .start()
+        val pushResult = pushTag.waitFor()
+
+        if (pushResult == 0) {
+            println("✅ Release $tagName successfully published!")
+        } else {
+            throw GradleException("❌ Failed to push tag to origin")
+        }
+    }
+}

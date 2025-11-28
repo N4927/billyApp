@@ -11,6 +11,7 @@
 #  CHECKS PERFORMED:
 #  1. Static Analysis (Linting via Spotless/KtLint)
 #  2. Unit Tests (Debug variant)
+#  3. Coverage Badge Generation
 #
 #  BYPASS:
 #  In emergency situations (e.g., hotfix), use: `git push --no-verify`
@@ -22,7 +23,7 @@ echo "========================================"
 # 1. LINT CHECK (Spotless)
 # We run spotlessCheck to verify formatting without modifying files.
 # If this fails, run `./gradlew spotlessApply` to fix it automatically.
-echo "\n🔍 [1/2] Running Static Analysis (Spotless)..."
+echo "\n🔍 [1/3] Running Static Analysis (Spotless)..."
 ./gradlew spotlessCheck --daemon
 
 if [ $? -ne 0 ]; then
@@ -35,7 +36,7 @@ fi
 # 2. UNIT TESTS
 # We run the shared module tests. This is the core logic.
 # Running 'testDebugUnitTest' covers the Android/JVM side of KMP.
-echo "\n🧪 [2/2] Running Unit Tests (Shared Module)..."
+echo "\n🧪 [2/3] Running Unit Tests (Shared Module)..."
 ./gradlew :shared:testDebugUnitTest --daemon
 
 if [ $? -ne 0 ]; then
@@ -44,6 +45,11 @@ if [ $? -ne 0 ]; then
     echo "========================================"
     exit 1
 fi
+
+# 3. COVERAGE BADGE
+# We generate the coverage badge locally so it's always up to date.
+echo "\n📊 [3/3] Generating Coverage Badge..."
+./gradlew :shared:generateCoverageBadge --daemon
 
 echo "\n✅ QUALITY GATE PASSED. PUSHING CODE..."
 echo "========================================"

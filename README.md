@@ -1,7 +1,7 @@
-# BillySDK (SpotMi KMM)
+# BillySDK
 
 ![Build Status](https://img.shields.io/github/actions/workflow/status/N4927/billyApp/quality_gate.yml?branch=stable/kmm&style=flat-square&label=Quality%20Gate)
-![Coverage](https://raw.githubusercontent.com/N4927/billyApp/badges/coverage.svg)
+![Coverage](./coverage.svg)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0.0-7f52ff?logo=kotlin&style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-lightgrey?style=flat-square)
 ![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)
@@ -60,9 +60,9 @@ graph TD
         end
         
         subgraph "Infrastructure Layer"
-            Net[Networking (Ktor)]
-            DB[Persistence (SQLDelight)]
-            Sec[Security (Keychain/Keystore)]
+            Net["Networking (Ktor)"]
+            DB["Persistence (SQLDelight)"]
+            Sec["Security (Keychain/Keystore)"]
         end
     end
 
@@ -132,6 +132,11 @@ We enforce strict quality standards locally. The pre-push hook is **automaticall
 **Zero Configuration Required**: Just clone and build. The environment self-heals.
 
 *The hook runs linting and tests automatically before every push.*
+
+### 5. Coverage Badge
+The coverage badge is **generated locally** when you run tests.
+*   Run `./gradlew :shared:check` to update `coverage.svg`.
+*   Commit the updated SVG file to keep the README current.
 
 ---
 
@@ -228,6 +233,10 @@ Reference for common Gradle tasks used in this project.
 ### iOS Specific
 *   **Generate XCFramework**: `./gradlew :shared:assembleBillySDKXCFramework`
     *   *Builds the framework for iOS integration.*
+
+### Release
+*   **Publish Release**: `./gradlew createReleaseTag`
+    *   *Creates and pushes a git tag matching the current SDK version.*
 
 ---
 
