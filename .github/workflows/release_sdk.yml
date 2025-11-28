@@ -1,0 +1,50 @@
+name: 📦 Release BillySDK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build iOS & Android Artifacts
+    runs-on: macos-latest # Needed for iOS build
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      # 1. Build Android AAR
+      - name: 🤖 Build Android Lib
+        run: ./gradlew :shared:assembleRelease
+
+      # 2. Build iOS XCFramework
+      - name: 🍎 Build iOS Framework
+        run: ./gradlew :shared:assembleBillySDKXCFramework
+
+      # 3. Zip iOS
+      - name: Zip iOS Framework
+        run: |
+          cd shared/build/XCFrameworks/release
+          zip -r BillySDK.xcframework.zip BillySDK.xcframework
+
+      # 4. Create GitHub Release & Upload Assets
+      - name: 🚀 Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            shared/build/XCFrameworks/release/BillySDK.xcframework.zip
+            shared/build/outputs/aar/shared-release.aar
+          generate_release_notes: true
