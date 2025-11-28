@@ -1,0 +1,93 @@
+name: 🚀 Release Pipeline
+
+on:
+  push:
+    branches:
+      - stable/kmm
+      - dev/kmm
+
+permissions:
+  contents: write
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check_tag.outputs.exists == 'false' }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract Version from Gradle
+        id: get_version
+        run: |
+          VERSION=$(grep 'version = "' shared/build.gradle.kts | sed -E 's/.*version = "([^"]+)".*/\1/')
+          echo "Detected version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if Tag Exists
+        id: check_tag
+        run: |
+          TAG="v${{ steps.get_version.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists."
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Tag $TAG does not exist. Triggering Release."
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-release:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Create and Push Tag
+        run: |
+          TAG="v${{ needs.check-version.outputs.version }}"
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          git tag -a "$TAG" -m "Release version ${{ needs.check-version.outputs.version }}"
+          git push origin "$TAG"
+          echo "✅ Created and pushed tag: $TAG"
+
+      # 1. Build Android AAR
+      - name: 🤖 Build Android Lib
+        run: ./gradlew :shared:assembleRelease
+
+      # 2. Build iOS XCFramework
+      - name: 🍎 Build iOS Framework
+        run: ./gradlew :shared:assembleBillySDKXCFramework
+
+      # 3. Zip iOS
+      - name: Zip iOS Framework
+        run: |
+          cd shared/build/XCFrameworks/release
+          zip -r BillySDK.xcframework.zip BillySDK.xcframework
+
+      # 4. Create GitHub Release & Upload Assets
+      - name: 🚀 Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.check-version.outputs.version }}
+          files: |
+            shared/build/XCFrameworks/release/BillySDK.xcframework.zip
+            shared/build/outputs/aar/shared-release.aar
+          generate_release_notes: true
