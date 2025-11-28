@@ -1,4 +1,4 @@
-name: 🚀 Release Pipeline
+name: KMM - Release Pipeline
 
 on:
   push:
