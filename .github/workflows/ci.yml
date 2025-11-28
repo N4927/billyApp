@@ -1,4 +1,4 @@
-name: KMM - Quality Gate
+name: KMM - Continuous Integration
 
 on:
   push:
@@ -7,7 +7,8 @@ on:
     branches: [ "stable/kmm", "dev/kmm" ]
 
 jobs:
-  # JOB 1: LINTING (Veloce)
+  # JOB 1: STATIC ANALYSIS (Fast Fail)
+  # Enforces code style and formatting standards before proceeding.
   lint:
     name: 🧹 Code Style (Lint)
     runs-on: ubuntu-latest
@@ -25,7 +26,8 @@ jobs:
       - name: Run Spotless Check
         run: ./gradlew :shared:spotlessCheck
 
-  # JOB 2: TESTING (Parallelo)
+  # JOB 2: UNIT TESTING (Parallel Execution)
+  # Validates business logic correctness across platforms.
   test:
     name: 🧪 Unit Tests
     runs-on: ubuntu-latest
@@ -40,15 +42,16 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
       
-      # Esegue i test unitari Android (JVM) e Comuni
+      # Executes Android (JVM) and Common unit tests.
       - name: Run Tests
         run: ./gradlew :shared:testDebugUnitTest
 
-  # JOB 3: BUILD CHECK (Verifica che compili su tutte le piattaforme)
+  # JOB 3: COMPILATION VERIFICATION (Cross-Platform)
+  # Ensures the SDK compiles successfully for both Android and iOS targets.
   build-check:
     name: 🏗️ Compilation Check
-    runs-on: macos-latest # Serve Mac per verificare la compilazione iOS
-    needs: [lint, test] # Parte solo se lint e test passano
+    runs-on: macos-latest # macOS is required to verify iOS compilation.
+    needs: [lint, test] # Depends on successful completion of Lint and Test jobs.
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
