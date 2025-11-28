@@ -129,7 +129,7 @@ jobs:
     needs: quality-assurance
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/dev/server' || github.ref == 'refs/heads/stable/server' || github.ref == 'refs/heads/api')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/stable/server'
 
     permissions:
       contents: read

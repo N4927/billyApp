@@ -49,7 +49,7 @@ The codebase follows a **Modular Monolith** approach using Domain Driven Design 
 
 1.  **Clone the repository:**
     ```bash
-    git clone <repository_url>
+    git clone https://github.com/N4927/billyApp/tree/stable/server
     cd billyApp
     ```
 
