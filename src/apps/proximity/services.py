@@ -16,6 +16,7 @@ on HTTP concerns (SRP).
 
 # Constant defining the number of slots in a 24-hour period (24h * 6 slots/h).
 # Extracted to avoid magic numbers (DRY/OCP).
+# 144 slots * 10 minutes = 1440 minutes = 24 hours.
 DAILY_BATCH_SIZE: int = 144
 
 
@@ -35,10 +36,13 @@ class BatchService:
         2. If miss, fetch from Cold Storage (Postgres).
         3. Populate Cache for future requests.
 
+        This strategy minimizes database load during high-concurrency scenarios.
+
         :param user_id: [int] The primary key of the authenticated user.
         :return: [Optional[int]] The 64-bit U_code or None if the profile is missing.
         """
         # Construct the namespaced cache key (DRY: Key format should match signals.py)
+        # Namespacing prevents key collisions in a shared Redis instance.
         key: str = f"ucode:user:{user_id}"
 
         # 1. Fast Path: Redis Lookup
@@ -50,6 +54,7 @@ class BatchService:
                 u_code = AppUser.objects.get(user_id=user_id).u_code
                 # 3. Cache Population (Write-Through logic is handled by signals, this is a failsafe)
                 # Timeout is set to None to persist indefinitely until invalidation.
+                # This assumes that U_code is immutable or rarely changed.
                 cache.set(key, u_code, timeout=None)
             except AppUser.DoesNotExist:
                 return None
@@ -71,13 +76,16 @@ class BatchService:
         # Retrieve active keys from the Crypto Domain Service
         keys = KeyManager.get_candidate_keys()
         if not keys:
+            # Critical failure: Without keys, the system cannot function.
             raise Exception("System Error: No active Master Keys found for encryption.")
 
         # Use the most recent key (Current Key) for generating new batches
+        # The first key in the queryset is the one with the most recent start_time.
         current_key = keys.first()
         engine = BLECryptoEngine(current_key.key_bytes)
 
         # Calculate the anchor point in time
+        # This ensures the batch starts from "now" relative to the server's clock.
         start_slot: int = engine.get_current_slot()
 
         # Generate the batch using List Comprehension.

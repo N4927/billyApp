@@ -6,11 +6,11 @@ from pathlib import Path
 import environ
 
 """
-Configurazione principale del progetto Django (Corporate Grade).
+Main Project Configuration (Corporate Grade).
 
-Questo modulo definisce l'ambiente di esecuzione, le connessioni ai servizi esterni (DB, Redis),
-la pipeline di sicurezza e la configurazione delle applicazioni installate.
-Segue i principi della 12-Factor App utilizzando variabili d'ambiente per la configurazione.
+This module defines the execution environment, connections to external services (DB, Redis),
+security pipeline, and installed application configuration.
+It follows the 12-Factor App principles by using environment variables for configuration.
 """
 
 # Initialize environment variables

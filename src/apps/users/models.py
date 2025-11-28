@@ -2,36 +2,36 @@ from django.db import models
 from django.conf import settings
 
 """
-Modulo di definizione del Modello di Dominio Utente.
+User Domain Model Definition.
 
-Implementa il pattern "Profile" per estendere il modello utente standard di Django (Auth)
-senza ereditarlo direttamente (Composition Over Inheritance - COI).
-Questo modello gestisce i dati specifici del dominio BLE/Proximity.
+Implements the "Profile" pattern to extend the standard Django User model (Auth)
+without directly inheriting from it (Composition Over Inheritance - COI).
+This model manages the data specific to the BLE/Proximity domain.
 """
 
 
 class AppUser(models.Model):
     """
-    Rappresenta il profilo esteso dell'utente per le funzionalità di Proximity.
-    Mantiene una relazione 1:1 con l'utente di autenticazione e custodisce l'identificativo
-    univoco segreto (U_code).
+    Represents the extended user profile for Proximity functionalities.
+    Maintains a 1:1 relationship with the authentication user and guards the
+    unique secret identifier (U_code).
     """
 
-    # Link 1:1 con l'utente di autenticazione (Identity).
-    # La cancellazione dell'utente Auth comporta la cancellazione a cascata del profilo.
+    # Link 1:1 with the authentication user (Identity).
+    # Deleting the Auth user triggers a cascading deletion of the profile.
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ble_profile"
     )
 
-    # Identificativo univoco a 64 bit utilizzato per la generazione dei B_id.
-    # db_index=True è fondamentale per garantire lookup O(log N) durante la risoluzione.
+    # Unique 64-bit identifier used for B_id generation.
+    # db_index=True is fundamental to ensure O(log N) lookups during resolution.
     u_code = models.BigIntegerField(
         unique=True,
         db_index=True,
         help_text="64-bit Unique Identifier used for BLE seed generation",
     )
 
-    # Timestamp di creazione per audit e debugging.
+    # Creation timestamp for audit and debugging purposes.
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -40,9 +40,9 @@ class AppUser(models.Model):
 
     def __str__(self) -> str:
         """
-        Restituisce una rappresentazione stringa dell'oggetto.
+        Returns a string representation of the object.
 
-        :return: Lo username dell'utente associato.
+        :return: The username of the associated user.
         """
         # Accessing self.user might trigger a DB query if not selected_related.
         # In admin panels, usually handled by the queryset manager.

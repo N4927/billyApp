@@ -15,6 +15,7 @@ It delegates validation logic to Serializers and persistence to Models.
 """
 
 # Get the active User model (Custom or Standard)
+# This ensures compatibility if the user model is swapped in settings.py.
 User = get_user_model()
 
 
@@ -28,6 +29,7 @@ class RegisterView(generics.CreateAPIView):
     """
 
     queryset = User.objects.all()
+    # AllowAny ensures that unauthenticated users can access this endpoint.
     permission_classes = (AllowAny,)
     serializer_class = RegisterSerializer
 
@@ -42,6 +44,12 @@ class RegisterView(generics.CreateAPIView):
         },
     )
     def post(self, request, *args, **kwargs):
+        """
+        Handle POST request for user registration.
+
+        :param request: [Request] The HTTP request object containing user data.
+        :return: [Response] HTTP 201 Created on success, or 400 Bad Request on failure.
+        """
         return super().post(request, *args, **kwargs)
 
 
@@ -64,4 +72,10 @@ class EmailTokenObtainPairView(TokenObtainPairView):
         },
     )
     def post(self, request, *args, **kwargs):
+        """
+        Handle POST request for user login.
+
+        :param request: [Request] The HTTP request object containing credentials.
+        :return: [Response] HTTP 200 OK with tokens, or 401 Unauthorized.
+        """
         return super().post(request, *args, **kwargs)

@@ -1,22 +1,28 @@
-name: BillyApp Enterprise Pipeline
+name: "BillyApp API: Production Release Pipeline"
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "dev/server", "stable/server" ]
     paths-ignore:
       - 'docs/**'
       - '*.md'
+      - '.github/badges/**'
   pull_request:
-    branches: [ "main" ]
+    branches: [ "dev/server", "stable/server" ]
     paths-ignore:
       - 'docs/**'
       - '*.md'
 
-# Variabili d'ambiente globali per la pipeline
+# [Optimization] Cancel previous runs on the same branch to save resources
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Global Environment Variables
 env:
   PYTHON_VERSION: "3.11"
   POETRY_VERSION: "1.7.1"
-  IMAGE_NAME: ghcr.io/${{ github.repository }} # Usa GitHub Registry
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 jobs:
   # ===================================================
@@ -25,9 +31,12 @@ jobs:
   quality-assurance:
     name: 🛡️ Quality & Security
     runs-on: ubuntu-latest
+    timeout-minutes: 10 # [Safety] Prevent hung jobs from consuming minutes
+    permissions:
+      contents: write # Required to commit the coverage badge
 
     services:
-      # Database effimero per i test di integrazione
+      # Ephemeral Database for Integration Tests
       postgres:
         image: postgres:15-alpine
         env:
@@ -36,14 +45,14 @@ jobs:
           POSTGRES_PASSWORD: ble_password
         ports:
           - 5432:5432
-        # Healthcheck: La pipeline aspetta che il DB sia pronto
+        # Healthcheck: Ensure DB is ready before tests start
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
-      # Cache effimera per i test di integrazione
+      # Ephemeral Cache for Integration Tests
       redis:
         image: redis:7-alpine
         ports:
@@ -54,6 +63,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🐍 Set up Python
+        id: setup-python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -80,37 +90,50 @@ jobs:
         run: poetry run black --check src tests
 
       - name: 🧐 Code Quality (Flake8)
-        # Ignoriamo errori non critici o conflitti con Black
+        # Enforce strict quality gates. F82 = undefined name, E9 = syntax error.
         run: poetry run flake8 src tests --count --select=E9,F63,F7,F82 --show-source --statistics
 
       - name: 🧪 Run Tests (Pytest)
         env:
           DEBUG: 1
           SECRET_KEY: "ci-secret-key-safe-for-testing"
-          # Nota: In GitHub Actions i service sono su localhost
+          # Services are exposed on localhost in GitHub Actions
           DATABASE_URL: "postgres://ble_user:ble_password@localhost:5432/ble_db"
           REDIS_URL: "redis://localhost:6379/1"
           PYTHONPATH: "src"
           DJANGO_SETTINGS_MODULE: "config.settings"
         run: |
+          # Run tests with coverage report generation
           poetry run pytest --cov=src --cov-report=xml
 
-      # Opzionale: Carica il report di copertura su Codecov (se hai un account)
-      # - name: Upload coverage
-      #   uses: codecov/codecov-action@v3
+      - name: 📛 Generate Coverage Badge
+        if: success() # Only generate if tests pass
+        run: |
+          pip install genbadge[coverage]
+          mkdir -p .github/badges
+          genbadge coverage -i coverage.xml -o .github/badges/coverage.svg
+
+      - name: 💾 Commit Badge
+        uses: stefanzweifel/git-auto-commit-action@v5
+        if: success() && github.event_name == 'push'
+        with:
+          commit_message: "chore: update coverage badge [skip ci]"
+          file_pattern: .github/badges/coverage.svg
 
   # ===================================================
   # STAGE 2: CONTINUOUS DELIVERY (Build & Publish)
   # ===================================================
   build-and-publish:
     name: 🐳 Build & Push Docker Image
-    needs: quality-assurance # Parte solo se i test passano
+    needs: quality-assurance
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' # Solo su merge a main
+    timeout-minutes: 15
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/dev/server' || github.ref == 'refs/heads/stable/server' || github.ref == 'refs/heads/api')
 
     permissions:
       contents: read
-      packages: write # Permesso per scrivere su GHCR
+      packages: write # Required to push to GHCR
+      security-events: write # Required for Trivy results
 
     steps:
       - name: 📥 Checkout Code
@@ -126,7 +149,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🏷️ Extract Metadata (tags, labels)
+      - name: 🏷️ Extract Metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -145,3 +168,14 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # [Security] Scan the built image for vulnerabilities
+      - name: 🛡️ Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:latest
+          format: 'table'
+          exit-code: '0' # Don't fail build on vuln yet, just report
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'

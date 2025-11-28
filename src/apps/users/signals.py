@@ -12,6 +12,7 @@ UserType = get_user_model()
 
 # Constant defining the maximum value for a signed 64-bit integer (PostgreSQL BigInt).
 # Used to ensure generated IDs fit within the database field constraints.
+# 2^63 - 1
 POSTGRES_BIGINT_MAX: int = 9223372036854775807
 
 
@@ -20,8 +21,8 @@ def get_cache_key(user_id: int) -> str:
     Constructs the standardized Redis cache key for a user's U_code.
     Follows DRY: Formatting logic is centralized here.
 
-    :param user_id: The primary key of the Auth User.
-    :return: A formatted string key (e.g., 'ucode:user:42').
+    :param user_id: [int] The primary key of the Auth User.
+    :return: [str] A formatted string key (e.g., 'ucode:user:42').
     """
     return f"ucode:user:{user_id}"
 
@@ -34,13 +35,16 @@ def generate_unique_ucode() -> int:
     While collisions in 64-bit space are statistically improbable, this ensures
     robustness (Murphy's Law).
 
-    :return: A unique integer between 1 and POSTGRES_BIGINT_MAX.
+    :return: [int] A unique integer between 1 and POSTGRES_BIGINT_MAX.
     """
     while True:
         # Generate a random integer within the signed 64-bit range.
+        # random.randint is suitable here as we are not generating keys for encryption,
+        # but rather unique identifiers.
         code: int = random.randint(1, POSTGRES_BIGINT_MAX)
 
         # Check against the DB to ensure uniqueness.
+        # This query is fast because u_code is indexed.
         if not AppUser.objects.filter(u_code=code).exists():
             return code
 
@@ -53,13 +57,13 @@ def create_user_profile(
     Signal handler triggered after a User model is saved.
 
     Automation: Automatically creates the associated AppUser profile with a
-    unique U_code when a new user registers. strictly follows SRP by
+    unique U_code when a new user registers. Strictly follows SRP by
     delegating ID generation to a helper function.
 
-    :param sender: The model class sending the signal.
-    :param instance: The actual instance being saved.
-    :param created: Boolean indicating if this is a new record.
-    :param kwargs: Additional signal arguments.
+    :param sender: [Type[Model]] The model class sending the signal.
+    :param instance: [Model] The actual instance being saved.
+    :param created: [bool] Boolean indicating if this is a new record.
+    :param kwargs: [Any] Additional signal arguments.
     """
     if created:
         unique_code = generate_unique_ucode()
@@ -78,9 +82,9 @@ def cache_user_ucode(
     This ensures subsequent read operations (e.g., batch download) hit Redis
     instead of the DB, providing sub-millisecond latency.
 
-    :param sender: The model class (AppUser).
-    :param instance: The AppUser instance being saved.
-    :param kwargs: Additional signal arguments.
+    :param sender: [Type[Model]] The model class (AppUser).
+    :param instance: [AppUser] The AppUser instance being saved.
+    :param kwargs: [Any] Additional signal arguments.
     """
     cache_key = get_cache_key(instance.user_id)
     # Timeout=None means the key never expires (persistent cache)
@@ -97,9 +101,9 @@ def delete_user_ucode_cache(
 
     Cleanup: Removes the stale entry from Redis to maintain data consistency.
 
-    :param sender: The model class (AppUser).
-    :param instance: The AppUser instance being deleted.
-    :param kwargs: Additional signal arguments.
+    :param sender: [Type[Model]] The model class (AppUser).
+    :param instance: [AppUser] The AppUser instance being deleted.
+    :param kwargs: [Any] Additional signal arguments.
     """
     cache_key = get_cache_key(instance.user_id)
     cache.delete(cache_key)

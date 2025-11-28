@@ -18,8 +18,11 @@ and sanitization (lowercase normalization) before data touches the database.
 UserType = get_user_model()
 
 # Configuration constants
+# 8 characters is the minimum recommended by NIST for basic password security.
 MIN_PASSWORD_LENGTH: int = 8
+# 3 characters allows for short but meaningful usernames (e.g., 'tom').
 USERNAME_MIN_LENGTH: int = 3
+# 30 characters limits database storage and UI rendering issues.
 USERNAME_MAX_LENGTH: int = 30
 
 
@@ -50,6 +53,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     )
 
     # Write-only to ensure the hashed password is never returned in the API response.
+    # This prevents accidental leakage of sensitive credentials.
     password = serializers.CharField(write_only=True, min_length=MIN_PASSWORD_LENGTH)
 
     class Meta:
@@ -59,6 +63,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate_email(self, value: str) -> str:
         """
         Normalizes the email address to lowercase.
+
+        This ensures that 'User@Example.com' and 'user@example.com' are treated
+        as the same identity, preventing duplicate accounts.
 
         :param value: [str] The raw email input.
         :return: [str] Sanitized email.
@@ -136,11 +143,13 @@ class EmailTokenObtainSerializer(TokenObtainPairSerializer):
 
         # 3. Verification (Guard Clauses for cleaner flow)
         if user is None:
+            # We use a generic error message to prevent User Enumeration attacks.
             raise AuthenticationFailed(
                 "No active account found with the given credentials"
             )
 
         if not user.check_password(password):
+            # We use a generic error message to prevent User Enumeration attacks.
             raise AuthenticationFailed(
                 "No active account found with the given credentials"
             )

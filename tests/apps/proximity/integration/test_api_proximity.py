@@ -10,18 +10,18 @@ from datetime import timedelta
 class TestProximityAPIs:
 
     def test_download_batch(self, authenticated_client, create_master_key):
-        """Testa che un utente loggato possa scaricare i 144 codici"""
+        """Tests that a logged-in user can download the 144 codes."""
         client, user = authenticated_client()
 
-        # FIX: Creiamo la chiave esplicitamente nel passato per evitare race condition
-        # Se il test runner e il DB hanno clock leggermente diversi, questo risolve tutto.
+        # FIX: Explicitly create the key in the past to avoid race conditions.
+        # If the test runner and DB have slightly different clocks, this solves it.
         past_time = timezone.now() - timedelta(minutes=5)
         create_master_key(start_time=past_time)
 
         url = reverse("download_batches")
         response = client.get(url)
 
-        # Debug in caso di fallimento (stampiamo il dettaglio errore)
+        # Debug in case of failure (print error detail)
         if response.status_code != 200:
             print(f"API Error Detail: {response.data}")
 
@@ -32,27 +32,27 @@ class TestProximityAPIs:
     def test_resolve_id_success(
         self, authenticated_client, create_master_key, crypto_helper
     ):
-        """Testa la risoluzione di un ID sniffato"""
-        # 1. Setup: Chi cerca (Scanner) e Chi viene cercato (Target)
+        """Tests the resolution of a sniffed ID."""
+        # 1. Setup: Who searches (Scanner) and Who is searched (Target)
         scanner_client, scanner_user = authenticated_client()
 
-        # Creiamo un Target User (che non è lo scanner)
+        # Create a Target User (who is not the scanner)
         from django.contrib.auth import get_user_model
 
         User = get_user_model()
         target_user = User.objects.create_user("target_user", "t@t.com", "password")
 
-        # 2. Creiamo la chiave (validità sicura)
+        # 2. Create the key (safe validity)
         past_time = timezone.now() - timedelta(minutes=5)
         master_key = create_master_key(start_time=past_time)
 
         slot = crypto_helper.get_current_slot()
 
-        # Recuperiamo l'U_code dal profilo
+        # Retrieve U_code from profile
         target_ucode = target_user.ble_profile.u_code
         b_id_hex = crypto_helper.encrypt_b_id(target_ucode, slot, master_key.key_bytes)
 
-        # 3. Lo scanner invia l'ID al backend
+        # 3. The scanner sends the ID to the backend
         url = reverse("resolve_b_id")
         response = scanner_client.post(url, {"b_id": b_id_hex}, format="json")
 
@@ -61,8 +61,8 @@ class TestProximityAPIs:
         assert response.data["display_name"] == "target_user"
 
     def test_resolve_fails_no_keys(self, authenticated_client):
-        """Testa errore 503 se non ci sono chiavi master"""
-        # NOTA: Qui NON chiamiamo create_master_key, quindi il DB chiavi è vuoto.
+        """Tests error 503 if there are no master keys."""
+        # NOTE: We do NOT call create_master_key here, so the key DB is empty.
         client, _ = authenticated_client()
         url = reverse("resolve_b_id")
         response = client.post(url, {"b_id": "a" * 32}, format="json")

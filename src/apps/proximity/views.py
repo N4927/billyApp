@@ -57,6 +57,7 @@ class DownloadBatchView(APIView):
         u_code: typing.Optional[int] = BatchService.get_user_ucode(request.user.id)
 
         if not u_code:
+            # This indicates a data integrity issue where an Auth User exists but no AppUser profile.
             return Response(
                 {"detail": "User profile integrity error: U_code not found."},
                 status=status.HTTP_404_NOT_FOUND,
@@ -64,10 +65,13 @@ class DownloadBatchView(APIView):
 
         try:
             # CPU-bound operation: Generates 144 AES encryptions.
+            # This is synchronous but fast enough for typical loads.
+            # For extremely high concurrency, consider offloading to Celery.
             batch_data = BatchService.generate_daily_batch(u_code)
             return Response(batch_data, status=status.HTTP_200_OK)
         except Exception as error:
             # Catch-all for critical crypto failures (e.g., missing keys in DB).
+            # We return 503 to indicate the client should retry later.
             return Response(
                 {"detail": str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
@@ -115,6 +119,7 @@ class ResolveProximityView(APIView):
         b_id_bytes: bytes = serializer.validated_data["b_id"]
 
         # 2. Key Retrieval
+        # We need all keys that could possibly have encrypted this packet.
         keys = KeyManager.get_candidate_keys()
         if not keys:
             return Response(
@@ -126,6 +131,7 @@ class ResolveProximityView(APIView):
 
         # 3. Decryption Loop
         # We iterate through candidate keys (max 2 usually: current + previous).
+        # This handles the edge case where a key rotation happened recently.
         for key in keys:
             crypto_engine = BLECryptoEngine(key.key_bytes)
             result = crypto_engine.decrypt_b_id(b_id_bytes)
@@ -134,10 +140,12 @@ class ResolveProximityView(APIView):
                 u_code, s_slot = result
 
                 # 4. Time Window Validation (Anti-Replay)
+                # Ensures the packet is not a replay of an old valid packet.
                 if crypto_engine.is_slot_valid(s_slot):
                     try:
                         # 5. User Lookup
                         # Uses select_related to fetch the auth User model in a single query.
+                        # This avoids the N+1 query problem when accessing user.username later.
                         found_user = AppUser.objects.select_related("user").get(
                             u_code=u_code
                         )
@@ -164,7 +172,7 @@ class ResolveProximityView(APIView):
 
         # Default security response: 404 Not Found.
         # We do not differentiate between "Bad Key", "Expired", or "Unknown User"
-        # to prevent Oracle Attacks.
+        # to prevent Oracle Attacks (Timing or Error based).
         return Response(
             {"detail": "Resolution failed"}, status=status.HTTP_404_NOT_FOUND
         )

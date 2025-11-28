@@ -1,13 +1,13 @@
 {
-    # Opzioni globali (log, email per ssl, ecc.)
+    # Global options (logging, email for SSL, etc.)
 }
 
-# Se hai un dominio:
-# api.tuodominio.com {
+# If you have a domain:
+# api.yourdomain.com {
 #     reverse_proxy backend:8000
 # }
 
-# Se usi l'IP (come ora):
+# If you use IP (as currently configured):
 :80 {
     reverse_proxy backend:8000
 }

@@ -43,15 +43,15 @@ dev = [
 [tool.coverage.run]
 source = ["src"]
 omit = [
-    "*/migrations/*",       # Codice generato da Django
-    "*/tests/*",            # Non testiamo i test
-    "*/__init__.py",        # File vuoti
-    "src/manage.py",        # Entry point amministrativo
-    "src/config/wsgi.py",   # Entry point server
-    "src/config/asgi.py",   # Entry point server
-    "src/apps/*/admin.py",  # Configurazione admin (opzionale, spesso si esclude)
+    "*/migrations/*",       # Generated Django code
+    "*/tests/*",            # We don't test the tests
+    "*/__init__.py",        # Empty files
+    "src/manage.py",        # Administrative entry point
+    "src/config/wsgi.py",   # Server entry point
+    "src/config/asgi.py",   # Server entry point
+    "src/apps/*/admin.py",  # Admin configuration (optional, often excluded)
 ]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 80             # La CI fallirà se la coverage è sotto l'80% (Standard Corporate)
+fail_under = 80             # CI will fail if coverage is under 80% (Corporate Standard)

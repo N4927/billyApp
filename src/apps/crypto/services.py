@@ -15,8 +15,10 @@ durations, and retrieval logic.
 
 # Configuration Constants (DRY/OCP)
 # How long a key is valid for generating new B_IDs.
+# 72 hours ensures keys are rotated frequently enough for security but not too often to cause sync issues.
 KEY_VALIDITY_HOURS: int = 72
 # The divisor used to calculate grace period (1/5th of validity).
+# Grace period allows for decryption of packets encrypted with a key that just expired.
 GRACE_PERIOD_DIVISOR: int = 5
 
 
@@ -34,6 +36,9 @@ class KeyManager:
         1. It has started (start_time <= now).
         2. It has not passed its grace period (grace_period_end >= now).
 
+        This query is optimized to return the most recent keys first,
+        which are statistically more likely to be the correct ones.
+
         :return: [QuerySet] List of valid MasterKey objects ordered by most recent.
         """
         now = timezone.now()
@@ -48,6 +53,8 @@ class KeyManager:
         """
         Internal helper to calculate end_time and grace_period_end based on a start time.
 
+        Encapsulates the business logic for key duration and grace period calculation.
+
         :param start_dt: [datetime] The starting timestamp for the key.
         :return: [Tuple] (end_time, grace_period_end).
         """
@@ -60,6 +67,9 @@ class KeyManager:
         """
         Bootstraps the system by creating the first Master Key if none exist.
 
+        This method is idempotent; if keys exist, it does nothing.
+        It is typically called during system initialization or migration.
+
         :return: [MasterKey] The created key, or None if keys already exist.
         """
         if MasterKey.objects.exists():
@@ -68,6 +78,7 @@ class KeyManager:
         now = timezone.now()
         end_time, grace_end = KeyManager._calculate_timings(now)
 
+        # os.urandom(32) provides cryptographically strong random bytes suitable for AES-256.
         return MasterKey.objects.create(
             key_bytes=os.urandom(32),
             start_time=now,
@@ -81,6 +92,7 @@ class KeyManager:
         Creates a new Master Key that starts exactly when the reference key ends.
 
         This ensures continuous coverage without gaps in the timeline.
+        Used by background tasks to ensure a future key is always available.
 
         :param reference_key: [MasterKey] The current latest key in the chain.
         :return: [MasterKey] The newly created future key.
@@ -88,6 +100,7 @@ class KeyManager:
         new_start = reference_key.end_time
         end_time, grace_end = KeyManager._calculate_timings(new_start)
 
+        # os.urandom(32) provides cryptographically strong random bytes suitable for AES-256.
         return MasterKey.objects.create(
             key_bytes=os.urandom(32),
             start_time=new_start,

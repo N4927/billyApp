@@ -36,10 +36,10 @@ services:
   backend:
     build:
       context: .
-      target: runner # USA LO STAGE FINALE OTTIMIZZATO
+      target: runner # USES THE OPTIMIZED FINAL STAGE
     restart: always
     env_file: .env
-    # Il comando è già nel Dockerfile, ma lo ribadiamo per chiarezza
+    # The command is already in the Dockerfile, but we reiterate it for clarity
     command: >
       sh -c "python src/manage.py collectstatic --noinput &&
              python src/manage.py migrate &&
@@ -55,7 +55,7 @@ services:
   celery_worker:
     build:
       context: .
-      target: runner # USA LO STAGE FINALE OTTIMIZZATO
+      target: runner # USES THE OPTIMIZED FINAL STAGE
     restart: always
     command: celery -A config worker -l info --concurrency=4
     env_file: .env
@@ -68,7 +68,7 @@ services:
   celery_beat:
     build:
       context: .
-      target: runner # USA LO STAGE FINALE OTTIMIZZATO
+      target: runner # USES THE OPTIMIZED FINAL STAGE
     restart: always
     command: celery -A config beat -l info
     env_file: .env

@@ -1,7 +1,7 @@
 # BillyApp Backend API
 
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+![Build Status](https://github.com/N4927/billyApp/actions/workflows/ci-cd.yml/badge.svg)
+![Coverage](.github/badges/coverage.svg)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)

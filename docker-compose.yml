@@ -3,7 +3,7 @@ services:
     image: postgres:15-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    env_file: .env # Legge dal file
+    env_file: .env # Reads from the file
     ports:
       - "5432:5432"
 
@@ -17,7 +17,7 @@ services:
 
   backend:
     build: .
-    # SCALING VERTICALE: Aumentiamo worker (4) e thread (4) per gestire concorrenza
+    # VERTICAL SCALING: Increase workers (4) and threads (4) to handle concurrency
     command: >
       sh -c "python src/manage.py collectstatic --noinput &&
              python src/manage.py migrate &&
@@ -28,7 +28,7 @@ services:
       - static_volume:/app/staticfiles
     ports:
       - "8000:8000"
-    env_file: .env # Legge DEBUG=0 da qui
+    env_file: .env # Reads DEBUG=0 from here
     depends_on:
       - db
       - redis
