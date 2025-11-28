@@ -288,7 +288,7 @@ class BillyCoreTest {
             val validHex = "000102030405060708090a0b0c0d0e0f"
             secureRepo.queue.add(Bid(validHex))
 
-            val response = ResolveResponse("John Doe", 1234567890L)
+            val response = ResolveResponse("John Doe")
             val fakeApi = FakeNetworkDataSource(resolveResponse = response)
 
             val core = createTestCore(secureRepo, resolvedRepo, fakeApi)

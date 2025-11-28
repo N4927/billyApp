@@ -168,7 +168,7 @@ class BillyApiClientTest {
                     assertEquals("Bearer fake_access_token", request.headers["Authorization"])
 
                     respond(
-                        content = ByteReadChannel("""{"display_name": "John Doe", "contact_timestamp": 1234567890}"""),
+                        content = ByteReadChannel("""{"display_name": "John Doe"}"""),
                         status = HttpStatusCode.OK,
                         headers = headersOf(HttpHeaders.ContentType, "application/json"),
                     )

@@ -89,6 +89,4 @@ data class BatchResponse(
 @Serializable
 data class ResolveResponse(
     @SerialName("display_name") val displayName: String,
-    // Unix Epoch Seconds
-    @SerialName("contact_timestamp") val contactTimestamp: Long,
 )

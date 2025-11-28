@@ -149,7 +149,7 @@ class BillyCore(
                 // 4. Update Application State (UI)
                 resolvedRepo.onMatchFound(
                     name = response.displayName,
-                    timestamp = response.contactTimestamp,
+                    timestamp = clock.now().epochSeconds,
                 )
             } catch (e: Exception) {
                 // Network/Server error strategy:
