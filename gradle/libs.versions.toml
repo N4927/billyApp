@@ -1,0 +1,59 @@
+[versions]
+# --- CORE GENERATI DAL WIZARD (LTS) ---
+agp = "8.2.0"            # Android Gradle Plugin Stabile
+kotlin = "1.9.21"        # Kotlin Stabile e Compatibile
+
+# SDK Android Stabili
+android-compileSdk = "34"
+android-minSdk = "24"
+android-targetSdk = "34"
+
+# Librerie di supporto
+androidx-activity = "1.8.2"
+androidx-appcompat = "1.6.1"
+androidx-core = "1.12.0"
+composeMultiplatform = "1.6.0" # Se usato, ma noi facciamo UI nativa
+junit = "4.13.2"
+
+# --- BILLY APP STACK ---
+# Versioni allineate a Kotlin 1.9.21
+ktor = "2.3.7"           # Networking
+sqldelight = "2.0.1"     # Database
+datetime = "0.5.0"       # Gestione tempo
+coroutines = "1.7.3"     # Concorrenza
+serialization = "1.6.2"  # JSON Parsing
+
+[libraries]
+# --- CORE ---
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+junit = { module = "junit:junit", version.ref = "junit" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
+
+# --- NETWORKING (Ktor) ---
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" } # iOS Engine
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" } # Android Engine
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
+
+# --- PERSISTENCE (SQLDelight) ---
+sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
+sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
+sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
+
+# --- UTILS ---
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+
+[plugins]
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+androidLibrary = { id = "com.android.library", version.ref = "agp" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+# PLUGIN AGGIUNTIVI
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

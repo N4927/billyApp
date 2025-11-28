@@ -1,0 +1,89 @@
+# ==========================================
+# 1. OPERATING SYSTEM & FILESYSTEM
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==========================================
+# 2. IDE & EDITORS
+# ==========================================
+# IntelliJ / Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# ==========================================
+# 3. GRADLE BUILD SYSTEM
+# ==========================================
+.gradle/
+build/
+*/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Gradle build cache / configuration cache reports
+**/build-scan-data
+**/reports
+
+# ==========================================
+# 4. LOCAL CONFIGURATION & SECRETS
+# ==========================================
+# Contains absolute paths to SDKs and potentially secrets. NEVER COMMIT.
+local.properties
+# Environment variables
+.env
+.env.*
+
+# ==========================================
+# 5. ANDROID ARTIFACTS & TEMP FILES
+# ==========================================
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+
+# Native builds
+.cxx/
+.externalNativeBuild/
+
+# Google Play Signing
+*.jks
+*.keystore
+*.pem
+*.p12
+*.key
+
+# ==========================================
+# 6. KOTLIN MULTIPLATFORM & IOS ARTIFACTS
+# ==========================================
+# Compiled Frameworks (These belong in GitHub Releases, not Git)
+*.framework
+*.xcframework/
+*.xcframework.zip
+
+# CocoaPods (If used in future)
+Pods/
+*.xcworkspace
+!default.xcworkspace
+.testplans
+.swiftpm
+
+# ==========================================
+# 7. LOGS & CRASHES
+# ==========================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+hs_err_pid*

@@ -1,0 +1,67 @@
+-- ==================================================================
+-- 1. SCHEMA DEFINITION
+-- ==================================================================
+
+-- Table: localBatch (T_batch)
+-- Usage: Advertising. High read frequency (every slot change).
+-- PK: slot_index implies implicit index for O(1) lookup.
+CREATE TABLE localBatch (
+    slot_index INTEGER NOT NULL PRIMARY KEY,
+    payload_hex TEXT NOT NULL
+);
+
+-- Table: ingestionQueue (T_queue)
+-- Usage: Scanning. High write frequency. FIFO structure.
+CREATE TABLE ingestionQueue (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    payload_hex TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+-- ==================================================================
+-- 2. BATCH QUERIES
+-- ==================================================================
+
+-- Clears the entire batch table. Used inside a transaction during rotation.
+deleteAllBatch:
+DELETE FROM localBatch;
+
+-- Inserts a single key.
+insertBatchItem:
+INSERT OR REPLACE INTO localBatch(slot_index, payload_hex)
+VALUES (?, ?);
+
+-- Retrieves the key for the specific time slot.
+selectPayloadBySlot:
+SELECT payload_hex FROM localBatch WHERE slot_index = ?;
+
+-- Used to calculate "S_max" (coverage check).
+selectMaxSlot:
+SELECT MAX(slot_index) FROM localBatch;
+
+-- ==================================================================
+-- 3. QUEUE QUERIES
+-- ==================================================================
+
+-- Metrics
+countQueue:
+SELECT count(*) FROM ingestionQueue;
+
+-- Enqueue: Adds to the tail.
+insertQueueItem:
+INSERT INTO ingestionQueue(payload_hex, created_at)
+VALUES (?, ?);
+
+-- Cap Enforcement: Deletes the Head (Oldest) item efficiently.
+deleteOldestItem:
+DELETE FROM ingestionQueue
+WHERE id = (SELECT min(id) FROM ingestionQueue);
+
+-- Peek: Reads the Head (Oldest) item without side effects.
+selectHead:
+SELECT id, payload_hex FROM ingestionQueue
+ORDER BY id ASC LIMIT 1;
+
+-- Dequeue/Ack: Removes a specific item by PK.
+deleteItemByKey:
+DELETE FROM ingestionQueue WHERE id = ?;
