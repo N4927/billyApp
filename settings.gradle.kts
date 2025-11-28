@@ -14,9 +14,9 @@ dependencyResolutionManagement {
     }
 }
 
-// Nome del progetto SDK
+// Defines the root project name, visible in IDEs and build reports.
 rootProject.name = "spotmi-kmm"
 
-// Includiamo SOLO il modulo condiviso.
-// Niente androidApp, niente iosApp.
+// This is a standalone KMP SDK project. We only include the 'shared' module
+// which produces the artifacts (AAR/Framework) for consumption by client apps.
 include(":shared")
