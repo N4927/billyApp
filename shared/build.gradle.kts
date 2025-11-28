@@ -39,9 +39,12 @@ kotlin {
     val xcf = XCFramework("BillySDK")
 
     listOf(
-        iosX64(),           // Simulator (Intel)
-        iosArm64(),         // Device (Apple Silicon)
-        iosSimulatorArm64() // Simulator (Apple Silicon)
+        // Simulator (Intel)
+        iosX64(),
+        // Device (Apple Silicon)
+        iosArm64(),
+        // Simulator (Apple Silicon)
+        iosSimulatorArm64(),
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "BillySDK"
