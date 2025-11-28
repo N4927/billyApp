@@ -1,6 +1,6 @@
-import java.net.URL
-import java.io.FileOutputStream
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+import java.io.FileOutputStream
+import java.net.URL
 
 plugins {
     alias(libs.plugins.androidLibrary)
@@ -189,16 +189,17 @@ tasks.register("generateCoverageBadge") {
             val total = missed + covered
             val percentage = (covered * 100) / total
 
-            val color = when {
-                percentage >= 90 -> "brightgreen"
-                percentage >= 80 -> "green"
-                else -> "red"
-            }
+            val color =
+                when {
+                    percentage >= 90 -> "brightgreen"
+                    percentage >= 80 -> "green"
+                    else -> "red"
+                }
 
             // Download badge from shields.io
-            val url = "https://img.shields.io/badge/Coverage-${percentage}%25-${color}?style=flat-square&logo=kotlin"
+            val url = "https://img.shields.io/badge/Coverage-$percentage%25-$color?style=flat-square&logo=kotlin"
             val badgeFile = rootDir.file("coverage.svg").asFile
-            
+
             try {
                 val connection = URL(url).openConnection()
                 connection.getInputStream().use { input ->
@@ -206,7 +207,7 @@ tasks.register("generateCoverageBadge") {
                         input.copyTo(output)
                     }
                 }
-                println("✅ Coverage badge updated: ${percentage}% -> ${badgeFile.absolutePath}")
+                println("✅ Coverage badge updated: $percentage% -> ${badgeFile.absolutePath}")
             } catch (e: Exception) {
                 println("⚠️ Failed to download badge: ${e.message}")
             }
