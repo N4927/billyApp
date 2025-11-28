@@ -19,9 +19,9 @@ import com.billyapp.shared.domain.repository.NetworkDataSource
 class AuthenticationService(
     private val apiClient: NetworkDataSource,
 ) {
-    // Espone i DTO di risposta per la UI
-    // In un'architettura ancora più pura, mapperemmo questi DTO in Domain Models,
-    // ma per un SDK mobile snello, usare i DTO di rete va bene (Pragmatism over Dogma).
+    // Exposes Response DTOs for the UI.
+    // In a purer architecture, we would map these DTOs to Domain Models,
+    // but for a lean mobile SDK, using network DTOs is acceptable (Pragmatism over Dogma).
 
     /**
      * Authenticates an existing user with the backend.
@@ -34,7 +34,7 @@ class AuthenticationService(
      * @throws Exception If the network request fails or credentials are invalid (401).
      *                   Note: Swift clients must handle this using `do-catch` blocks.
      */
-    @Throws(Exception::class) // Importante per Swift error handling
+    @Throws(Exception::class) // Important for Swift error handling
     suspend fun login(email: String, password: String): NetworkDataSource.AuthResponse {
         return apiClient.login(email, password)
     }

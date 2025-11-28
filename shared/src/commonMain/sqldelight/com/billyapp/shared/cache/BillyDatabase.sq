@@ -4,7 +4,10 @@
 
 -- Table: localBatch (T_batch)
 -- Usage: Advertising. High read frequency (every slot change).
--- PK: slot_index implies implicit index for O(1) lookup.
+-- ARCHITECTURE NOTE:
+-- This table acts as the "Cold Storage" for the cryptographic material.
+-- It is read-optimized (O(1) lookup by slot_index) to ensure the advertising loop
+-- stays performant even on low-end devices.
 CREATE TABLE localBatch (
     slot_index INTEGER NOT NULL PRIMARY KEY,
     payload_hex TEXT NOT NULL
@@ -12,6 +15,10 @@ CREATE TABLE localBatch (
 
 -- Table: ingestionQueue (T_queue)
 -- Usage: Scanning. High write frequency. FIFO structure.
+-- ARCHITECTURE NOTE:
+-- This table implements a persistent Ring Buffer.
+-- It is write-optimized to handle bursts of BLE packets.
+-- The 'id' acts as the sequence number for strict ordering.
 CREATE TABLE ingestionQueue (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     payload_hex TEXT NOT NULL,
@@ -23,19 +30,23 @@ CREATE TABLE ingestionQueue (
 -- ==================================================================
 
 -- Clears the entire batch table. Used inside a transaction during rotation.
+-- Complexity: O(N) but N is small (typically ~1000 items).
 deleteAllBatch:
 DELETE FROM localBatch;
 
 -- Inserts a single key.
+-- Used during batch download to populate the table.
 insertBatchItem:
 INSERT OR REPLACE INTO localBatch(slot_index, payload_hex)
 VALUES (?, ?);
 
 -- Retrieves the key for the specific time slot.
+-- Complexity: O(1) via Primary Key Index.
 selectPayloadBySlot:
 SELECT payload_hex FROM localBatch WHERE slot_index = ?;
 
 -- Used to calculate "S_max" (coverage check).
+-- Helps the domain layer decide when to fetch new keys.
 selectMaxSlot:
 SELECT MAX(slot_index) FROM localBatch;
 
@@ -44,24 +55,29 @@ SELECT MAX(slot_index) FROM localBatch;
 -- ==================================================================
 
 -- Metrics
+-- Used to enforce the Max Capacity (Q_max) policy.
 countQueue:
 SELECT count(*) FROM ingestionQueue;
 
 -- Enqueue: Adds to the tail.
+-- Complexity: O(1).
 insertQueueItem:
 INSERT INTO ingestionQueue(payload_hex, created_at)
 VALUES (?, ?);
 
 -- Cap Enforcement: Deletes the Head (Oldest) item efficiently.
+-- Used to maintain the Ring Buffer property when Q > Q_max.
 deleteOldestItem:
 DELETE FROM ingestionQueue
 WHERE id = (SELECT min(id) FROM ingestionQueue);
 
 -- Peek: Reads the Head (Oldest) item without side effects.
+-- Implements the "Peek-Lock" pattern for reliable processing.
 selectHead:
 SELECT id, payload_hex FROM ingestionQueue
 ORDER BY id ASC LIMIT 1;
 
 -- Dequeue/Ack: Removes a specific item by PK.
+-- Completes the transaction after successful network sync.
 deleteItemByKey:
 DELETE FROM ingestionQueue WHERE id = ?;

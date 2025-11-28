@@ -31,6 +31,10 @@ import kotlin.test.assertTrue
 class ResolvedRepositoryImplTest {
     // --- INITIAL STATE TESTS ---
 
+    /**
+     * Verifies that the repository starts in a clean state.
+     * Essential for ensuring no state leaks between app sessions (if the object is recreated).
+     */
     @Test
     fun activeSet_should_be_empty_on_initialization() =
         runTest {
@@ -46,6 +50,9 @@ class ResolvedRepositoryImplTest {
 
     // --- onMatchFound: INSERT PATH ---
 
+    /**
+     * Verifies that a new user is correctly added to the active set.
+     */
     @Test
     fun onMatchFound_should_add_new_user_to_active_set() =
         runTest {
@@ -61,6 +68,9 @@ class ResolvedRepositoryImplTest {
             assertEquals("Alice", activeSet[0].name, "User name should match")
         }
 
+    /**
+     * Verifies that multiple distinct users can coexist in the active set.
+     */
     @Test
     fun onMatchFound_should_add_multiple_distinct_users() =
         runTest {
@@ -84,6 +94,11 @@ class ResolvedRepositoryImplTest {
 
     // --- onMatchFound: UPDATE PATH (UPSERT) ---
 
+    /**
+     * Verifies the Upsert Logic:
+     * If a user already exists, we update their `lastSeen` timestamp instead of creating a duplicate.
+     * This keeps the user "alive" in the radar view.
+     */
     @Test
     fun onMatchFound_should_update_existing_user_lastSeen_timestamp() =
         runTest {
@@ -112,6 +127,9 @@ class ResolvedRepositoryImplTest {
             )
         }
 
+    /**
+     * Verifies that updates are targeted correctly and do not affect other users in the set.
+     */
     @Test
     fun onMatchFound_should_only_update_matching_user_in_set() =
         runTest {
@@ -146,6 +164,9 @@ class ResolvedRepositoryImplTest {
 
     // --- pruneActiveSet: REMOVAL PATH ---
 
+    /**
+     * Verifies robustness: Pruning an empty set should be a no-op.
+     */
     @Test
     fun pruneActiveSet_should_do_nothing_on_empty_set() =
         runTest {
@@ -160,6 +181,9 @@ class ResolvedRepositoryImplTest {
             assertTrue(activeSet.isEmpty(), "Empty set should remain empty after prune")
         }
 
+    /**
+     * Verifies that users seen recently (within TTL) are NOT removed.
+     */
     @Test
     fun pruneActiveSet_should_retain_fresh_users() =
         runTest {
@@ -176,6 +200,9 @@ class ResolvedRepositoryImplTest {
             assertEquals("FreshUser", activeSet[0].name)
         }
 
+    /**
+     * Verifies that multiple fresh users are all retained.
+     */
     @Test
     fun pruneActiveSet_should_retain_multiple_fresh_users() =
         runTest {
@@ -195,6 +222,10 @@ class ResolvedRepositoryImplTest {
 
     // --- EDGE CASES ---
 
+    /**
+     * Verifies handling of empty strings.
+     * While the backend should prevent this, the mobile SDK must be robust against bad data.
+     */
     @Test
     fun onMatchFound_should_handle_empty_name() =
         runTest {
@@ -210,6 +241,10 @@ class ResolvedRepositoryImplTest {
             assertEquals("", activeSet[0].name)
         }
 
+    /**
+     * Verifies Internationalization (I18n) support.
+     * Names can contain Unicode characters (Chinese, Emoji, Umlauts).
+     */
     @Test
     fun onMatchFound_should_handle_unicode_names() =
         runTest {
@@ -231,6 +266,10 @@ class ResolvedRepositoryImplTest {
             assertTrue(names.contains("🎉 Party"), "Emoji should be stored")
         }
 
+    /**
+     * Verifies that whitespace is significant for identity.
+     * "Alice" and " Alice" are treated as different users.
+     */
     @Test
     fun onMatchFound_should_handle_whitespace_names_as_distinct() =
         runTest {
@@ -247,6 +286,10 @@ class ResolvedRepositoryImplTest {
             assertEquals(3, activeSet.size, "Whitespace variations should be distinct")
         }
 
+    /**
+     * Verifies the Reactive Nature of the repository.
+     * The StateFlow should emit a new list every time the set changes.
+     */
     @Test
     fun activeSet_should_be_observable_via_stateflow() =
         runTest {
@@ -270,6 +313,11 @@ class ResolvedRepositoryImplTest {
             assertEquals(2, collectedStates[2].size, "After second user")
         }
 
+    /**
+     * Documents a key architectural decision:
+     * The `timestamp` parameter from the API response is currently ignored in favor of `Clock.System.now()`.
+     * This ensures consistency with the local device time for TTL calculations, avoiding issues with server clock drift.
+     */
     @Test
     fun onMatchFound_timestamp_parameter_is_ignored_uses_system_clock() =
         runTest {
@@ -297,6 +345,10 @@ class ResolvedRepositoryImplTest {
 
     // --- CONCURRENT ACCESS PATTERN ---
 
+    /**
+     * Verifies thread safety and idempotency under high load.
+     * Rapid updates for the same user should result in a single entry with the latest timestamp.
+     */
     @Test
     fun onMatchFound_should_handle_rapid_updates_to_same_user() =
         runTest {
@@ -314,6 +366,10 @@ class ResolvedRepositoryImplTest {
             assertEquals("FrequentUser", activeSet[0].name)
         }
 
+    /**
+     * Verifies the lifecycle of a user: Added -> Pruned (if old) -> Re-added.
+     * Ensures that a user can "come back" after disappearing.
+     */
     @Test
     fun pruneActiveSet_followed_by_onMatchFound_should_repopulate() =
         runTest {

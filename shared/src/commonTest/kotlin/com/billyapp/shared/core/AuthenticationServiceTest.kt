@@ -10,16 +10,25 @@ import kotlin.test.assertFailsWith
 
 /**
  * Unit Tests for AuthenticationService.
+ *
+ * ARCHITECTURE NOTE:
+ * This service is currently a thin Facade over the NetworkDataSource.
+ * These tests verify that the delegation works correctly and that exceptions
+ * are propagated to the UI layer (where they should be handled).
  */
 class AuthenticationServiceTest {
     // --- FAKE IMPLEMENTATION ---
 
+    /**
+     * Fake NetworkDataSource for Auth testing.
+     * Captures calls to login/register and allows simulating success/failure scenarios.
+     */
     class FakeNetworkDataSource : NetworkDataSource {
         var loginCalled = false
         var registerCalled = false
         var shouldThrow = false
 
-        // [FIX] Use NetworkDataSource.AuthResponse
+        // Stub response to return on success
         var authResponseStub = NetworkDataSource.AuthResponse("access", "refresh", 1, "user")
 
         override suspend fun login(
@@ -49,6 +58,10 @@ class AuthenticationServiceTest {
 
     // --- TESTS ---
 
+    /**
+     * Verifies that the login method correctly delegates to the underlying data source
+     * and returns the expected AuthResponse.
+     */
     @Test
     fun login_should_delegate_to_datasource() =
         runTest {
@@ -62,6 +75,10 @@ class AuthenticationServiceTest {
             assertEquals("user", result.username)
         }
 
+    /**
+     * Verifies that exceptions from the network layer (e.g., 401 Unauthorized)
+     * are propagated up to the caller, allowing the UI to show appropriate error messages.
+     */
     @Test
     fun login_should_propagate_exception() =
         runTest {
@@ -74,6 +91,10 @@ class AuthenticationServiceTest {
             }
         }
 
+    /**
+     * Verifies that the register method correctly delegates to the underlying data source
+     * and returns the expected AuthResponse (auto-login behavior).
+     */
     @Test
     fun register_should_delegate_to_datasource() =
         runTest {

@@ -26,6 +26,7 @@ class BillyCore(
     private val resolvedRepo: ResolvedRepository,
     private val apiClient: NetworkDataSource,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val clock: Clock = Clock.System,
 ) {
     private companion object {
         // Time slot duration (10 minutes) aligned with backend crypto policy
@@ -55,7 +56,7 @@ class BillyCore(
      * @return The [Bid] to be broadcasted, or null if the batch is exhausted or not yet synced.
      */
     fun getCurrentBid(): Bid? {
-        val nowSec = Clock.System.now().epochSeconds
+        val nowSec = clock.now().epochSeconds
         val currentSlot = nowSec / SLOT_DURATION_SECONDS
 
         // This is a fast read-optimized query (O(1)), safe to call on main thread if needed,
@@ -78,7 +79,7 @@ class BillyCore(
      * @param bidHex The raw hex string received from the Bluetooth stack.
      */
     fun ingestPacket(bidHex: String) {
-        val nowSec = Clock.System.now().epochSeconds
+        val nowSec = clock.now().epochSeconds
 
         // 1. Volatile Gatekeeper (Memory)
         // Prevents "Write Amplification" where the same device is scanned 10x/sec.
@@ -171,7 +172,7 @@ class BillyCore(
      */
     suspend fun ensureAdvertisingBatch() =
         withContext(ioDispatcher) {
-            val nowSec = Clock.System.now().epochSeconds
+            val nowSec = clock.now().epochSeconds
             val currentSlot = nowSec / SLOT_DURATION_SECONDS
             val maxSlot = secureRepo.getMaxBatchSlot() ?: 0L
 

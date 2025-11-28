@@ -21,6 +21,7 @@ import kotlinx.datetime.Clock
  */
 class SecureRepositoryImpl(
     private val db: BillyDatabase,
+    private val maxQueueCapacity: Long = QUEUE_CAPACITY_MAX,
 ) : SecureRepository {
     private val queries = db.billyDatabaseQueries
 
@@ -101,7 +102,7 @@ class SecureRepositoryImpl(
             val count = queries.countQueue().executeAsOne()
 
             // 2. Evict if necessary (Ring Buffer Logic)
-            if (count >= QUEUE_CAPACITY_MAX) {
+            if (count >= maxQueueCapacity) {
                 queries.deleteOldestItem()
             }
 
