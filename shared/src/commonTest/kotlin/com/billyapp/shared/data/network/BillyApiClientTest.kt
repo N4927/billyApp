@@ -1,5 +1,6 @@
 package com.billyapp.shared.data.network
 
+import com.billyapp.shared.core.Result
 import com.billyapp.shared.domain.repository.TokenStorage
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -11,6 +12,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Integration Tests for the Network Layer.
@@ -80,9 +82,11 @@ class BillyApiClientTest {
                 )
 
             // 3. ACT: Execute the call
-            val response = client.downloadBatch()
+            val result = client.downloadBatch()
 
             // 4. ASSERT: Verify Domain Object structure
+            assertTrue(result is Result.Success)
+            val response = result.data
             assertEquals(1000L, response.startSlot)
             assertEquals(2, response.bIds.size)
             assertEquals("aabbcc11223344556677889900aabbcc", response.bIds[0])
@@ -147,9 +151,11 @@ class BillyApiClientTest {
                 )
 
             // 2. ACT
-            val response = client.login("test@email.com", "password")
+            val result = client.login("test@email.com", "password")
 
             // 3. ASSERT
+            assertTrue(result is Result.Success)
+            val response = result.data
             assertEquals("billy_user", response.username)
             // Verify the side-effect: Tokens MUST be saved to storage
             assertEquals("new_access_token", savedAccess)
@@ -181,8 +187,9 @@ class BillyApiClientTest {
                     engine = mockEngine,
                 )
 
-            val response = client.resolveContact("aabbcc11223344556677889900aabbcc")
-            assertEquals("John Doe", response.displayName)
+            val result = client.resolveContact("aabbcc11223344556677889900aabbcc")
+            assertTrue(result is Result.Success)
+            assertEquals("John Doe", result.data.displayName)
         }
 
     /**
@@ -213,28 +220,40 @@ class BillyApiClientTest {
 
             val mockEngine =
                 MockEngine { request ->
-                    assertEquals("https://api.test.com/auth/register/", request.url.toString())
-                    respond(
-                        content =
-                            ByteReadChannel(
-                                """
-                                {
-                                    "access": "reg_access",
-                                    "refresh": "reg_refresh",
-                                    "user_id": 456,
-                                    "username": "new_user"
-                                }
-                                """.trimIndent(),
-                            ),
-                        status = HttpStatusCode.OK,
-                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
-                    )
+                    when (request.url.encodedPath) {
+                        "/auth/register/" -> {
+                            respond(
+                                content = ByteReadChannel("""{"username": "new_user", "email": "new@email.com"}"""),
+                                status = HttpStatusCode.Created,
+                                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                            )
+                        }
+                        "/auth/token/" -> {
+                            respond(
+                                content =
+                                    ByteReadChannel(
+                                        """
+                                        {
+                                            "access": "reg_access",
+                                            "refresh": "reg_refresh",
+                                            "user_id": 456,
+                                            "username": "new_user"
+                                        }
+                                        """.trimIndent(),
+                                    ),
+                                status = HttpStatusCode.OK,
+                                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                            )
+                        }
+                        else -> error("Unhandled ${request.url}")
+                    }
                 }
 
             val client = BillyApiClient("https://api.test.com/", spyStorage, mockEngine)
-            val response = client.register("new_user", "new@email.com", "pass")
+            val result = client.register("new_user", "new@email.com", "pass")
 
-            assertEquals("new_user", response.username)
+            assertTrue(result is Result.Success)
+            assertEquals("new_user", result.data.username)
             assertEquals("reg_access", savedAccess)
             assertEquals("reg_refresh", savedRefresh)
         }
@@ -300,9 +319,10 @@ class BillyApiClientTest {
 
             val client = BillyApiClient("https://api.test.com/", spyStorage, mockEngine)
 
-            val response = client.downloadBatch()
+            val result = client.downloadBatch()
 
-            assertEquals(2000L, response.startSlot)
+            assertTrue(result is Result.Success)
+            assertEquals(2000L, result.data.startSlot)
             assertEquals("new_access_token", savedAccess)
             assertEquals("new_refresh_token", savedRefresh)
         }
@@ -352,11 +372,8 @@ class BillyApiClientTest {
 
             val client = BillyApiClient("https://api.test.com/", spyStorage, mockEngine)
 
-            try {
-                client.downloadBatch()
-            } catch (e: Exception) {
-                // Expected
-            }
+            val result = client.downloadBatch()
+            assertTrue(result is Result.Failure)
 
             assertNull(savedAccess)
             assertNull(savedRefresh)

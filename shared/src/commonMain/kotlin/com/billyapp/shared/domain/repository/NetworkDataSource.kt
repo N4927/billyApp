@@ -1,5 +1,7 @@
 package com.billyapp.shared.domain.repository
 
+import com.billyapp.shared.core.Result
+import com.billyapp.shared.domain.model.AppError
 import com.billyapp.shared.domain.model.BatchResponse
 import com.billyapp.shared.domain.model.ResolveResponse
 import kotlinx.serialization.SerialName
@@ -17,37 +19,37 @@ interface NetworkDataSource {
 
     /**
      * Downloads a batch of cryptographic keys for future time slots.
-     * @return [BatchResponse] containing the keys and slot metadata.
+     * @return [Result] containing [BatchResponse] or [AppError].
      */
-    suspend fun downloadBatch(): BatchResponse
+    suspend fun downloadBatch(): Result<BatchResponse, AppError>
 
     /**
      * Resolves an anonymous BID to a user identity.
      * @param bidHex The 32-char hex string of the discovered ID.
-     * @return [ResolveResponse] containing the user's display name.
+     * @return [Result] containing [ResolveResponse] or [AppError].
      */
-    suspend fun resolveContact(bidHex: String): ResolveResponse
+    suspend fun resolveContact(bidHex: String): Result<ResolveResponse, AppError>
 
     // --- Identity Feature ---
 
     /**
      * Authenticates a user and retrieves session tokens.
-     * @return [AuthResponse] with access and refresh tokens.
+     * @return [Result] containing [AuthResponse] or [AppError].
      */
     suspend fun login(
         email: String,
         password: String,
-    ): AuthResponse
+    ): Result<AuthResponse, AppError>
 
     /**
      * Registers a new user and automatically logs them in.
-     * @return [AuthResponse] with initial session tokens.
+     * @return [Result] containing [AuthResponse] or [AppError].
      */
     suspend fun register(
         username: String,
         email: String,
         password: String,
-    ): AuthResponse
+    ): Result<AuthResponse, AppError>
 
     // --- Shared DTOs ---
     // Defined here so both Implementation and Consumer can use it without coupling.

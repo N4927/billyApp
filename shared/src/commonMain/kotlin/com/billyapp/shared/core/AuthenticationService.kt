@@ -1,5 +1,6 @@
 package com.billyapp.shared.core
 
+import com.billyapp.shared.domain.model.AppError
 import com.billyapp.shared.domain.repository.NetworkDataSource
 
 /**
@@ -30,12 +31,9 @@ class AuthenticationService(
      *
      * @param email The user's email address.
      * @param password The user's plain-text password.
-     * @return [NetworkDataSource.AuthResponse] containing the Access and Refresh tokens.
-     * @throws Exception If the network request fails or credentials are invalid (401).
-     *                   Note: Swift clients must handle this using `do-catch` blocks.
+     * @return [Result] containing [NetworkDataSource.AuthResponse] or [AppError].
      */
-    @Throws(Exception::class) // Important for Swift error handling
-    suspend fun login(email: String, password: String): NetworkDataSource.AuthResponse {
+    suspend fun login(email: String, password: String): Result<NetworkDataSource.AuthResponse, AppError> {
         return apiClient.login(email, password)
     }
 
@@ -48,15 +46,13 @@ class AuthenticationService(
      * @param username The desired display name for the user.
      * @param email The user's email address.
      * @param password The user's plain-text password.
-     * @return [NetworkDataSource.AuthResponse] containing the initial session tokens.
-     * @throws Exception If the network request fails or if the email is already in use (409).
+     * @return [Result] containing [NetworkDataSource.AuthResponse] or [AppError].
      */
-    @Throws(Exception::class)
     suspend fun register(
         username: String,
         email: String,
         password: String,
-    ): NetworkDataSource.AuthResponse {
+    ): Result<NetworkDataSource.AuthResponse, AppError> {
         return apiClient.register(username, email, password)
     }
 }

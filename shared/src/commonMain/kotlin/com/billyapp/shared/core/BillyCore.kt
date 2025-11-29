@@ -1,5 +1,6 @@
 package com.billyapp.shared.core
 
+import co.touchlab.kermit.Logger
 import com.billyapp.shared.domain.model.Bid
 import com.billyapp.shared.domain.repository.NetworkDataSource
 import com.billyapp.shared.domain.repository.ResolvedRepository
@@ -85,6 +86,7 @@ class BillyCore(
         // Prevents "Write Amplification" where the same device is scanned 10x/sec.
         val lastSeen = ingestionCache[bidHex]
         if (lastSeen != null && (nowSec - lastSeen) < INGESTION_RATE_LIMIT_SECONDS) {
+            Logger.withTag("BillyCore").d { "Ingest Skipped (Rate Limit): $bidHex" }
             return // Rate limit hit: Skip DB write
         }
 
@@ -96,6 +98,7 @@ class BillyCore(
             // 3. Persistence (Disk)
             // We accept this side-effect here as it is write-optimized.
             secureRepo.enqueue(bid)
+            Logger.withTag("BillyCore").d { "Ingest Enqueued: $bidHex" }
 
             // 4. Cache Update
             ingestionCache[bidHex] = nowSec
@@ -104,11 +107,13 @@ class BillyCore(
             // When cache is full, we clear it entirely. This is cheaper (O(1)) than LRU (O(N)).
             if (ingestionCache.size > MAX_VOLATILE_CACHE_SIZE) {
                 ingestionCache.clear()
+                Logger.withTag("BillyCore").d { "Ingestion Cache Cleared (Size Limit)" }
             }
         } catch (e: IllegalArgumentException) {
             // Malformed BID received from the ether.
             // Log locally if needed, but do not crash.
             // This is expected noise in BLE environments.
+            Logger.withTag("BillyCore").w { "Ingest Failed (Malformed): $bidHex" }
         }
     }
 
@@ -137,26 +142,29 @@ class BillyCore(
             }
 
             val (primaryKey, bid) = head
+            Logger.withTag("BillyCore").d { "Sync Processing: $primaryKey -> ${bid.hex}" }
 
-            try {
-                // 2. Remote Resolution (Network I/O)
-                val response = apiClient.resolveContact(bid.hex)
+            // 2. Remote Resolution (Network I/O)
+            when (val result = apiClient.resolveContact(bid.hex)) {
+                is Result.Success -> {
+                    val response = result.data
+                    // 3. Acknowledge & Dequeue (Atomic Transaction via Repo)
+                    // Only remove from disk if the network call succeeded.
+                    secureRepo.deleteByKey(primaryKey)
+                    Logger.withTag("BillyCore").d { "Sync Success: Resolved to '${response.displayName}'" }
 
-                // 3. Acknowledge & Dequeue (Atomic Transaction via Repo)
-                // Only remove from disk if the network call succeeded.
-                secureRepo.deleteByKey(primaryKey)
-
-                // 4. Update Application State (UI)
-                resolvedRepo.onMatchFound(
-                    name = response.displayName,
-                    timestamp = clock.now().epochSeconds,
-                )
-            } catch (e: Exception) {
-                // Network/Server error strategy:
-                // We DO NOT remove the item from the queue.
-                // It will be retried at the next tick (Eventual Consistency).
-                // TODO: Integrate specialized Logger (e.g., Kermit or Crashlytics)
-                println("SyncQueue Failure: ${e.message}")
+                    // 4. Update Application State (UI)
+                    resolvedRepo.onMatchFound(
+                        name = response.displayName,
+                        timestamp = clock.now().epochSeconds,
+                    )
+                }
+                is Result.Failure -> {
+                    // Network/Server error strategy:
+                    // We DO NOT remove the item from the queue.
+                    // It will be retried at the next tick (Eventual Consistency).
+                    Logger.withTag("BillyCore").e { "Sync Failed: ${result.error}" }
+                }
             }
 
             // Always perform housekeeping on the UI state
@@ -178,24 +186,34 @@ class BillyCore(
 
             // Check if we are below the safety threshold
             // If we have fewer than BATCH_REFILL_THRESHOLD slots left, trigger a refill.
-            if ((maxSlot - currentSlot) < BATCH_REFILL_THRESHOLD) {
-                try {
-                    // Fetch new batch
-                    val batch = apiClient.downloadBatch()
+            if ((maxSlot - currentSlot) < BATCH_REFILL_THRESHOLD.toLong()) {
+                Logger.withTag("BillyCore").d { "Batch Low (Current: $currentSlot, Max: $maxSlot). Refilling..." }
 
-                    // Validate & Transform
-                    val bids = batch.bIds.map { Bid(it) }
+                // Fetch new batch
+                when (val result = apiClient.downloadBatch()) {
+                    is Result.Success -> {
+                        val batch = result.data
+                        try {
+                            // Validate & Transform
+                            val bids = batch.bIds.map { Bid(it) }
 
-                    // Atomic Replace (Disk I/O)
-                    // We replace the batch to ensure we have a contiguous block of keys.
-                    secureRepo.replaceBatch(
-                        startSlot = batch.startSlot,
-                        bids = bids,
-                    )
-                } catch (e: Exception) {
-                    // Resiliency: If offline, we just rely on remaining keys.
-                    // We do not crash the app for background sync failures.
-                    println("Advertising Batch Sync Failed: ${e.message}")
+                            // Atomic Replace (Disk I/O)
+                            // We replace the batch to ensure we have a contiguous block of keys.
+                            secureRepo.replaceBatch(
+                                startSlot = batch.startSlot,
+                                bids = bids,
+                            )
+                            Logger.withTag("BillyCore").d { "Batch Refill Success: ${bids.size} keys added." }
+                        } catch (e: IllegalArgumentException) {
+                            // Data Integrity Error (Backend sent bad data)
+                            Logger.withTag("BillyCore").e(e) { "Batch Refill Failed: Invalid Data" }
+                        }
+                    }
+                    is Result.Failure -> {
+                        // Resiliency: If offline, we just rely on remaining keys.
+                        // We do not crash the app for background sync failures.
+                        Logger.withTag("BillyCore").e { "Batch Refill Failed: ${result.error}" }
+                    }
                 }
             }
         }

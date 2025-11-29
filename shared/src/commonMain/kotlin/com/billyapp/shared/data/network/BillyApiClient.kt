@@ -1,5 +1,9 @@
 package com.billyapp.shared.data.network
 
+import co.touchlab.kermit.Logger
+import com.billyapp.shared.core.KtorKermitLogger
+import com.billyapp.shared.core.Result
+import com.billyapp.shared.domain.model.AppError
 import com.billyapp.shared.domain.model.BatchResponse
 import com.billyapp.shared.domain.model.ResolveResponse
 import com.billyapp.shared.domain.repository.NetworkDataSource
@@ -8,19 +12,25 @@ import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.serialization.JsonConvertException
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 /**
@@ -32,11 +42,13 @@ import kotlinx.serialization.json.Json
  * - Authentication (Bearer Token Injection)
  * - Token Refresh Logic (Automatic Retry)
  * - Timeouts and Connection Configuration
+ * - Error Mapping (HTTP -> Domain Error)
  */
 class BillyApiClient(
     private val baseUrl: String,
     private val tokenStorage: TokenStorage,
     private val engine: HttpClientEngine? = null,
+    private val enableLogging: Boolean = false,
 ) : NetworkDataSource {
     private companion object {
         // API Endpoints
@@ -71,6 +83,13 @@ class BillyApiClient(
                 requestTimeoutMillis = TIMEOUT_MILLIS
                 connectTimeoutMillis = TIMEOUT_MILLIS
                 socketTimeoutMillis = TIMEOUT_MILLIS
+            }
+
+            if (enableLogging) {
+                install(Logging) {
+                    logger = KtorKermitLogger()
+                    level = LogLevel.ALL
+                }
             }
 
             if (configAuth) {
@@ -132,24 +151,22 @@ class BillyApiClient(
 
     @Serializable private data class RefreshResponse(val access: String, val refresh: String? = null)
 
-    // NOTE: AuthResponse definition removed from here. We use NetworkDataSource.AuthResponse.
-
     // --- Implementation ---
 
     /**
      * Downloads a batch of cryptographic keys for advertising.
      * Authenticated request.
      */
-    override suspend fun downloadBatch(): BatchResponse {
-        return client.get(ENDPOINT_BATCHES).body()
+    override suspend fun downloadBatch(): Result<BatchResponse, AppError> = safeRequest {
+        client.get(ENDPOINT_BATCHES).body()
     }
 
     /**
      * Resolves a discovered BID to a user profile.
      * Authenticated request.
      */
-    override suspend fun resolveContact(bidHex: String): ResolveResponse {
-        return client.post(ENDPOINT_RESOLVE) {
+    override suspend fun resolveContact(bidHex: String): Result<ResolveResponse, AppError> = safeRequest {
+        client.post(ENDPOINT_RESOLVE) {
             setBody(ResolveRequest(b_id = bidHex))
         }.body()
     }
@@ -161,7 +178,7 @@ class BillyApiClient(
     override suspend fun login(
         email: String,
         password: String,
-    ): NetworkDataSource.AuthResponse {
+    ): Result<NetworkDataSource.AuthResponse, AppError> = safeRequest {
         // Ktor deserializes directly into the Interface DTO
         val response: NetworkDataSource.AuthResponse =
             publicClient.post(ENDPOINT_LOGIN) {
@@ -170,25 +187,69 @@ class BillyApiClient(
 
         // Side Effect: Save tokens immediately upon success
         tokenStorage.saveTokens(response.accessToken, response.refreshToken)
-        return response
+        response
     }
 
     /**
      * Registers a new user.
      * Public request (No Auth header).
+     *
+     * NOTE: The backend Register endpoint does NOT return tokens.
+     * We must chain a Login call immediately after registration to fulfill the contract.
      */
     override suspend fun register(
         username: String,
         email: String,
         password: String,
-    ): NetworkDataSource.AuthResponse {
-        val response: NetworkDataSource.AuthResponse =
+    ): Result<NetworkDataSource.AuthResponse, AppError> {
+        // 1. Register (Ignore response body as it's just user info)
+        val registerResult = safeRequest<Unit> {
             publicClient.post(ENDPOINT_REGISTER) {
                 setBody(RegisterRequest(username = username, email = email, password = password))
-            }.body()
+            }
+            // We don't call .body() because we don't care about the User object here,
+            // and we want to avoid serialization issues if the backend changes.
+            // Just ensuring 201 Created is enough.
+        }
 
-        // Side Effect: Save tokens immediately upon success
-        tokenStorage.saveTokens(response.accessToken, response.refreshToken)
-        return response
+        if (registerResult is Result.Failure) {
+            return Result.Failure(registerResult.error)
+        }
+
+        // 2. Login to get tokens
+        return login(email, password)
+    }
+
+    /**
+     * Wraps Ktor calls in a Result Monad, mapping exceptions to Domain Errors.
+     */
+    private suspend inline fun <reified T> safeRequest(
+        block: () -> T
+    ): Result<T, AppError> {
+        return try {
+            Result.Success(block())
+        } catch (e: ClientRequestException) {
+            // 4xx Errors
+            Logger.withTag("BillyAPI").w { "Client Error: ${e.response.status.value} - ${e.message}" }
+            when (e.response.status.value) {
+                401 -> Result.Failure(AppError.Network.Unauthorized)
+                404 -> Result.Failure(AppError.Business.UserNotFound)
+                else -> Result.Failure(AppError.Network.ServerError(e.response.status.value, e.message))
+            }
+        } catch (e: ServerResponseException) {
+            // 5xx Errors
+            Logger.withTag("BillyAPI").e { "Server Error: ${e.response.status.value} - ${e.message}" }
+            Result.Failure(AppError.Network.ServerError(e.response.status.value, e.message))
+        } catch (e: SerializationException) {
+            Logger.withTag("BillyAPI").e { "Serialization Error: ${e.message}" }
+            Result.Failure(AppError.Network.Serialization(e.message))
+        } catch (e: JsonConvertException) {
+             Logger.withTag("BillyAPI").e { "JSON Error: ${e.message}" }
+             Result.Failure(AppError.Network.Serialization(e.message))
+        } catch (e: Exception) {
+            // Network/Unknown
+            Logger.withTag("BillyAPI").e(e) { "Unknown Network Error" }
+            Result.Failure(AppError.Network.NoInternet)
+        }
     }
 }

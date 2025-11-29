@@ -69,6 +69,8 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kermit)
+            implementation(libs.ktor.client.logging)
         }
 
         // [ANDROID] Platform Implementation

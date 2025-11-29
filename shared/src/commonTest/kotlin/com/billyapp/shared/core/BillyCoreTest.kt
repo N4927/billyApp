@@ -1,5 +1,6 @@
 package com.billyapp.shared.core
 
+import com.billyapp.shared.domain.model.AppError
 import com.billyapp.shared.domain.model.BatchResponse
 import com.billyapp.shared.domain.model.Bid
 import com.billyapp.shared.domain.model.QueuedItem
@@ -116,21 +117,21 @@ class BillyCoreTest {
     ) : NetworkDataSource {
         var downloadBatchCalled = false
 
-        override suspend fun resolveContact(bidHex: String): ResolveResponse {
-            if (shouldThrow) throw Exception("Network Error")
-            return resolveResponse ?: throw Exception("Mock resolve not set")
+        override suspend fun resolveContact(bidHex: String): Result<ResolveResponse, AppError> {
+            if (shouldThrow) return Result.Failure(AppError.Network.NoInternet)
+            return resolveResponse?.let { Result.Success(it) } ?: throw Exception("Mock resolve not set")
         }
 
-        override suspend fun downloadBatch(): BatchResponse {
+        override suspend fun downloadBatch(): Result<BatchResponse, AppError> {
             downloadBatchCalled = true
-            if (shouldThrow) throw Exception("Network Error")
-            return batchResponse ?: throw Exception("Mock batch not set")
+            if (shouldThrow) return Result.Failure(AppError.Network.NoInternet)
+            return batchResponse?.let { Result.Success(it) } ?: throw Exception("Mock batch not set")
         }
 
         override suspend fun login(
             email: String,
             password: String,
-        ): NetworkDataSource.AuthResponse {
+        ): Result<NetworkDataSource.AuthResponse, AppError> {
             throw NotImplementedError("Not used in BillyCore tests")
         }
 
@@ -138,7 +139,7 @@ class BillyCoreTest {
             username: String,
             email: String,
             password: String,
-        ): NetworkDataSource.AuthResponse {
+        ): Result<NetworkDataSource.AuthResponse, AppError> {
             throw NotImplementedError("Not used in BillyCore tests")
         }
     }

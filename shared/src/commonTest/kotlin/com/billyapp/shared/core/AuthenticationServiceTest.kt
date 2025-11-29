@@ -1,12 +1,13 @@
 package com.billyapp.shared.core
 
+import com.billyapp.shared.domain.model.AppError
 import com.billyapp.shared.domain.model.BatchResponse
 import com.billyapp.shared.domain.model.ResolveResponse
 import com.billyapp.shared.domain.repository.NetworkDataSource
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 /**
  * Unit Tests for AuthenticationService.
@@ -34,26 +35,26 @@ class AuthenticationServiceTest {
         override suspend fun login(
             email: String,
             password: String,
-        ): NetworkDataSource.AuthResponse {
+        ): Result<NetworkDataSource.AuthResponse, AppError> {
             loginCalled = true
-            if (shouldThrow) throw Exception("Auth Failed")
-            return authResponseStub
+            if (shouldThrow) return Result.Failure(AppError.Network.Unauthorized)
+            return Result.Success(authResponseStub)
         }
 
         override suspend fun register(
             username: String,
             email: String,
             password: String,
-        ): NetworkDataSource.AuthResponse {
+        ): Result<NetworkDataSource.AuthResponse, AppError> {
             registerCalled = true
-            if (shouldThrow) throw Exception("Register Failed")
-            return authResponseStub
+            if (shouldThrow) return Result.Failure(AppError.Business.ValidationFailed("Duplicate"))
+            return Result.Success(authResponseStub)
         }
 
         // Irrelevant for Auth tests
-        override suspend fun downloadBatch(): BatchResponse = throw NotImplementedError()
+        override suspend fun downloadBatch(): Result<BatchResponse, AppError> = throw NotImplementedError()
 
-        override suspend fun resolveContact(bidHex: String): ResolveResponse = throw NotImplementedError()
+        override suspend fun resolveContact(bidHex: String): Result<ResolveResponse, AppError> = throw NotImplementedError()
     }
 
     // --- TESTS ---
@@ -71,8 +72,9 @@ class AuthenticationServiceTest {
             val result = service.login("test@email.com", "pass")
 
             assertEquals(true, fakeSource.loginCalled)
-            assertEquals("access", result.accessToken)
-            assertEquals("user", result.username)
+            assertTrue(result is Result.Success)
+            assertEquals("access", result.data.accessToken)
+            assertEquals("user", result.data.username)
         }
 
     /**
@@ -80,15 +82,15 @@ class AuthenticationServiceTest {
      * are propagated up to the caller, allowing the UI to show appropriate error messages.
      */
     @Test
-    fun login_should_propagate_exception() =
+    fun login_should_propagate_failure() =
         runTest {
             val fakeSource = FakeNetworkDataSource()
             fakeSource.shouldThrow = true
             val service = AuthenticationService(fakeSource)
 
-            assertFailsWith<Exception> {
-                service.login("test", "pass")
-            }
+            val result = service.login("test", "pass")
+            assertTrue(result is Result.Failure)
+            assertTrue(result.error is AppError.Network.Unauthorized)
         }
 
     /**
@@ -107,6 +109,7 @@ class AuthenticationServiceTest {
             val result = service.register("new_user", "mail", "pass")
 
             assertEquals(true, fakeSource.registerCalled)
-            assertEquals("new_user", result.username)
+            assertTrue(result is Result.Success)
+            assertEquals("new_user", result.data.username)
         }
 }
