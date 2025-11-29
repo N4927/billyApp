@@ -157,19 +157,21 @@ class BillyApiClient(
      * Downloads a batch of cryptographic keys for advertising.
      * Authenticated request.
      */
-    override suspend fun downloadBatch(): Result<BatchResponse, AppError> = safeRequest {
-        client.get(ENDPOINT_BATCHES).body()
-    }
+    override suspend fun downloadBatch(): Result<BatchResponse, AppError> =
+        safeRequest {
+            client.get(ENDPOINT_BATCHES).body()
+        }
 
     /**
      * Resolves a discovered BID to a user profile.
      * Authenticated request.
      */
-    override suspend fun resolveContact(bidHex: String): Result<ResolveResponse, AppError> = safeRequest {
-        client.post(ENDPOINT_RESOLVE) {
-            setBody(ResolveRequest(b_id = bidHex))
-        }.body()
-    }
+    override suspend fun resolveContact(bidHex: String): Result<ResolveResponse, AppError> =
+        safeRequest {
+            client.post(ENDPOINT_RESOLVE) {
+                setBody(ResolveRequest(b_id = bidHex))
+            }.body()
+        }
 
     /**
      * Performs user login.
@@ -178,17 +180,18 @@ class BillyApiClient(
     override suspend fun login(
         email: String,
         password: String,
-    ): Result<NetworkDataSource.AuthResponse, AppError> = safeRequest {
-        // Ktor deserializes directly into the Interface DTO
-        val response: NetworkDataSource.AuthResponse =
-            publicClient.post(ENDPOINT_LOGIN) {
-                setBody(LoginRequest(email = email, password = password))
-            }.body()
+    ): Result<NetworkDataSource.AuthResponse, AppError> =
+        safeRequest {
+            // Ktor deserializes directly into the Interface DTO
+            val response: NetworkDataSource.AuthResponse =
+                publicClient.post(ENDPOINT_LOGIN) {
+                    setBody(LoginRequest(email = email, password = password))
+                }.body()
 
-        // Side Effect: Save tokens immediately upon success
-        tokenStorage.saveTokens(response.accessToken, response.refreshToken)
-        response
-    }
+            // Side Effect: Save tokens immediately upon success
+            tokenStorage.saveTokens(response.accessToken, response.refreshToken)
+            response
+        }
 
     /**
      * Registers a new user.
@@ -203,14 +206,15 @@ class BillyApiClient(
         password: String,
     ): Result<NetworkDataSource.AuthResponse, AppError> {
         // 1. Register (Ignore response body as it's just user info)
-        val registerResult = safeRequest<Unit> {
-            publicClient.post(ENDPOINT_REGISTER) {
-                setBody(RegisterRequest(username = username, email = email, password = password))
+        val registerResult =
+            safeRequest<Unit> {
+                publicClient.post(ENDPOINT_REGISTER) {
+                    setBody(RegisterRequest(username = username, email = email, password = password))
+                }
+                // We don't call .body() because we don't care about the User object here,
+                // and we want to avoid serialization issues if the backend changes.
+                // Just ensuring 201 Created is enough.
             }
-            // We don't call .body() because we don't care about the User object here,
-            // and we want to avoid serialization issues if the backend changes.
-            // Just ensuring 201 Created is enough.
-        }
 
         if (registerResult is Result.Failure) {
             return Result.Failure(registerResult.error)
@@ -223,9 +227,7 @@ class BillyApiClient(
     /**
      * Wraps Ktor calls in a Result Monad, mapping exceptions to Domain Errors.
      */
-    private suspend inline fun <reified T> safeRequest(
-        block: () -> T
-    ): Result<T, AppError> {
+    private suspend inline fun <reified T> safeRequest(block: () -> T): Result<T, AppError> {
         return try {
             Result.Success(block())
         } catch (e: ClientRequestException) {
@@ -244,8 +246,8 @@ class BillyApiClient(
             Logger.withTag("BillyAPI").e { "Serialization Error: ${e.message}" }
             Result.Failure(AppError.Network.Serialization(e.message))
         } catch (e: JsonConvertException) {
-             Logger.withTag("BillyAPI").e { "JSON Error: ${e.message}" }
-             Result.Failure(AppError.Network.Serialization(e.message))
+            Logger.withTag("BillyAPI").e { "JSON Error: ${e.message}" }
+            Result.Failure(AppError.Network.Serialization(e.message))
         } catch (e: Exception) {
             // Network/Unknown
             Logger.withTag("BillyAPI").e(e) { "Unknown Network Error" }

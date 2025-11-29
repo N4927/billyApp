@@ -10,14 +10,16 @@ package com.billyapp.shared.core
  */
 sealed class Result<out D, out E> {
     data class Success<out D>(val data: D) : Result<D, Nothing>()
+
     data class Failure<out E>(val error: E) : Result<Nothing, E>()
 
     val isSuccess: Boolean get() = this is Success
     val isFailure: Boolean get() = this is Failure
 
     fun getOrNull(): D? = if (this is Success) data else null
+
     fun errorOrNull(): E? = if (this is Failure) error else null
-    
+
     inline fun onSuccess(action: (D) -> Unit): Result<D, E> {
         if (this is Success) action(data)
         return this

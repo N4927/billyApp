@@ -2,7 +2,6 @@ package com.billyapp.shared.core
 
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
-import co.touchlab.kermit.StaticConfig
 import co.touchlab.kermit.platformLogWriter
 
 /**
@@ -23,11 +22,11 @@ object BillyLog {
      */
     fun init(isDebug: Boolean) {
         val severity = if (isDebug) Severity.Debug else Severity.Warn
-        
+
         // Use platform-specific log writer (Logcat on Android, OSLog on iOS)
         Logger.setLogWriters(platformLogWriter())
         Logger.setMinSeverity(severity)
-        
+
         if (isDebug) {
             Logger.withTag("BillySDK").d { "🚀 BillySDK Initialized in DEBUG mode" }
         }

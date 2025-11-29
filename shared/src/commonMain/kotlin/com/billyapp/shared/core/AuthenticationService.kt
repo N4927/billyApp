@@ -33,7 +33,10 @@ class AuthenticationService(
      * @param password The user's plain-text password.
      * @return [Result] containing [NetworkDataSource.AuthResponse] or [AppError].
      */
-    suspend fun login(email: String, password: String): Result<NetworkDataSource.AuthResponse, AppError> {
+    suspend fun login(
+        email: String,
+        password: String,
+    ): Result<NetworkDataSource.AuthResponse, AppError> {
         return apiClient.login(email, password)
     }
 
