@@ -12,10 +12,10 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.billyapp.core.Constants
-import com.example.billyapp.core.Encounter
-import com.example.billyapp.core.EncounterBus
-import com.example.billyapp.core.EncounterRepository
-import com.example.billyapp.core.FakeServer
+import com.example.shared.Encounter
+import com.example.shared.EncounterBus
+import com.example.shared.EncounterRepository
+import com.example.shared.FakeServer
 import com.example.billyapp.core.UserManager
 import kotlinx.coroutines.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -23,8 +23,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
@@ -33,7 +31,7 @@ import javax.net.ssl.*
 class BleServiceServer : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val repo = EncounterRepository()
+    private val encounterRepo = EncounterRepository()
     private lateinit var userManager: UserManager
 
     private var advertiser: BluetoothLeAdvertiser? = null
@@ -52,7 +50,7 @@ class BleServiceServer : Service() {
         userManager = UserManager(this)
         val name = userManager.getUserName()
         Log.i("BleServiceServer", "📱 Device name: $name")
-        Log.i("BleServiceServer", "🔐 Initializing cryptography for secure BLE communication")
+        Log.i("BleServiceServer", "🔐 Using server-side encrypted BIDs with batch system")
 
         val adapter = (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
         advertiser = adapter.bluetoothLeAdvertiser
@@ -95,27 +93,37 @@ class BleServiceServer : Service() {
         startForeground(1, noti)
     }
 
-    // 🔹 Advertising loop
+    // 🔹 Advertising loop - UPDATED for new architecture
     private suspend fun loopRotateAndAdvertise() {
         while (isActive) {
             stopAdvertising()
 
-            val ts = System.currentTimeMillis() / 1000
-            val personalId = userManager.getPersonalIdentifier()
-            val cryptoManager = userManager.getCryptographyManager()
-            val encryptedPayload = cryptoManager.encryptRotatingIdentifier(personalId, ts)
+            // ✅ NEW ARCHITECTURE: Get current BID from server-side batch
+            val bidBytes = userManager.getCurrentBidBytes()
 
-            Log.d("BleServiceServer", "🧩 Advertising name=${userManager.getUserName()}")
-            Log.d("BleServiceServer", "🧩 Personal ID=$personalId")
-            Log.d("BleServiceServer", "🧩 Encrypted payload=${encryptedPayload.joinToString("") { "%02x".format(it) }}")
-            Log.d("BleServiceServer", "🧩 Timestamp=$ts")
+            if (bidBytes != null) {
+                Log.d("BleServiceServer", "📡 Advertising BID from batch: ${bidBytes.size} bytes")
+                Log.d("BleServiceServer", "🧩 BID Hex: ${bidBytes.joinToString("") { "%02x".format(it) }}")
 
-            startAdvertising(encryptedPayload)
+                startAdvertising(bidBytes)
+                updateNotification("BLE active - ${userManager.getBatchStatus()}")
+            } else {
+                Log.w("BleServiceServer", "⚠️ No valid BID available - batch may be expired")
+                updateNotification("BLE inactive - No valid batch")
+
+                // ✅ Try to refresh batch
+                if (userManager.refreshBatch()) {
+                    Log.i("BleServiceServer", "✅ Batch refreshed successfully")
+                } else {
+                    Log.e("BleServiceServer", "❌ Failed to refresh batch")
+                }
+            }
+
             delay(Constants.ROTATION_SECONDS * 1000L)
         }
 
         Log.d("BleServiceServer", "Stopped advertising due to service inactive")
-        updateNotification("Pubblicazione BLE fermata")
+        updateNotification("BLE advertising stopped")
     }
 
     private fun hasBluetoothPermissions(): Boolean {
@@ -132,13 +140,13 @@ class BleServiceServer : Service() {
     // 🔹 Advertising logic
     private fun startAdvertising(payload: ByteArray) {
         if (!hasBluetoothPermissions()) {
-            Log.w("BleServiceServer", "⚠️ Permessi Bluetooth non concessi, skip startAdvertising")
+            Log.w("BleServiceServer", "⚠️ Bluetooth permissions not granted, skip startAdvertising")
             return
         }
         try {
             val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
             if (!adapter.isEnabled) {
-                Log.w("BleServiceServer", "⚠️ Bluetooth non abilitato, skip startAdvertising")
+                Log.w("BleServiceServer", "⚠️ Bluetooth not enabled, skip startAdvertising")
                 return
             }
             val adv = advertiser ?: return
@@ -156,10 +164,10 @@ class BleServiceServer : Service() {
 
             adv.startAdvertising(settings, data, advCb)
             Log.d("BleServiceServer", "🚀 Advertising BLE payload size=${payload.size}")
-            updateNotification("BLE attivo")
+            updateNotification("BLE active")
 
         } catch (e: SecurityException) {
-            Log.e("BleServiceServer", "❌ Errore permessi BLE: ${e.message}")
+            Log.e("BleServiceServer", "❌ BLE permission error: ${e.message}")
         }
     }
 
@@ -168,7 +176,7 @@ class BleServiceServer : Service() {
             advertiser?.stopAdvertising(advCb)
             Log.d("BleServiceServer", "🛑 Stop advertising")
         } catch (e: SecurityException) {
-            Log.e("BleServiceServer", "❌ Errore stopAdvertising: ${e.message}")
+            Log.e("BleServiceServer", "❌ Stop advertising error: ${e.message}")
         }
     }
 
@@ -183,16 +191,16 @@ class BleServiceServer : Service() {
         nm.notify(1, notification)
     }
 
-    // 🔹 Scanning logic
+    // 🔹 Scanning logic - UPDATED for new architecture
     private fun startScan() {
         if (!hasBluetoothPermissions()) {
-            Log.w("BleServiceServer", "⚠️ Permessi Bluetooth non concessi, skip startScan")
+            Log.w("BleServiceServer", "⚠️ Bluetooth permissions not granted, skip startScan")
             return
         }
         try {
             val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
             if (!adapter.isEnabled) {
-                Log.w("BleServiceServer", "⚠️ Bluetooth non abilitato, skip startScan")
+                Log.w("BleServiceServer", "⚠️ Bluetooth not enabled, skip startScan")
                 return
             }
             val sc = scanner ?: return
@@ -209,39 +217,33 @@ class BleServiceServer : Service() {
                 override fun onScanResult(callbackType: Int, result: ScanResult) {
                     val record = result.scanRecord ?: return
                     val payload = record.getServiceData(Constants.SERVICE_UUID) ?: return
-                    if (payload.size != 16) return // solo payload completi
+                    if (payload.size != 16) return // Only accept full 16-byte BIDs
 
-                    // estrai timestamp raw (secondi epoch)
-                    val timestampBytes = payload.copyOfRange(0, 8)
-                    val ts = ByteBuffer.wrap(timestampBytes).order(ByteOrder.BIG_ENDIAN).long
                     val payloadHex = payload.joinToString("") { "%02x".format(it) }
+                    val currentTime = System.currentTimeMillis() / 1000
 
-                    if (!repo.shouldProcess(payloadHex, ts)) return
+                    Log.d("BleServiceServer", "📡 Received BID: ${payloadHex.take(16)}..., RSSI: ${result.rssi}")
 
-                    // normalizza al bucket di rotazione — questo è quello che server e FakeServer si aspettano
-                    val windowTimestamp = ts / Constants.ROTATION_SECONDS * Constants.ROTATION_SECONDS
-
+                    // ✅ NEW: Use EncounterRepository for processing (matches new architecture)
                     scope.launch {
-                        // risolvi prima via server (o fallback locale)
-                        val resolvedName = resolveViaServer(payload, windowTimestamp) ?: "Unknown"
-
-                        val encounter = Encounter(
-                            idHex = payloadHex,
-                            rssi = result.rssi,
-                            timestampSec = ts, // manteniamo il timestamp reale per log/UI
-                            resolvedName = resolvedName
-                        )
-
-                        EncounterBus.emit(encounter)
-                        Log.d("BleServiceServer", "🟢 Emitted encounter for $resolvedName")
-                        Log.d("BleServiceServer", "📡 Found: $resolvedName (encrypted: ${payloadHex.take(16)}...)")
+                        val encounter = encounterRepo.processEncounter(payloadHex, result.rssi)
+                        if (encounter != null) {
+                            EncounterBus.emit(encounter)
+                            Log.d("BleServiceServer", "🟢 Emitted encounter for ${encounter.resolvedName ?: "Unknown user"}")
+                        }
                     }
+                }
+
+                override fun onScanFailed(errorCode: Int) {
+                    Log.e("BleServiceServer", "❌ Scan failed with error: $errorCode")
                 }
             }
 
             sc.startScan(listOf(filter), settings, scanCb)
+            Log.d("BleServiceServer", "🔍 Started BLE scanning")
+
         } catch (e: SecurityException) {
-            Log.e("BleServiceServer", "❌ Errore startScan: ${e.message}")
+            Log.e("BleServiceServer", "❌ Start scan error: ${e.message}")
         }
     }
 
@@ -251,35 +253,30 @@ class BleServiceServer : Service() {
             scanCb = null
             Log.d("BleServiceServer", "🛑 Stop scanning")
         } catch (e: SecurityException) {
-            Log.e("BleServiceServer", "❌ Errore stopScan: ${e.message}")
+            Log.e("BleServiceServer", "❌ Stop scan error: ${e.message}")
         }
     }
 
-    // 🔹 HTTP lookup - nuovo endpoint HTTPS
-    // Nota: ora riceve `payload` (per estrarre il cipher) e `windowTimestamp` (già normalizzato)
-    private suspend fun resolveViaServer(payload: ByteArray, windowTimestamp: Long): String? {
+    // 🔹 HTTP lookup - Optional: Keep for ETHZ server integration
+    private suspend fun resolveViaServer(bidHex: String, timestamp: Long): String? {
         return withContext(Dispatchers.IO) {
             try {
-                // CORRETTO: estrai la parte cifrata (byte 8..15)
-                val cipherBytes = payload.copyOfRange(8, 16)
-                val cipher8Hex = cipherBytes.joinToString("") { "%02x".format(it) }
-
                 val json = JSONObject().apply {
-                    put("timestamp", windowTimestamp)
-                    put("cipher8_hex", cipher8Hex)
+                    put("timestamp", timestamp)
+                    put("cipher8_hex", bidHex) // ✅ Use full BID hex (16 bytes)
                 }
 
                 val request = Request.Builder()
-                    .url("https://19.hackathon.ethz.ch/api/match/") // endpoint HTTPS reale
+                    .url("https://19.hackathon.ethz.ch/api/match/")
                     .post(json.toString().toRequestBody("application/json".toMediaType()))
                     .build()
 
                 httpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
                         Log.w("BleServiceServer", "⚠️ Server returned ${response.code}")
-                        // fallback locale: ricostruisci come server-side (timestamp + cipher)
-                        val localUser = FakeServer.resolveRotatingId(cipher8Hex, windowTimestamp)
-                        return@withContext localUser?.displayName
+                        // Fallback to local resolution
+                        val localUser = FakeServer.resolveBid(bidHex, timestamp)
+                        return@withContext localUser?.name // ✅ Fixed: was displayName
                     }
 
                     val body = response.body?.string() ?: return@withContext null
@@ -289,17 +286,15 @@ class BleServiceServer : Service() {
                     val displayName = obj.optString("display_name", null)
                     if (!displayName.isNullOrBlank()) return@withContext displayName
 
-                    // se il server non ha restituito display_name, prova fallback locale
-                    val localUserFromServerNull = FakeServer.resolveRotatingId(cipher8Hex, windowTimestamp)
-                    return@withContext localUserFromServerNull?.displayName
+                    // If server didn't return display_name, try local fallback
+                    val localUserFromServerNull = FakeServer.resolveBid(bidHex, timestamp)
+                    return@withContext localUserFromServerNull?.name // ✅ Fixed: was displayName
                 }
             } catch (e: Exception) {
                 Log.e("BleServiceServer", "❌ HTTP error: ${e.message}")
-                // fallback locale in caso di eccezione (es. DNS/SSL)
+                // Fallback to local resolution on exception
                 return@withContext try {
-                    val cipherBytes = payload.copyOfRange(8, 16)
-                    val cipher8Hex = cipherBytes.joinToString("") { "%02x".format(it) }
-                    FakeServer.resolveRotatingId(cipher8Hex, windowTimestamp)?.displayName
+                    FakeServer.resolveBid(bidHex, timestamp)?.name // ✅ Fixed: was displayName
                 } catch (ex: Exception) {
                     Log.e("BleServiceServer", "❌ Local fallback error: ${ex.message}")
                     null
@@ -338,5 +333,9 @@ class BleServiceServer : Service() {
                 .readTimeout(5, TimeUnit.SECONDS)
                 .build()
         }
+    }
+
+    private fun String.decodeHexToByteArray(): ByteArray {
+        return chunked(2).map { it.toInt(16).toByte() }.toByteArray()
     }
 }

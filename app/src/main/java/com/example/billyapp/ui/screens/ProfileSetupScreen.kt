@@ -12,7 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.billyapp.core.User
+import com.example.shared.User
 import java.util.UUID
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.unit.Dp
@@ -24,7 +24,7 @@ fun ProfileSetupScreen(
     user: User?,
     onSave: (User) -> Unit
 ) {
-    var name by remember { mutableStateOf(user?.displayName ?: "") }
+    var name by remember { mutableStateOf(user?.name ?: "") } // ✅ Fixed: was displayName
     var age by remember { mutableStateOf(user?.age?.toString() ?: "") }
     var bio by remember { mutableStateOf(user?.bio ?: "") }
 
@@ -90,13 +90,13 @@ fun ProfileSetupScreen(
                 )
 
                 val cleanName = name.trim().lowercase()
-                val assignedId = userIds[cleanName] ?: UUID.randomUUID().toString()
+                val assignedId = userIds[cleanName] ?: UUID.randomUUID().toString().take(16) // ✅ Limit ID length
 
                 val newUser = User(
                     id = assignedId,
-                    displayName = name.trim(),
+                    name = name.trim(), // ✅ Fixed: was displayName
                     age = age.toIntOrNull(),
-                    bio = bio.trim()
+                    bio = bio.trim().ifEmpty { null } // ✅ Make bio optional
                 )
                 onSave(newUser)
             },
@@ -116,6 +116,17 @@ fun ProfileSetupScreen(
                 fontWeight = FontWeight.Medium
             )
         }
+
+        // 🔹 Info about the new architecture
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = "Your profile will use server-side encrypted identifiers",
+            style = MaterialTheme.typography.bodySmall.copy(
+                color = Color.Gray
+            ),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 20.dp)
+        )
     }
 }
 

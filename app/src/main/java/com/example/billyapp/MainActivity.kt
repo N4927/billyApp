@@ -4,6 +4,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,11 +22,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
-import com.example.billyapp.ble.BleServiceServer
+import com.example.billyapp.ble.BleService
 import com.example.billyapp.ble.BleViewModel
 import com.example.billyapp.core.ChatViewModel
 import com.example.billyapp.core.UserManager
 import com.example.billyapp.core.simulateEncounter
+import com.example.billyapp.core.testBatchSystem
 import com.example.billyapp.ui.screens.*
 import com.example.billyapp.ui.theme.BillyAppTheme
 import androidx.compose.foundation.layout.*
@@ -36,62 +39,208 @@ import androidx.compose.ui.unit.dp
 class MainActivity : ComponentActivity() {
     private val bleViewModel: BleViewModel by viewModels()
     private val chatViewModel: ChatViewModel by viewModels()
+    private lateinit var userManager: UserManager
+
+    private var appInitialized = false
 
     private val reqPerms = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { perms ->
         val allGranted = perms.entries.all { it.value }
-        if (allGranted) startBleService()
+        if (allGranted) {
+            // ✅ Permissions granted - now initialize the app
+            initializeApp()
+        } else {
+            // ❌ Permissions denied - show error and set basic content
+            Toast.makeText(this, "BLE permissions required for app functionality!", Toast.LENGTH_LONG).show()
+            setBasicContent()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        userManager = UserManager(this)
+
+        // ✅ Request permissions FIRST, before any app initialization
+        requestAllPermissions()
+    }
+
+    private fun initializeApp() {
+        if (appInitialized) return // Prevent multiple initializations
+
+        appInitialized = true
+
+        // ✅ Initialize batch system
+        initializeBatchSystem()
+
+        // ✅ Start chat
         chatViewModel.startChat("Helena Hills")
 
+        // ✅ Set the main app content
+        setMainContent()
+
+        // ✅ Auto-start BLE service
+        startBleService()
+
+        Log.d("MainActivity", "✅ App fully initialized with permissions")
+    }
+
+    private fun setMainContent() {
         setContent {
             BillyAppTheme {
                 val navController = rememberNavController()
+                val context = LocalContext.current
+
                 BillyApp(
                     navController = navController,
                     bleViewModel = bleViewModel,
                     chatViewModel = chatViewModel,
-                    onStartService = { requestAllPermissions() },
-                    onStopService = { stopService(Intent(this, BleServiceServer::class.java)) } // ✅ usa BleServiceServer
+                    onStartService = {
+                        // Just start service - we already have permissions
+                        startBleService()
+                    },
+                    onStopService = { stopBleService() },
+                    onTestBatchSystem = { testBatchSystem(context) },
+                    onClearAllData = {
+                        stopBleService()
+                        UserManager(context).clearAllUserData()
+                        bleViewModel.clearAllEncounters()
+                        Log.i("MainActivity", "🧹 Cleared all data")
+                        // Restart the app to refresh completely
+                        restartActivity()
+                    }
                 )
             }
         }
     }
 
+    private fun setBasicContent() {
+        // ✅ Fallback content when permissions are denied
+        setContent {
+            BillyAppTheme {
+                Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Permissions Required",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = Color.Red
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "This app requires Bluetooth permissions to function properly.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = { requestAllPermissions() }
+                        ) {
+                            Text("Grant Permissions")
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { finish() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                        ) {
+                            Text("Exit App")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun initializeBatchSystem() {
+        val user = userManager.getUser()
+        if (user != null) {
+            userManager.refreshBatch()
+            Log.d("MainActivity", "🔄 Initialized batch system for user: ${user.name}")
+        } else {
+            Log.d("MainActivity", "ℹ️ No user profile set up yet")
+        }
+    }
+
     private fun requestAllPermissions() {
         val permissions = mutableListOf<String>()
+
+        // ✅ Bluetooth permissions for Android 12+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             permissions += android.Manifest.permission.BLUETOOTH_ADVERTISE
             permissions += android.Manifest.permission.BLUETOOTH_SCAN
             permissions += android.Manifest.permission.BLUETOOTH_CONNECT
         } else {
+            // ✅ Location permissions for Android < 12
             permissions += android.Manifest.permission.ACCESS_FINE_LOCATION
             permissions += android.Manifest.permission.ACCESS_COARSE_LOCATION
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            permissions += android.Manifest.permission.POST_NOTIFICATIONS
 
-        reqPerms.launch(permissions.toTypedArray())
+        // ✅ Notification permission for Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions += android.Manifest.permission.POST_NOTIFICATIONS
+        }
+
+        // ✅ Check if we already have all permissions
+        val hasAllPermissions = permissions.all { permission ->
+            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+        }
+
+        if (hasAllPermissions) {
+            Log.d("MainActivity", "✅ All permissions already granted")
+            initializeApp()
+        } else {
+            Log.d("MainActivity", "🔵 Requesting permissions: ${permissions.size} permissions")
+            reqPerms.launch(permissions.toTypedArray())
+        }
     }
 
     private fun startBleService() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            val intent = Intent(this, BleServiceServer::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+        if (hasBluetoothPermissions()) {
+            val intent = Intent(this, BleService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 ContextCompat.startForegroundService(this, intent)
-            else
+            } else {
                 startService(intent)
+            }
+
+            userManager.setBleOnline(true)
+            Log.d("MainActivity", "🚀 Started BLE Service")
         } else {
+            Log.w("MainActivity", "⚠️ Cannot start BLE service - permissions missing")
             requestAllPermissions()
         }
+    }
+
+    private fun stopBleService() {
+        val intent = Intent(this, BleService::class.java)
+        stopService(intent)
+
+        userManager.setBleOnline(false)
+        Log.d("MainActivity", "🛑 Stopped BLE Service")
+    }
+
+    private fun hasBluetoothPermissions(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_ADVERTISE) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    private fun restartActivity() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+        finish()
     }
 }
 
@@ -102,7 +251,9 @@ fun BillyApp(
     bleViewModel: BleViewModel,
     chatViewModel: ChatViewModel,
     onStartService: () -> Unit,
-    onStopService: () -> Unit
+    onStopService: () -> Unit,
+    onTestBatchSystem: () -> Unit,
+    onClearAllData: () -> Unit
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -124,9 +275,10 @@ fun BillyApp(
             startDestination = "home",
             modifier = Modifier.padding(innerPadding)
         ) {
-            // 🏠 Home (reattiva)
             composable("home") {
-                val context = LocalContext.current // ✅ context composable valido
+                val context = LocalContext.current
+                val userManager = remember { UserManager(context) }
+
                 HomeScreen(
                     encounters = bleViewModel.resolvedEncounters,
                     onSelectProfile = { user -> navController.navigate("profile/$user") },
@@ -134,13 +286,14 @@ fun BillyApp(
                         chatViewModel.startChat(userName)
                         navController.navigate("chat/$userName")
                     },
-                    onSimulateEncounter = { simulateEncounter(bleViewModel, context) }, // ✅ usa context
+                    onSimulateEncounter = { simulateEncounter(bleViewModel, context) },
                     onStartBle = onStartService,
-                    onStopBle = onStopService
+                    onStopBle = onStopService,
+                    onTestBatchSystem = onTestBatchSystem,
+                    userStatus = userManager.getUserStatus(),
                 )
             }
 
-            // 💬 Lista chat
             composable("chats") {
                 ChatsScreen(
                     chats = chatViewModel.getActiveChats(),
@@ -151,7 +304,6 @@ fun BillyApp(
                 )
             }
 
-            // 🗨️ Chat singola
             composable("chat/{userName}") { backStackEntry ->
                 val userName = backStackEntry.arguments?.getString("userName") ?: return@composable
                 ChatScreen(
@@ -161,7 +313,6 @@ fun BillyApp(
                 )
             }
 
-            // 👤 Profilo utente
             composable("profile/{userName}") { backStackEntry ->
                 val userName = backStackEntry.arguments?.getString("userName") ?: return@composable
                 ProfileScreen(
@@ -172,7 +323,6 @@ fun BillyApp(
                 )
             }
 
-            // ⚙️ Setup profilo
             composable("profile/setup") {
                 val context = LocalContext.current
                 val userManager = remember { UserManager(context) }
@@ -181,12 +331,12 @@ fun BillyApp(
                     user = userManager.getUser(),
                     onSave = { newUser ->
                         userManager.saveUser(newUser)
+                        userManager.refreshBatch()
                         navController.popBackStack("myprofile", inclusive = false)
                     }
                 )
             }
 
-            // 👤 Mio profilo
             composable("myprofile") {
                 val context = LocalContext.current
                 val userManager = remember { UserManager(context) }
@@ -198,17 +348,18 @@ fun BillyApp(
                         onSave = { newUser ->
                             userManager.saveUser(newUser)
                             currentUser = newUser
+                            userManager.refreshBatch()
                         }
                     )
                 } else {
                     MyProfileScreen(
-                        userName = currentUser!!.displayName,
+                        userName = currentUser!!.name,
                         age = currentUser!!.age ?: 0,
                         bio = currentUser!!.bio ?: "No bio yet",
                         onEditProfile = { navController.navigate("profile/setup") },
                         onNavigateHome = { navController.navigate("home") },
                         onNavigateChats = { navController.navigate("chats") },
-                        onNavigateProfile = { navController.navigate("myprofile") }
+                        onNavigateProfile = { navController.navigate("myprofile") },
                     )
                 }
             }
@@ -247,7 +398,7 @@ fun BottomBarMinimal(
             }
             IconButton(onClick = onNavigateChats) {
                 Icon(
-                    Icons.AutoMirrored.Filled.Chat, // ✅ fix warning
+                    Icons.AutoMirrored.Filled.Chat,
                     contentDescription = "Chats",
                     tint = if (currentRoute == "chats") Color.Black else Color.Gray
                 )

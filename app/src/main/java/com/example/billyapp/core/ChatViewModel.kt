@@ -2,6 +2,7 @@ package com.example.billyapp.core
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
+import com.example.shared.ChatMessage
 
 class ChatViewModel : ViewModel() {
 
@@ -17,11 +18,21 @@ class ChatViewModel : ViewModel() {
     fun getActiveChats(): List<Chat> = chats
 
     fun sendMessage(userName: String, message: String) {
-        chats.find { it.userName == userName }?.messages?.add(ChatMessage(message, isIncoming = false))
+        chats.find { it.userName == userName }?.messages?.add(
+            ChatMessage(
+                message,
+                isIncoming = false
+            )
+        )
     }
 
     fun receiveMessage(userName: String, message: String) {
-        chats.find { it.userName == userName }?.messages?.add(ChatMessage(message, isIncoming = true))
+        chats.find { it.userName == userName }?.messages?.add(
+            ChatMessage(
+                message,
+                isIncoming = true
+            )
+        )
     }
 
     fun getChat(userName: String): Chat? = chats.find { it.userName == userName }

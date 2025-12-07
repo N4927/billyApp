@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "BillyApp"
 include(":app")
+include(":shared")

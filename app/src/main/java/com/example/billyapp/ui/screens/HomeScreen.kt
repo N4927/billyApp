@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.billyapp.core.ResolvedEncounter
+import com.example.shared.ResolvedEncounter
 import com.example.billyapp.core.UserManager
 import androidx.compose.ui.platform.LocalContext
 
@@ -29,7 +29,9 @@ fun HomeScreen(
     onOpenChat: (String) -> Unit,
     onSimulateEncounter: (() -> Unit)? = null,
     onStartBle: (() -> Unit)? = null,
-    onStopBle: (() -> Unit)? = null
+    onStopBle: (() -> Unit)? = null,
+    onTestBatchSystem: () -> Unit,
+    userStatus: String,
 ) {
     val context = LocalContext.current
     val userManager = remember { UserManager(context) }

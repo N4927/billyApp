@@ -1,12 +1,14 @@
 package com.example.billyapp.core
 
 import android.content.Context
+import com.example.shared.Encounter
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 
 object EncounterStore {
     private const val FILE_NAME = "encounters.json"
+    private const val MAX_STORED_ENCOUNTERS = 1000 // Prevent storage bloat
 
     fun loadAll(context: Context): MutableList<Encounter> {
         val f = File(context.filesDir, FILE_NAME)
@@ -22,7 +24,13 @@ object EncounterStore {
     fun saveAll(context: Context, list: List<Encounter>) {
         val f = File(context.filesDir, FILE_NAME)
         try {
-            f.writeText(Json.Default.encodeToString(list))
+            // Limit storage size
+            val limitedList = if (list.size > MAX_STORED_ENCOUNTERS) {
+                list.sortedByDescending { it.timestampSec }.take(MAX_STORED_ENCOUNTERS)
+            } else {
+                list
+            }
+            f.writeText(Json.Default.encodeToString(limitedList))
         } catch (_: Exception) {}
     }
 
@@ -30,5 +38,10 @@ object EncounterStore {
         val list = loadAll(context)
         list.add(item)
         saveAll(context, list)
+    }
+
+    // Clear all stored encounters
+    fun clearAll(context: Context) {
+        saveAll(context, emptyList())
     }
 }
