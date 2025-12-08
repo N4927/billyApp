@@ -10,34 +10,38 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.*
-import com.example.billyapp.ble.BleService
-import com.example.billyapp.ble.BleViewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.example.billyapp.bluetooth.BluetoothCentralService
+import com.example.billyapp.bluetooth.BluetoothPeripheralService
 import com.example.billyapp.core.ChatViewModel
 import com.example.billyapp.core.UserManager
-import com.example.billyapp.core.simulateEncounter
 import com.example.billyapp.core.testBatchSystem
+import com.example.billyapp.proximity.ProximityViewModel
 import com.example.billyapp.ui.screens.*
 import com.example.billyapp.ui.theme.BillyAppTheme
-import androidx.compose.foundation.layout.*
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 
 class MainActivity : ComponentActivity() {
-    private val bleViewModel: BleViewModel by viewModels()
+
+    private val proximityViewModel: ProximityViewModel by viewModels()
     private val chatViewModel: ChatViewModel by viewModels()
     private lateinit var userManager: UserManager
 
@@ -52,7 +56,11 @@ class MainActivity : ComponentActivity() {
             initializeApp()
         } else {
             // ❌ Permissions denied - show error and set basic content
-            Toast.makeText(this, "BLE permissions required for app functionality!", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                "BLE permissions required for app functionality!",
+                Toast.LENGTH_LONG
+            ).show()
             setBasicContent()
         }
     }
@@ -71,7 +79,7 @@ class MainActivity : ComponentActivity() {
 
         appInitialized = true
 
-        // ✅ Initialize batch system
+        // ✅ Initialize batch system (resta com’era – se UserManager lo gestisce ancora)
         initializeBatchSystem()
 
         // ✅ Start chat
@@ -80,8 +88,8 @@ class MainActivity : ComponentActivity() {
         // ✅ Set the main app content
         setMainContent()
 
-        // ✅ Auto-start BLE service
-        startBleService()
+        // ✅ Auto-start BLE services (central + peripheral)
+        startBleServices()
 
         Log.d("MainActivity", "✅ App fully initialized with permissions")
     }
@@ -94,18 +102,18 @@ class MainActivity : ComponentActivity() {
 
                 BillyApp(
                     navController = navController,
-                    bleViewModel = bleViewModel,
+                    proximityViewModel = proximityViewModel,
                     chatViewModel = chatViewModel,
                     onStartService = {
-                        // Just start service - we already have permissions
-                        startBleService()
+                        // Just start services - we already have permissions
+                        startBleServices()
                     },
-                    onStopService = { stopBleService() },
+                    onStopService = { stopBleServices() },
                     onTestBatchSystem = { testBatchSystem(context) },
                     onClearAllData = {
-                        stopBleService()
+                        stopBleServices()
                         UserManager(context).clearAllUserData()
-                        bleViewModel.clearAllEncounters()
+                        // se vuoi pulire anche il KMM, puoi aggiungere qui
                         Log.i("MainActivity", "🧹 Cleared all data")
                         // Restart the app to refresh completely
                         restartActivity()
@@ -136,7 +144,7 @@ class MainActivity : ComponentActivity() {
                         Text(
                             text = "This app requires Bluetooth permissions to function properly.",
                             style = MaterialTheme.typography.bodyMedium,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(24.dp))
                         Button(
@@ -160,6 +168,8 @@ class MainActivity : ComponentActivity() {
     private fun initializeBatchSystem() {
         val user = userManager.getUser()
         if (user != null) {
+            // Se UserManager ha ancora refreshBatch(), lo puoi mantenere,
+            // altrimenti puoi togliere questa riga.
             userManager.refreshBatch()
             Log.d("MainActivity", "🔄 Initialized batch system for user: ${user.name}")
         } else {
@@ -188,7 +198,8 @@ class MainActivity : ComponentActivity() {
 
         // ✅ Check if we already have all permissions
         val hasAllPermissions = permissions.all { permission ->
-            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(this, permission) ==
+                    PackageManager.PERMISSION_GRANTED
         }
 
         if (hasAllPermissions) {
@@ -200,39 +211,60 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startBleService() {
+    // ---------------- BLE SERVICES (NUOVI) ----------------
+
+    private fun startBleServices() {
         if (hasBluetoothPermissions()) {
-            val intent = Intent(this, BleService::class.java)
+            val centralIntent = Intent(this, BluetoothCentralService::class.java)
+            val peripheralIntent = Intent(this, BluetoothPeripheralService::class.java)
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                ContextCompat.startForegroundService(this, intent)
+                ContextCompat.startForegroundService(this, centralIntent)
+                ContextCompat.startForegroundService(this, peripheralIntent)
             } else {
-                startService(intent)
+                startService(centralIntent)
+                startService(peripheralIntent)
             }
 
             userManager.setBleOnline(true)
-            Log.d("MainActivity", "🚀 Started BLE Service")
+            Log.d("MainActivity", "🚀 Started BLE Central & Peripheral Services")
         } else {
-            Log.w("MainActivity", "⚠️ Cannot start BLE service - permissions missing")
+            Log.w("MainActivity", "⚠️ Cannot start BLE services - permissions missing")
             requestAllPermissions()
         }
     }
 
-    private fun stopBleService() {
-        val intent = Intent(this, BleService::class.java)
-        stopService(intent)
+    private fun stopBleServices() {
+        stopService(Intent(this, BluetoothCentralService::class.java))
+        stopService(Intent(this, BluetoothPeripheralService::class.java))
 
         userManager.setBleOnline(false)
-        Log.d("MainActivity", "🛑 Stopped BLE Service")
+        Log.d("MainActivity", "🛑 Stopped BLE Services")
     }
 
     private fun hasBluetoothPermissions(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_ADVERTISE) == PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.BLUETOOTH_ADVERTISE
+            ) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(
+                        this,
+                        android.Manifest.permission.BLUETOOTH_SCAN
+                    ) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(
+                        this,
+                        android.Manifest.permission.BLUETOOTH_CONNECT
+                    ) == PackageManager.PERMISSION_GRANTED
         } else {
-            ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(
+                        this,
+                        android.Manifest.permission.ACCESS_COARSE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
         }
     }
 
@@ -248,7 +280,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun BillyApp(
     navController: NavHostController,
-    bleViewModel: BleViewModel,
+    proximityViewModel: ProximityViewModel,
     chatViewModel: ChatViewModel,
     onStartService: () -> Unit,
     onStopService: () -> Unit,
@@ -257,6 +289,9 @@ fun BillyApp(
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    // prendiamo lo stato dal nuovo ViewModel di prossimità
+    val proximityUiState by proximityViewModel.uiState.collectAsState()
 
     Scaffold(
         bottomBar = {
@@ -280,13 +315,13 @@ fun BillyApp(
                 val userManager = remember { UserManager(context) }
 
                 HomeScreen(
-                    encounters = bleViewModel.resolvedEncounters,
+                    // ⬇⬇ NUOVO: passiamo gli incontri dal ProximityViewModel
+                    encounters = proximityUiState.encounters,
                     onSelectProfile = { user -> navController.navigate("profile/$user") },
                     onOpenChat = { userName ->
                         chatViewModel.startChat(userName)
                         navController.navigate("chat/$userName")
                     },
-                    onSimulateEncounter = { simulateEncounter(bleViewModel, context) },
                     onStartBle = onStartService,
                     onStopBle = onStopService,
                     onTestBatchSystem = onTestBatchSystem,
@@ -296,13 +331,14 @@ fun BillyApp(
 
             composable("chats") {
                 ChatsScreen(
-                    chats = chatViewModel.getActiveChats(),
+                    chatViewModel = chatViewModel,
                     onSelectChat = { userName ->
                         chatViewModel.startChat(userName)
                         navController.navigate("chat/$userName")
                     }
                 )
             }
+
 
             composable("chat/{userName}") { backStackEntry ->
                 val userName = backStackEntry.arguments?.getString("userName") ?: return@composable
@@ -318,7 +354,8 @@ fun BillyApp(
                 ProfileScreen(
                     userName = userName,
                     chatViewModel = chatViewModel,
-                    bleViewModel = bleViewModel,
+                    // ⬇ se ProfileScreen usava BleViewModel, aggiorna la firma e passa ProximityViewModel
+                    proximityViewModel = proximityViewModel,
                     onGoToChat = { navController.navigate("chat/$it") }
                 )
             }

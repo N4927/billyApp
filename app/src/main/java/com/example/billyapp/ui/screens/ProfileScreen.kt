@@ -13,21 +13,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
 import com.example.billyapp.core.ChatViewModel
-import com.example.billyapp.ble.BleViewModel
+import com.example.billyapp.proximity.ProximityViewModel
+
+
 
 @Composable
 fun ProfileScreen(
     userName: String,
     chatViewModel: ChatViewModel,
-    bleViewModel: BleViewModel,
+    proximityViewModel: ProximityViewModel,
     onGoToChat: (String) -> Unit
 ) {
     val existingChat = chatViewModel.getChat(userName)
 
-    // ✅ Ottieni il numero di volte che hai incontrato la persona
-    val encounter = bleViewModel.resolvedEncounters.find { it.name == userName }
-    val encounterCount = encounter?.count ?: 0
+
 
     // 🔹 Palette minimal
     val background = Color(0xFFF8F8F8)
@@ -77,17 +78,6 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 🔹 Mostra quante volte lo hai incontrato
-            Text(
-                text = when {
-                    encounterCount > 1 -> "👀 Hai incontrato $userName $encounterCount volte nelle vicinanze"
-                    encounterCount == 1 -> "👀 Hai incontrato $userName una volta nelle vicinanze"
-                    else -> "Nessun incontro recente"
-                },
-                style = MaterialTheme.typography.bodyLarge.copy(color = Color.Gray),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
 
             Spacer(modifier = Modifier.height(32.dp))
 

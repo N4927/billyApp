@@ -44,6 +44,7 @@
         tools:targetApi="34" />
 
     <application
+        android:name=".BillyAppApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -53,6 +54,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BillyApp"
         tools:targetApi="34">
+
 
         <!-- 🌍 Activity principale -->
         <activity
@@ -68,7 +70,7 @@
 
         <!-- 📡 Servizio BLE in foreground -->
         <service
-            android:name=".ble.BleService"
+            android:name=".Bluetooth.BleService"
             android:exported="false"
             android:foregroundServiceType="location|connectedDevice|dataSync"
             android:stopWithTask="false" />

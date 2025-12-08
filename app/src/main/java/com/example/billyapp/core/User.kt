@@ -1,17 +1,12 @@
 package com.example.billyapp.core
 
-import kotlinx.serialization.Serializable
-
-@OptIn(kotlinx.serialization.InternalSerializationApi::class)
-
-@Serializable
+/**
+ * Modello profilo locale usato dallo screen di setup.
+ * In futuro potrai collegarlo al KMM / backend, ma per ora basta così.
+ */
 data class User(
-    val id: String,                // UUID univoco o assegnato dal server
-    var displayName: String,       // Nome visibile
-    var age: Int? = null,          // opzionale
-    var gender: String? = null,    // opzionale
-    var bio: String? = null,       // breve descrizione
-    var avatarUrl: String? = null, // immagine profilo
-    var interests: List<String>? = null, // tag
-    var rotatingId: ByteArray? = null // collegato al BLE
+    val id: String,
+    val name: String,
+    val age: Int? = null,
+    val bio: String? = null
 )

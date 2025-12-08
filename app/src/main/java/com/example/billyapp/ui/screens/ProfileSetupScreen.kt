@@ -12,7 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.shared.User
+import com.example.billyapp.core.User
 import java.util.UUID
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.unit.Dp

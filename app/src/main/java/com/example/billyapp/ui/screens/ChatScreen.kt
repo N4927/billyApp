@@ -91,13 +91,8 @@ fun ChatScreen(
                 .padding(horizontal = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            items(messages) { msg ->
-                if (msg.isIncoming) {
-                    ReceivedMessageBubble(msg.text)
-                } else {
-                    SentMessageBubble(msg.text)
-                }
-            }
+
+
         }
     }
 }

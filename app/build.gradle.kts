@@ -11,13 +11,14 @@ android {
 
     defaultConfig {
         applicationId = "com.example.billyapp"
-        minSdk = 23
+        minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // ✅ ADD THIS LINE
+
+
         multiDexEnabled = true
     }
 
@@ -32,7 +33,6 @@ android {
     }
 
     compileOptions {
-        // ✅ USE THIS INSTEAD (for older AGP versions)
         isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -48,11 +48,23 @@ android {
 }
 
 dependencies {
-    // ✅ ADD THIS DESUGARING DEPENDENCY
+    // Desugaring dependency
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
-    // ... rest of your dependencies remain the same ...
-    implementation(project(":shared"))
+    // Local AAR file
+    implementation(files("libs/shared-release.aar"))
+
+    // Ktor client (necessario per HttpClientEngine usato nel KMM)
+    implementation("io.ktor:ktor-client-core:2.3.12")
+    implementation("io.ktor:ktor-client-android:2.3.12")
+
+// Kotlinx datetime (necessario per Clock usato nel KMM)
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+
+
+    implementation("app.cash.sqldelight:android-driver:2.0.2")
+
+    // Compose dependencies
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
@@ -63,6 +75,8 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("androidx.compose.material:material-icons-extended:1.7.7")
+
+    // Other dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -73,6 +87,8 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+    // Testing dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
