@@ -203,4 +203,20 @@ Android = BLE + UI
 KMM = crypto + ingestion + resolution  
 
 This ensures full parity between iOS and Android proximity behavior.
+🟦 GAP-Only BLE Design (No GATT Used at This Stage)
+
+BillyApp Android currently operates exclusively using GAP (Generic Access Profile) for its proximity protocol.
+
+✔ GAP Used
+
+The app relies entirely on:
+
+BLE Advertising (Peripheral role)
+
+BLE Scanning (Central role)
+
+Service UUID + Service Data for transmitting the encrypted anonymous B_ID payload
+
+This means all proximity interactions happen without establishing BLE connections.
+
 
