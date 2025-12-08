@@ -1,153 +1,206 @@
-# BillyApp (Android) con risoluzione lato Server
 
-Questa repository contiene l’implementazione per **Android (Kotlin)** della logica di pubblicazione e scansione di identificatori rotanti via **Bluetooth Low Energy (BLE)**.
-La parte di **risoluzione degli ID** (associazione ID → nome utente) è spostata completamente sul **server** per garantire sicurezza e scalabilità.
+# 📱 BillyApp Android Client — Technical Documentation
 
----
-
-## 🔹 Funzionamento generale
-
-1. Ogni dispositivo Android genera un **identificatore rotante (ID)** con `RotatingIdGenerator`.
-
-   * L’ID cambia ogni `Constants.ROTATION_SECONDS` secondi.
-   * Viene trasmesso come **Service Data** BLE sotto un `SERVICE_UUID` fisso.
-
-2. Gli altri dispositivi nelle vicinanze effettuano lo **scanning** e ricevono:
-
-   * l’`idHex` (stringa esadecimale)
-   * il `timestamp` (secondi UNIX dell’avvistamento).
-
-3. L’app invia questi dati al **server** tramite `POST /api/resolve`.
-
-4. Il server restituisce il **nome utente associato** (se riconosciuto), oppure `null`.
-
-5. L’app registra l’incontro in memoria (o database), aggiornando un contatore delle volte in cui lo stesso nome è stato visto.
+BillyApp Android is the official proximity-aware mobile client implementing:
+- BLE scanning and advertising  
+- Encrypted proximity identifiers (B_ID)  
+- KMM Shared Core ingestion + resolution  
+- Foreground BLE services  
+- Jetpack Compose UI  
+- Real-time reactive flows  
 
 ---
 
-## 🔹 API del Server
-
-Il server è il **punto centrale** della logica.
-Deve esporre almeno un endpoint REST per risolvere gli ID.
-
-### Endpoint principale: Risoluzione
+# 🧱 Project Structure
 
 ```
-POST /api/resolve
-Content-Type: application/json
-```
-
-### Request
-
-```json
-{
-  "id": "aabbccddeeff00112233",
-  "timestamp": 1706200000
-}
-```
-
-* `id`: stringa esadecimale dell’ID BLE ricevuto.
-* `timestamp`: tempo (epoch secondi) in cui è stato rilevato.
-
-### Response
-
-```json
-{
-  "name": "Person1"
-}
-```
-
-oppure, se sconosciuto:
-
-```json
-{
-  "name": null
-}
+com.example.billyapp
+├─ bluetooth/
+│  ├─ BluetoothCentralService.kt
+│  ├─ BluetoothPeripheralService.kt
+│  └─ BleConstants.kt
+│
+├─ proximity/
+│  ├─ ProximityViewModel.kt
+│  └─ KmmProximityDataSource.kt
+│
+├─ kmm/
+│  ├─ KmmEnvironment.kt
+│  └─ AndroidTokenStorage.kt
+│
+├─ core/
+│  ├─ User.kt
+│  ├─ UserManager.kt
+│  ├─ ChatViewModel.kt
+│  └─ CryptographyManager.kt
+│
+├─ ui/
+│  └─ screens/
+│     ├─ HomeScreen.kt
+│     ├─ ChatsScreen.kt
+│     ├─ ChatScreen.kt
+│     ├─ ProfileScreen.kt
+│     └─ ProfileSetupScreen.kt
+│
+└─ MainActivity.kt
 ```
 
 ---
 
-## 🔹 Logica del Server
+# 🔄 Proximity Pipeline
 
-Il server deve:
+## 1. Advertising (Peripheral)
+- Retrieves active BID from KMM  
+- Packs B_ID → BLE advertisement service data  
+- Foreground service ensures stable operation  
 
-1. **Gestire un database utenti** → ogni utente ha una chiave segreta (`userSecret`).
-2. **Rigenerare ID attesi** usando lo stesso algoritmo di `RotatingIdGenerator` (con `userSecret`, `salt`, `bucket`).
-3. **Confrontare** l’ID ricevuto con gli ID calcolati per il periodo `timestamp ± window`.
-4. Se c’è match → restituisce il `name` associato all’utente.
-5. Se non trova match → restituisce `name = null`.
+## 2. Scanning (Central)
+- Scans for BLE packets containing B_ID  
+- Extracts 16-byte encrypted payload  
+- Converts to hex  
+- Sends to KMM:  
+```kotlin
+core.ingestPacket(bidHex)
+core.syncQueue()
+```
 
-> 🔒 Le chiavi segrete restano solo lato server.
-> I client Android non hanno accesso ai `userSecret`.
+## 3. KMM Core
+- Stores encounters in SQLDelight
+- Sends B_IDs to server via ingest/resolve
+- Updates `ResolvedRepository.activeSet`
+
+## 4. Android UI
+- Observes resolved users via  
+  ```kotlin
+  KmmEnvironment.resolvedUsersFlow
+  ```
+- Renders in HomeScreen  
 
 ---
 
-## 🔹 Schema di Rotating ID
+# 🧩 KMM Integration
 
-* Algoritmo: SHA-256 di (`userSecret + salt + bucket`).
-* `bucket = floor(epochSeconds / rotationSeconds)`.
-* Output = primi 16 byte dell’hash.
-* `serviceUUID` è fisso (es. `0000FEAA-0000-1000-8000-00805F9B34FB`).
+Place AAR in:
 
----
+```
+app/libs/shared-release.aar
+```
 
-## 🔹 Esempi di Implementazione Server
-
-### Kotlin + Ktor (scheletro)
+Add dependencies:
 
 ```kotlin
-post("/api/resolve") {
-    val req = call.receive<ResolveRequest>()
-    val user = database.find { matchId(req.id, req.timestamp, it.secret) }
-    if (user != null) {
-        call.respond(ResolveResponse(user.name))
-    } else {
-        call.respond(ResolveResponse(null))
-    }
-}
+implementation(files("libs/shared-release.aar"))
+implementation("io.ktor:ktor-client-core:2.3.12")
+implementation("io.ktor:ktor-client-android:2.3.12")
+implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
 ```
 
-### Python + FastAPI (scheletro)
+Initialize:
 
-```python
-@app.post("/api/resolve")
-def resolve(req: ResolveRequest):
-    for user in users_db:
-        if match_id(req.id, req.timestamp, user.secret):
-            return {"name": user.name}
-    return {"name": None}
+```kotlin
+KmmEnvironment.init(this)
+```
+
+APIs used:
+
+```kotlin
+core.getCurrentBid()
+core.ingestPacket(bidHex)
+core.syncQueue()
+core.ensureAdvertisingBatch()
 ```
 
 ---
 
-## 🔹 Sicurezza
+# 📡 BLE Layer
 
-* Usare **HTTPS** obbligatorio.
-* Possibile aggiungere un token API o OAuth per autenticare le richieste.
-* Logging controllato: non salvare direttamente gli `idHex` se non necessario.
+## BluetoothPeripheralService
+- Advertises encrypted B_ID  
+- Handles rotation & restarts  
+- Foreground mode  
 
----
-
-## 🔹 Dati salvati lato client (Android)
-
-* Android → `ConcurrentHashMap<String, Encounter>` con chiave = `name`.
-
-Ogni volta che viene visto lo stesso `name`, il `count` viene incrementato.
+## BluetoothCentralService
+- Scans continuously  
+- Extracts service data  
+- Forwards B_ID to KMM  
 
 ---
 
-## ✅ In sintesi
+# 🧭 UI Overview
 
-* Android:
+### HomeScreen
+- People nearby  
+- Online/offline toggle  
 
-  * genera ID → li trasmette con BLE
-  * scansiona ID vicini → invia al server per risoluzione
-  * salva nome + count
+### ChatsScreen
+- Active chat list  
 
-* Server:
+### ChatScreen
+- Messaging  
 
-  * custodisce i `userSecret`
-  * rigenera ID validi per i tempi recenti
-  * risponde con `name` o `null`
+### ProfileScreen
+- User details  
 
-Questo approccio garantisce che la **logica sensibile** (chiavi, matching) resti sul server e non sul dispositivo.
+### MainActivity
+- BLE permissions  
+- BLE service orchestration  
+- Sets navigation  
+
+---
+
+# 🐞 Debugging Commands
+
+Advertising:
+```
+adb logcat | grep BluetoothPeripheralService
+```
+
+Scanning:
+```
+adb logcat | grep BluetoothCentralService
+```
+
+Ingestion:
+```
+adb logcat | grep ingestPacket
+```
+
+Resolution:
+```
+adb logcat | grep activeSet
+```
+
+UI updates:
+```
+adb logcat | grep ProximityViewModel
+```
+
+---
+
+# 🧪 Real-World Testing
+
+1. Install app on two devices  
+2. Enable Bluetooth + grant permissions  
+3. Move devices within ~1–3 meters  
+4. Expected behavior:
+   - Phone A advertises BID  
+   - Phone B scans → ingestPacket + syncQueue  
+   - Server resolves identity  
+   - HomeScreen displays user name  
+
+---
+
+# 🚀 Summary
+
+BillyApp Android provides:
+✔ BLE dual-role (scanner + advertiser)  
+✔ Anonymous proximity via shared KMM module  
+✔ Automatic ingestion + resolution pipeline  
+✔ Real-time UI updates via StateFlow  
+✔ Clean MVVM & Compose architecture  
+
+Android = BLE + UI  
+KMM = crypto + ingestion + resolution  
+
+This ensures full parity between iOS and Android proximity behavior.
+
