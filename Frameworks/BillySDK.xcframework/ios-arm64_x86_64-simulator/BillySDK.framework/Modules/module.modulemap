@@ -1,0 +1,6 @@
+framework module "BillySDK" {
+    umbrella header "BillySDK.h"
+
+    export *
+    module * { export * }
+}

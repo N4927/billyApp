@@ -3,61 +3,92 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0C49BDFDFDF17E9110C6F88D /* Shared.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C16663432FFB954C32032F55 /* Shared.xcframework */; };
-		519AC486FBA2D0F1A359C5D6 /* PeripheralServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36828C85FAA45FF9331852B9 /* PeripheralServer.swift */; };
-		56C5F3EF18266A4E2E0777BD /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = BCD376966495C09BE8A703A1 /* Localizable.strings */; };
-		57103A7A695080E775FC254F /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BC93FFD698A9CF81D0C6DA /* Logging.swift */; };
-		5F257137DAF6F1F4F1318E20 /* KMMFacade.swift in Sources */ = {isa = PBXBuildFile; fileRef = E39BD075ABEB4560B9A69234 /* KMMFacade.swift */; };
-		6AF2DDDE7DC7BFC16F6959D8 /* CompositionRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 772752FDC032FAEAFF5A6094 /* CompositionRoot.swift */; };
-		8B943CA8586B61D9F8B809C5 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AA8CDC9F4F8DE4F11694F63 /* Notifications.swift */; };
-		9D0305136887BD31B52DF4AD /* KMMInterop.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61408C79A22BDEEA6BF27B3 /* KMMInterop.swift */; };
-		9FB23B7A9727159CEB67AAB9 /* NameSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2560FD94F6C4EC756DADE498 /* NameSetupView.swift */; };
-		A8519583FBB9A5F25A7EDA11 /* CentralClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A502CC86415F2006D687BC /* CentralClient.swift */; };
-		B179672738AF81862E9605FE /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E43CEE9C80781871F8C25DAB /* BluetoothManager.swift */; };
-		B27A6FA235C729AE8550BFA6 /* UserManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA786C73E2BF5B65C044885E /* UserManager.swift */; };
-		BB3EF34EDBF8CFCCABE16FAE /* BleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9D920B359EEF8AA5B2C1418 /* BleViewModel.swift */; };
-		CE38711F7E23B7C592C6D3F3 /* Data+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0E3E69D4C94E82D840DD37 /* Data+Ext.swift */; };
-		CFFB77933D8679DA68A3514B /* BleViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A9A4AB016F391E14EAEC02 /* BleViewModelTests.swift */; };
-		D394DE347A6BBBD5492F7193 /* BillyAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61FA7AFB45E34803352948CD /* BillyAppApp.swift */; };
-		ED8D714966522854D6C03D9E /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022C6AE422166E0375704A62 /* HomeView.swift */; };
+		00B5A0683008712C68C0844F /* DebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B1EAE0F9970B4D42F3E03A7 /* DebugLogger.swift */; };
+		0501D2FDCBDAC81C0222543E /* BillySDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 3E59FDC828CD52C1FB9DFF56 /* BillySDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		37FC4A658E86DB80DD69F490 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B67F298E549E609D420C98F /* AuthView.swift */; };
+		478F8C0268BE6166A812CC90 /* ProximityDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = E43EDAF435B089A37E0419E8 /* ProximityDTOs.swift */; };
+		4B898F419AF509750998FC7D /* AuthValueObjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 423E27431A697EC166E70516 /* AuthValueObjects.swift */; };
+		4D036D7D671D4597106B163E /* BillyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA75CBB3BE571677EDC7C70E /* BillyApp.swift */; };
+		4FBC6AAE296EB4715A40AFDE /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9663E81A8800BD53B9C945E1 /* Logger.swift */; };
+		53E6C9031A65970239C75E4A /* KeychainStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E90A4DDB1C742F0A74B2F446 /* KeychainStorage.swift */; };
+		5472E2F6E092357611BC6051 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A80DB7455097A26A119379F /* AuthViewModel.swift */; };
+		575E0395BD39643276F12E00 /* CompositionRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB6BC37399CAD5A5B768CA66 /* CompositionRoot.swift */; };
+		675D251C4B9B72E20B649075 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DCA22472C2FE46DA188DF66 /* HomeView.swift */; };
+		71E650C317AAC7C8574736FA /* StartProximityUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FC0B5C248FA9CBB40658518 /* StartProximityUseCase.swift */; };
+		7D61F984230F545780827844 /* ProximityEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1238F04A8F1988808D96073 /* ProximityEngine.swift */; };
+		7E0541466A21B790C1189CB7 /* SystemLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504DFEADA98A79EF1ABFF511 /* SystemLogger.swift */; };
+		85C1FA20C72DE40764EAFCE1 /* DebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99530850763580AB1BC83905 /* DebugView.swift */; };
+		8B8090231B8A22A224261855 /* SessionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9062FA0F2344D7BA3100AA32 /* SessionStorage.swift */; };
+		904DC4CCC122B6C0BDF8503A /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7B6B8D9EBE07D5E7AFE488F /* User.swift */; };
+		A0C4C3E88263C9C0409E0B3A /* StopProximityUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AAC3FB6E98F1C0AF10B829 /* StopProximityUseCase.swift */; };
+		A3DAFB37B35657B791B4701E /* SessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1404C7AC751B3686A3D23196 /* SessionManager.swift */; };
+		B4E1AE617A3AE7D2C8E4BF23 /* ProximityValueObjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41DE4CD1227674FE4E5C7CCA /* ProximityValueObjects.swift */; };
+		B61712B85572898018D98388 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F94D56CF690275C2B2E5C893 /* libsqlite3.tbd */; };
+		B62E05CD0758610B8E4552EF /* LoginUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 940BB504FD151ABB24F9D02B /* LoginUseCase.swift */; };
+		B853994C944A22CF98F4D3D9 /* BillySDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E59FDC828CD52C1FB9DFF56 /* BillySDK.xcframework */; };
+		C3D88B2414EF1C621BF0CE72 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD49DF1F5ECAE0D934B64163 /* HomeViewModel.swift */; };
+		C4DD0623406F4587C82A49B7 /* KMMAuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F9242DE4A0ADEF93AF111C /* KMMAuthRepository.swift */; };
+		CA1BA4D575619D8B0190D4DB /* ObserveProximityUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F510A0B929DF96DD6A88E922 /* ObserveProximityUseCase.swift */; };
+		CAE309090F70995C72A52505 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = D992A48600563FC870B247E3 /* AppConfig.swift */; };
+		F0E902106E7360D5090E1D12 /* RegisterUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 778993CC4D4FB4F363F74411 /* RegisterUseCase.swift */; };
+		F200AD59024291D84713AEF2 /* Data+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1A40C8E99D593BB5F6187D /* Data+Hex.swift */; };
+		F7CCF0FF7C985754B4D47D70 /* BleProximityEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2770341545A2A775419A230 /* BleProximityEngine.swift */; };
+		F8816FAD18068122017191BB /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE8C63D1990B42FE0F2CFB5 /* AuthRepository.swift */; };
+		FC4804BE050EA172ACE75EB0 /* AuthInputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 641B082E8F4E21D12C9145FE /* AuthInputs.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		8A43D3F1BC40783450C598E5 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 73CAEFAC3C357C398DA44B04 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 3341BC0DB49C637893904226;
-			remoteInfo = BillyApp;
+/* Begin PBXCopyFilesBuildPhase section */
+		2977479668E2720CFC8E20B6 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				0501D2FDCBDAC81C0222543E /* BillySDK.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXContainerItemProxy section */
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		022C6AE422166E0375704A62 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		0BDAD8A16837BBB07530BE62 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		2560FD94F6C4EC756DADE498 /* NameSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameSetupView.swift; sourceTree = "<group>"; };
-		36828C85FAA45FF9331852B9 /* PeripheralServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeripheralServer.swift; sourceTree = "<group>"; };
-		61BC93FFD698A9CF81D0C6DA /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
-		61FA7AFB45E34803352948CD /* BillyAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillyAppApp.swift; sourceTree = "<group>"; };
-		6C099C591503748E5FC98BC8 /* BillyAppTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BillyAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		772752FDC032FAEAFF5A6094 /* CompositionRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompositionRoot.swift; sourceTree = "<group>"; };
-		7AA8CDC9F4F8DE4F11694F63 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
-		8209F318CB03942445FC0164 /* BillyApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BillyApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		8436B1B11B945753696428FE /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/Localizable.strings; sourceTree = "<group>"; };
-		84A9A4AB016F391E14EAEC02 /* BleViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleViewModelTests.swift; sourceTree = "<group>"; };
-		B9D920B359EEF8AA5B2C1418 /* BleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleViewModel.swift; sourceTree = "<group>"; };
-		BA786C73E2BF5B65C044885E /* UserManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserManager.swift; sourceTree = "<group>"; };
-		C16663432FFB954C32032F55 /* Shared.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Shared.xcframework; path = BillyApp/Frameworks/Shared.xcframework; sourceTree = "<group>"; };
-		E39BD075ABEB4560B9A69234 /* KMMFacade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KMMFacade.swift; sourceTree = "<group>"; };
-		E43CEE9C80781871F8C25DAB /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
-		E7A502CC86415F2006D687BC /* CentralClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CentralClient.swift; sourceTree = "<group>"; };
-		EC0E3E69D4C94E82D840DD37 /* Data+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+Ext.swift"; sourceTree = "<group>"; };
-		EC7E3D4E200F195D356B43BE /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
-		F61408C79A22BDEEA6BF27B3 /* KMMInterop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KMMInterop.swift; sourceTree = "<group>"; };
+		0B67F298E549E609D420C98F /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		13AAC3FB6E98F1C0AF10B829 /* StopProximityUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProximityUseCase.swift; sourceTree = "<group>"; };
+		1404C7AC751B3686A3D23196 /* SessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManager.swift; sourceTree = "<group>"; };
+		2A80DB7455097A26A119379F /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		2B1EAE0F9970B4D42F3E03A7 /* DebugLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogger.swift; sourceTree = "<group>"; };
+		3E59FDC828CD52C1FB9DFF56 /* BillySDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BillySDK.xcframework; path = Frameworks/BillySDK.xcframework; sourceTree = "<group>"; };
+		41DE4CD1227674FE4E5C7CCA /* ProximityValueObjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityValueObjects.swift; sourceTree = "<group>"; };
+		423E27431A697EC166E70516 /* AuthValueObjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthValueObjects.swift; sourceTree = "<group>"; };
+		44F9242DE4A0ADEF93AF111C /* KMMAuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KMMAuthRepository.swift; sourceTree = "<group>"; };
+		504DFEADA98A79EF1ABFF511 /* SystemLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemLogger.swift; sourceTree = "<group>"; };
+		641B082E8F4E21D12C9145FE /* AuthInputs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthInputs.swift; sourceTree = "<group>"; };
+		6FC0B5C248FA9CBB40658518 /* StartProximityUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartProximityUseCase.swift; sourceTree = "<group>"; };
+		778993CC4D4FB4F363F74411 /* RegisterUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterUseCase.swift; sourceTree = "<group>"; };
+		7DCA22472C2FE46DA188DF66 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		7E1A40C8E99D593BB5F6187D /* Data+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+Hex.swift"; sourceTree = "<group>"; };
+		8209F318CB03942445FC0164 /* BillyApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BillyApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9062FA0F2344D7BA3100AA32 /* SessionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStorage.swift; sourceTree = "<group>"; };
+		940BB504FD151ABB24F9D02B /* LoginUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCase.swift; sourceTree = "<group>"; };
+		9663E81A8800BD53B9C945E1 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		99530850763580AB1BC83905 /* DebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugView.swift; sourceTree = "<group>"; };
+		A1238F04A8F1988808D96073 /* ProximityEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityEngine.swift; sourceTree = "<group>"; };
+		AD49DF1F5ECAE0D934B64163 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		BA75CBB3BE571677EDC7C70E /* BillyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillyApp.swift; sourceTree = "<group>"; };
+		D992A48600563FC870B247E3 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		E343DFA7AE921AF841E9D3AE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E43EDAF435B089A37E0419E8 /* ProximityDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityDTOs.swift; sourceTree = "<group>"; };
+		E7B6B8D9EBE07D5E7AFE488F /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		E90A4DDB1C742F0A74B2F446 /* KeychainStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStorage.swift; sourceTree = "<group>"; };
+		F2770341545A2A775419A230 /* BleProximityEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleProximityEngine.swift; sourceTree = "<group>"; };
+		F510A0B929DF96DD6A88E922 /* ObserveProximityUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObserveProximityUseCase.swift; sourceTree = "<group>"; };
+		F94D56CF690275C2B2E5C893 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		FB6BC37399CAD5A5B768CA66 /* CompositionRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompositionRoot.swift; sourceTree = "<group>"; };
+		FBE8C63D1990B42FE0F2CFB5 /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,63 +96,143 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0C49BDFDFDF17E9110C6F88D /* Shared.xcframework in Frameworks */,
+				B853994C944A22CF98F4D3D9 /* BillySDK.xcframework in Frameworks */,
+				B61712B85572898018D98388 /* libsqlite3.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		04B4641217ABC136CD96AEC7 /* Features */ = {
-			isa = PBXGroup;
-			children = (
-				817187BE343A807606FDFE90 /* Home */,
-				BA7CB17317A5C94C3D54CD89 /* Onboarding */,
-			);
-			path = Features;
-			sourceTree = "<group>";
-		};
 		0ACCA86D49C4F9A079CEA346 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				8209F318CB03942445FC0164 /* BillyApp.app */,
-				6C099C591503748E5FC98BC8 /* BillyAppTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		4755F33C1EC4FAD4BD25E811 /* Tests */ = {
+		0FCC2FB8727DC4D8AF2F7DF0 /* Domain */ = {
 			isa = PBXGroup;
 			children = (
-				84A9A4AB016F391E14EAEC02 /* BleViewModelTests.swift */,
+				641B082E8F4E21D12C9145FE /* AuthInputs.swift */,
+				423E27431A697EC166E70516 /* AuthValueObjects.swift */,
 			);
-			name = Tests;
-			path = BillyApp/Tests;
+			path = Domain;
 			sourceTree = "<group>";
 		};
-		7F8D49BF31972E3589DCF7FF /* SharedBridge */ = {
+		119455DCE5E463CF2C8B6118 /* Api */ = {
 			isa = PBXGroup;
 			children = (
-				E39BD075ABEB4560B9A69234 /* KMMFacade.swift */,
-				F61408C79A22BDEEA6BF27B3 /* KMMInterop.swift */,
+				0B67F298E549E609D420C98F /* AuthView.swift */,
+				2A80DB7455097A26A119379F /* AuthViewModel.swift */,
 			);
-			path = SharedBridge;
+			path = Api;
 			sourceTree = "<group>";
 		};
-		817187BE343A807606FDFE90 /* Home */ = {
+		16CBB7F80384BAE2DC2BC6E6 /* Domain */ = {
 			isa = PBXGroup;
 			children = (
-				B9D920B359EEF8AA5B2C1418 /* BleViewModel.swift */,
-				022C6AE422166E0375704A62 /* HomeView.swift */,
+				41DE4CD1227674FE4E5C7CCA /* ProximityValueObjects.swift */,
+				E7B6B8D9EBE07D5E7AFE488F /* User.swift */,
 			);
-			path = Home;
+			path = Domain;
 			sourceTree = "<group>";
 		};
-		864A9598B2360735A6DA42BA /* App */ = {
+		194C240986AD1828EEB86448 /* Api */ = {
 			isa = PBXGroup;
 			children = (
-				61FA7AFB45E34803352948CD /* BillyAppApp.swift */,
-				772752FDC032FAEAFF5A6094 /* CompositionRoot.swift */,
+				7DCA22472C2FE46DA188DF66 /* HomeView.swift */,
+				AD49DF1F5ECAE0D934B64163 /* HomeViewModel.swift */,
+				E43EDAF435B089A37E0419E8 /* ProximityDTOs.swift */,
+			);
+			path = Api;
+			sourceTree = "<group>";
+		};
+		1E6A2C290C2EDDAC6E85D07E /* Proximity */ = {
+			isa = PBXGroup;
+			children = (
+				194C240986AD1828EEB86448 /* Api */,
+				56AD931EC317E747B266A98F /* App */,
+				4449BCAAB8B483C62AEC012A /* Contract */,
+				16CBB7F80384BAE2DC2BC6E6 /* Domain */,
+				95F884FCD82F403972408493 /* Infra */,
+			);
+			path = Proximity;
+			sourceTree = "<group>";
+		};
+		1E85F9C3DF5198B876B3BA4A /* Modules */ = {
+			isa = PBXGroup;
+			children = (
+				AFDD26DC0ADAE3B75FA5189E /* Auth */,
+				1E6A2C290C2EDDAC6E85D07E /* Proximity */,
+			);
+			path = Modules;
+			sourceTree = "<group>";
+		};
+		291CBDEC987228DFC5C051EE /* App */ = {
+			isa = PBXGroup;
+			children = (
+				940BB504FD151ABB24F9D02B /* LoginUseCase.swift */,
+				778993CC4D4FB4F363F74411 /* RegisterUseCase.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		3AB7D8F3023FE95C93E8290D /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				B3B6508E4F74A6EC8E4DF94A /* App */,
+				A3D8355D919DC98F263F9770 /* Config */,
+				1E85F9C3DF5198B876B3BA4A /* Modules */,
+				55199E2F95D4221B09CBF1D6 /* Shared */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		4449BCAAB8B483C62AEC012A /* Contract */ = {
+			isa = PBXGroup;
+			children = (
+				A1238F04A8F1988808D96073 /* ProximityEngine.swift */,
+			);
+			path = Contract;
+			sourceTree = "<group>";
+		};
+		4D1B9222C95AB8E95D4742B9 /* Contract */ = {
+			isa = PBXGroup;
+			children = (
+				FBE8C63D1990B42FE0F2CFB5 /* AuthRepository.swift */,
+				9062FA0F2344D7BA3100AA32 /* SessionStorage.swift */,
+			);
+			path = Contract;
+			sourceTree = "<group>";
+		};
+		5169B87B483920D18A338BC3 /* Infra */ = {
+			isa = PBXGroup;
+			children = (
+				E90A4DDB1C742F0A74B2F446 /* KeychainStorage.swift */,
+				44F9242DE4A0ADEF93AF111C /* KMMAuthRepository.swift */,
+			);
+			path = Infra;
+			sourceTree = "<group>";
+		};
+		55199E2F95D4221B09CBF1D6 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				FD09F78055812D3AC45B97A7 /* Extensions */,
+				DAE2F90FD0388874CF6AE2D8 /* Infra */,
+				C6F45573A238738404BB4628 /* Kernel */,
+				C63A6C80BB8B2607848FA6E5 /* UI */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		56AD931EC317E747B266A98F /* App */ = {
+			isa = PBXGroup;
+			children = (
+				F510A0B929DF96DD6A88E922 /* ObserveProximityUseCase.swift */,
+				6FC0B5C248FA9CBB40658518 /* StartProximityUseCase.swift */,
+				13AAC3FB6E98F1C0AF10B829 /* StopProximityUseCase.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -129,70 +240,99 @@
 		8C2DD398557724E3FAA69B8B = {
 			isa = PBXGroup;
 			children = (
-				DB8419D579D8AED36B457FF9 /* BillyApp */,
-				4755F33C1EC4FAD4BD25E811 /* Tests */,
+				B21BB002985AE59F8FD916DE /* Resources */,
+				3AB7D8F3023FE95C93E8290D /* Sources */,
 				D24AA58C9B0BEA5772EAFF29 /* Frameworks */,
 				0ACCA86D49C4F9A079CEA346 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		94862324268040CEA251EDD3 /* Utils */ = {
+		95F884FCD82F403972408493 /* Infra */ = {
 			isa = PBXGroup;
 			children = (
-				EC0E3E69D4C94E82D840DD37 /* Data+Ext.swift */,
-				61BC93FFD698A9CF81D0C6DA /* Logging.swift */,
-				7AA8CDC9F4F8DE4F11694F63 /* Notifications.swift */,
-				BA786C73E2BF5B65C044885E /* UserManager.swift */,
+				F2770341545A2A775419A230 /* BleProximityEngine.swift */,
 			);
-			path = Utils;
+			path = Infra;
 			sourceTree = "<group>";
 		};
-		BA7CB17317A5C94C3D54CD89 /* Onboarding */ = {
+		A3D8355D919DC98F263F9770 /* Config */ = {
 			isa = PBXGroup;
 			children = (
-				2560FD94F6C4EC756DADE498 /* NameSetupView.swift */,
+				D992A48600563FC870B247E3 /* AppConfig.swift */,
 			);
-			path = Onboarding;
+			path = Config;
 			sourceTree = "<group>";
 		};
-		CCAA4692F2D7AE782063EDA7 /* BLE */ = {
+		AFDD26DC0ADAE3B75FA5189E /* Auth */ = {
 			isa = PBXGroup;
 			children = (
-				E43CEE9C80781871F8C25DAB /* BluetoothManager.swift */,
-				E7A502CC86415F2006D687BC /* CentralClient.swift */,
-				36828C85FAA45FF9331852B9 /* PeripheralServer.swift */,
+				119455DCE5E463CF2C8B6118 /* Api */,
+				291CBDEC987228DFC5C051EE /* App */,
+				4D1B9222C95AB8E95D4742B9 /* Contract */,
+				0FCC2FB8727DC4D8AF2F7DF0 /* Domain */,
+				5169B87B483920D18A338BC3 /* Infra */,
 			);
-			path = BLE;
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		B21BB002985AE59F8FD916DE /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				E343DFA7AE921AF841E9D3AE /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		B3B6508E4F74A6EC8E4DF94A /* App */ = {
+			isa = PBXGroup;
+			children = (
+				BA75CBB3BE571677EDC7C70E /* BillyApp.swift */,
+				FB6BC37399CAD5A5B768CA66 /* CompositionRoot.swift */,
+				1404C7AC751B3686A3D23196 /* SessionManager.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C63A6C80BB8B2607848FA6E5 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				99530850763580AB1BC83905 /* DebugView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		C6F45573A238738404BB4628 /* Kernel */ = {
+			isa = PBXGroup;
+			children = (
+				9663E81A8800BD53B9C945E1 /* Logger.swift */,
+			);
+			path = Kernel;
 			sourceTree = "<group>";
 		};
 		D24AA58C9B0BEA5772EAFF29 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				C16663432FFB954C32032F55 /* Shared.xcframework */,
+				3E59FDC828CD52C1FB9DFF56 /* BillySDK.xcframework */,
+				F94D56CF690275C2B2E5C893 /* libsqlite3.tbd */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		DB8419D579D8AED36B457FF9 /* BillyApp */ = {
+		DAE2F90FD0388874CF6AE2D8 /* Infra */ = {
 			isa = PBXGroup;
 			children = (
-				864A9598B2360735A6DA42BA /* App */,
-				CCAA4692F2D7AE782063EDA7 /* BLE */,
-				04B4641217ABC136CD96AEC7 /* Features */,
-				FBFE922987F192086E8E666A /* Resources */,
-				7F8D49BF31972E3589DCF7FF /* SharedBridge */,
-				94862324268040CEA251EDD3 /* Utils */,
+				2B1EAE0F9970B4D42F3E03A7 /* DebugLogger.swift */,
+				504DFEADA98A79EF1ABFF511 /* SystemLogger.swift */,
 			);
-			path = BillyApp;
+			path = Infra;
 			sourceTree = "<group>";
 		};
-		FBFE922987F192086E8E666A /* Resources */ = {
+		FD09F78055812D3AC45B97A7 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				0BDAD8A16837BBB07530BE62 /* Info.plist */,
-				BCD376966495C09BE8A703A1 /* Localizable.strings */,
+				7E1A40C8E99D593BB5F6187D /* Data+Hex.swift */,
 			);
-			path = Resources;
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -203,8 +343,8 @@
 			buildConfigurationList = 7F51DEB37D103E069D54130C /* Build configuration list for PBXNativeTarget "BillyApp" */;
 			buildPhases = (
 				7BA38B20F5B0DCACD3255C04 /* Sources */,
-				B97DDE67B563EE93774E155F /* Resources */,
 				47F31C3938061489D2E472A2 /* Frameworks */,
+				2977479668E2720CFC8E20B6 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -217,24 +357,6 @@
 			productReference = 8209F318CB03942445FC0164 /* BillyApp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		8485DB24863DA7FF62A54283 /* BillyAppTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = F6006E82DE0D88349BB17111 /* Build configuration list for PBXNativeTarget "BillyAppTests" */;
-			buildPhases = (
-				8DF650F20D2109B907668270 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				8586EE7C1A9A004CFA39E299 /* PBXTargetDependency */,
-			);
-			name = BillyAppTests;
-			packageProductDependencies = (
-			);
-			productName = BillyAppTests;
-			productReference = 6C099C591503748E5FC98BC8 /* BillyAppTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -244,8 +366,8 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
-					8485DB24863DA7FF62A54283 = {
-						DevelopmentTeam = "";
+					3341BC0DB49C637893904226 = {
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -256,82 +378,55 @@
 			knownRegions = (
 				Base,
 				en,
-				it,
 			);
 			mainGroup = 8C2DD398557724E3FAA69B8B;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				3341BC0DB49C637893904226 /* BillyApp */,
-				8485DB24863DA7FF62A54283 /* BillyAppTests */,
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXResourcesBuildPhase section */
-		B97DDE67B563EE93774E155F /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				56C5F3EF18266A4E2E0777BD /* Localizable.strings in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		7BA38B20F5B0DCACD3255C04 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D394DE347A6BBBD5492F7193 /* BillyAppApp.swift in Sources */,
-				BB3EF34EDBF8CFCCABE16FAE /* BleViewModel.swift in Sources */,
-				B179672738AF81862E9605FE /* BluetoothManager.swift in Sources */,
-				A8519583FBB9A5F25A7EDA11 /* CentralClient.swift in Sources */,
-				6AF2DDDE7DC7BFC16F6959D8 /* CompositionRoot.swift in Sources */,
-				CE38711F7E23B7C592C6D3F3 /* Data+Ext.swift in Sources */,
-				ED8D714966522854D6C03D9E /* HomeView.swift in Sources */,
-				5F257137DAF6F1F4F1318E20 /* KMMFacade.swift in Sources */,
-				9D0305136887BD31B52DF4AD /* KMMInterop.swift in Sources */,
-				57103A7A695080E775FC254F /* Logging.swift in Sources */,
-				9FB23B7A9727159CEB67AAB9 /* NameSetupView.swift in Sources */,
-				8B943CA8586B61D9F8B809C5 /* Notifications.swift in Sources */,
-				519AC486FBA2D0F1A359C5D6 /* PeripheralServer.swift in Sources */,
-				B27A6FA235C729AE8550BFA6 /* UserManager.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8DF650F20D2109B907668270 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				CFFB77933D8679DA68A3514B /* BleViewModelTests.swift in Sources */,
+				CAE309090F70995C72A52505 /* AppConfig.swift in Sources */,
+				FC4804BE050EA172ACE75EB0 /* AuthInputs.swift in Sources */,
+				F8816FAD18068122017191BB /* AuthRepository.swift in Sources */,
+				4B898F419AF509750998FC7D /* AuthValueObjects.swift in Sources */,
+				37FC4A658E86DB80DD69F490 /* AuthView.swift in Sources */,
+				5472E2F6E092357611BC6051 /* AuthViewModel.swift in Sources */,
+				4D036D7D671D4597106B163E /* BillyApp.swift in Sources */,
+				F7CCF0FF7C985754B4D47D70 /* BleProximityEngine.swift in Sources */,
+				575E0395BD39643276F12E00 /* CompositionRoot.swift in Sources */,
+				F200AD59024291D84713AEF2 /* Data+Hex.swift in Sources */,
+				00B5A0683008712C68C0844F /* DebugLogger.swift in Sources */,
+				85C1FA20C72DE40764EAFCE1 /* DebugView.swift in Sources */,
+				675D251C4B9B72E20B649075 /* HomeView.swift in Sources */,
+				C3D88B2414EF1C621BF0CE72 /* HomeViewModel.swift in Sources */,
+				C4DD0623406F4587C82A49B7 /* KMMAuthRepository.swift in Sources */,
+				53E6C9031A65970239C75E4A /* KeychainStorage.swift in Sources */,
+				4FBC6AAE296EB4715A40AFDE /* Logger.swift in Sources */,
+				B62E05CD0758610B8E4552EF /* LoginUseCase.swift in Sources */,
+				CA1BA4D575619D8B0190D4DB /* ObserveProximityUseCase.swift in Sources */,
+				478F8C0268BE6166A812CC90 /* ProximityDTOs.swift in Sources */,
+				7D61F984230F545780827844 /* ProximityEngine.swift in Sources */,
+				B4E1AE617A3AE7D2C8E4BF23 /* ProximityValueObjects.swift in Sources */,
+				F0E902106E7360D5090E1D12 /* RegisterUseCase.swift in Sources */,
+				A3DAFB37B35657B791B4701E /* SessionManager.swift in Sources */,
+				8B8090231B8A22A224261855 /* SessionStorage.swift in Sources */,
+				71E650C317AAC7C8574736FA /* StartProximityUseCase.swift in Sources */,
+				A0C4C3E88263C9C0409E0B3A /* StopProximityUseCase.swift in Sources */,
+				7E0541466A21B790C1189CB7 /* SystemLogger.swift in Sources */,
+				904DC4CCC122B6C0BDF8503A /* User.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		8586EE7C1A9A004CFA39E299 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 3341BC0DB49C637893904226 /* BillyApp */;
-			targetProxy = 8A43D3F1BC40783450C598E5 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
-/* Begin PBXVariantGroup section */
-		BCD376966495C09BE8A703A1 /* Localizable.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				8436B1B11B945753696428FE /* Base */,
-				EC7E3D4E200F195D356B43BE /* it */,
-			);
-			name = Localizable.strings;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		0701BE2EC357B05235CA15DE /* Release */ = {
@@ -339,43 +434,26 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = UQA966RB74;
+				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"BillyApp/Frameworks\"",
+					"\"Frameworks\"",
 				);
-				INFOPLIST_FILE = BillyApp/Resources/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.acme.billyapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.billyapp.ios;
 				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.9;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		2C61AA5D8FE23C30B5DE96AB /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.acme.billyapp.tests;
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BillyApp.app/BillyApp";
 			};
 			name = Release;
 		};
@@ -430,6 +508,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -446,43 +525,26 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = UQA966RB74;
+				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"BillyApp/Frameworks\"",
+					"\"Frameworks\"",
 				);
-				INFOPLIST_FILE = BillyApp/Resources/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.acme.billyapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.billyapp.ios;
 				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.9;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		85522ECD4B2345649E528F5B /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.acme.billyapp.tests;
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BillyApp.app/BillyApp";
 			};
 			name = Debug;
 		};
@@ -531,6 +593,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -558,15 +621,6 @@
 			buildConfigurations = (
 				36288DA1C87794DEF041C4E8 /* Debug */,
 				0701BE2EC357B05235CA15DE /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		F6006E82DE0D88349BB17111 /* Build configuration list for PBXNativeTarget "BillyAppTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				85522ECD4B2345649E528F5B /* Debug */,
-				2C61AA5D8FE23C30B5DE96AB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

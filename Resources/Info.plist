@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- 
+    @desc Standard Bundle Identification 
+    -->
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string> <key>CFBundleVersion</key>
+    <string>1</string>
+    
+    <!-- 
+    @desc UI Configuration 
+    -->
+    <key>UILaunchScreen</key>
+    <dict/>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    
+    <!-- 
+    @desc Device Capabilities 
+    Required for App Store filtering.
+    -->
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>arm64</string>
+        <string>bluetooth-le</string>
+    </array>
+
+    <!-- 
+    @desc Privacy Permissions (Bluetooth)
+    Mandatory for iOS 13+ to access CoreBluetooth.
+    -->
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>BillyApp requires Bluetooth access to detect nearby users and exchange secure IDs even when the app is in the background.</string>
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>BillyApp uses Bluetooth to securely broadcast your anonymous ID to nearby users.</string>
+    
+    <!-- 
+    @desc Background Modes
+    Enables the app to perform BLE operations while suspended.
+    - bluetooth-central: Scanning and connecting in background.
+    - bluetooth-peripheral: Advertising in background.
+    -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>bluetooth-central</string>
+        <string>bluetooth-peripheral</string>
+        </array>
+    
+    <!-- 
+    @desc Scene Manifest (SwiftUI Lifecycle)
+    -->
+    <key>UIApplicationSceneManifest</key>
+    <dict>
+        <key>UIApplicationSupportsMultipleScenes</key>
+        <false/>
+    </dict>
+</dict>
+</plist>
