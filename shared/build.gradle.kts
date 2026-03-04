@@ -20,7 +20,7 @@ plugins {
 }
 
 group = "com.billyapp.sdk"
-version = "1.2.0"
+version = "1.2.1"
 
 kotlin {
     // --- ANDROID TARGET (JVM) ---
