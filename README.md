@@ -80,11 +80,12 @@ This section is kept in sync automatically by CI to reflect the actual folder st
 
 
 
+
 | Feature | Area / Document | Latest Version | Path |
 |--------|-----------------|----------------|------|
-| `_templates` | `(root)` | `—` | `_templates` |
 | `ble` | `architecture_client_server` | `v_1_1_1` | `ble/architecture_client_server/v_1_1_1` |
 | `ble` | `implementation_client` | `v_1_0_0` | `ble/implementation_client/v_1_0_0` |
+
 
 
 
