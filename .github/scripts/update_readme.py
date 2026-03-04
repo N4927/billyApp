@@ -57,13 +57,19 @@ def collect_feature_entries() -> List[AreaEntry]:
     entries: List[AreaEntry] = []
 
     for feature_dir in sorted(
-        [p for p in REPO_ROOT.iterdir() if p.is_dir() and p.name not in FEATURE_IGNORE]
+        [
+            p
+            for p in REPO_ROOT.iterdir()
+            if p.is_dir() and p.name not in FEATURE_IGNORE and not p.name.startswith("_")
+        ]
     ):
         feature_name = feature_dir.name
 
         # Each immediate subdir is a "document area"
         area_dirs = [
-            p for p in feature_dir.iterdir() if p.is_dir() and not p.name.startswith(".")
+            p
+            for p in feature_dir.iterdir()
+            if p.is_dir() and not p.name.startswith(".") and not p.name.startswith("_")
         ]
         if not area_dirs:
             # Feature with no areas yet
