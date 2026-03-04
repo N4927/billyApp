@@ -1,0 +1,261 @@
+% ===========================================================================
+% BILLYAPP REPORT TEMPLATE - v.1.0.0
+% ===========================================================================
+
+\documentclass[a4paper,11pt,table,dvipsnames]{article}
+
+% ===========================================================================
+% PACKAGES
+% ===========================================================================
+
+% Fonts and symbols
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{inconsolata}
+\usepackage{wasysym}
+\usepackage{microtype}
+
+% Layout, page setup
+\usepackage[margin=2.5cm,a4paper]{geometry}
+\usepackage{titlesec}
+\usepackage{appendix}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{parskip}
+\usepackage{tabto}
+\usepackage{pdflscape}
+\usepackage{enumitem}
+\usepackage{adjustbox}
+\usepackage[super]{nth}
+
+% Science and language typesetting
+\usepackage{bm}
+\usepackage[
+  arc-separator = \,,
+  retain-explicit-plus,
+  inter-unit-product = \cdot,
+  detect-weight=true,
+  detect-family=true,
+  range-phrase=--,
+  range-units=single
+]{siunitx}
+\usepackage[version=4]{mhchem}
+\usepackage{nicematrix}
+\usepackage[makeroom]{cancel}
+\usepackage{circledsteps}
+\usepackage[italian]{babel}
+\usepackage{csquotes}
+
+% Graphics, captions, tables
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{tikz,tikz-3dplot}
+\usepackage{pgfplots}
+\usepackage{pdfpages}
+\usepackage[justification=centering, labelfont={small,bf}, font={small}]{caption}
+\usepackage{subcaption}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage[outline]{contour}
+
+% TikZ options setup
+\usetikzlibrary{
+  calc,
+  arrows,
+  arrows.meta,
+  positioning,
+  decorations.pathreplacing,
+  decorations.markings,
+  decorations.text,
+  calligraphy,
+  pgfplots.dateplot,
+  shapes.geometric
+}
+
+% References and links
+\usepackage{hyperref}
+\usepackage[noabbrev]{cleveref}
+\usepackage[nottoc,numbib]{tocbibind}
+
+% Miscellaneous
+\usepackage{datetime2}
+\usepackage{iftex,etoolbox,expl3,xparse}
+
+\pgfplotsset{compat=1.18}
+\AtBeginDocument{\RenewCommandCopy\qty\SI}
+
+% ===========================================================================
+% METADATA
+% ===========================================================================
+
+\title{\textbf{[Nome Feature]}}
+\author{\textbf{[Nome Autore]} -- BillyApp}
+\date{Versione [X.Y.Z] \\ \today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+% ===========================================================================
+% TEMPLATE CONTENT
+% ===========================================================================
+
+\section{Templates (da rimuovere)}
+
+% Table template
+\subsection{Tabelle e diagrammi}
+
+\subsubsection{Tabella}
+% Table === BEGIN
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{@{} l l c @{}}
+        \toprule
+        \textbf{Titolo 1} & \textbf{Titolo 2} & \textbf{Titolo 3} \\
+        \midrule
+        Riga 1            & Riga 1            & Riga 1            \\
+        Riga 2            & Riga 2            & Riga 2            \\
+        Riga 3            & Riga 3            & Riga 3            \\
+        \midrule
+        \textbf{Titolo 1} &                   & Riga 4            \\
+        Riga 5            &                   & Riga 5            \\
+        \bottomrule
+    \end{tabular}
+    \caption{Descrizione della tabella}
+    \label{tab:nome_tabella}
+\end{table}
+% Table === END
+
+\subsubsection{Diagramma}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+            node distance=2cm,
+            auto,
+            font=\small\sffamily,
+            % Stili dei nodi
+            startstop/.style={rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=gray!10},
+            process/.style={rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=white},
+            decision/.style={diamond, aspect=2, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=gray!5},
+            arrow/.style={thick,->,>=stealth}
+        ]
+
+        % Nodi
+        \node (start) [startstop] {Evento Iniziale};
+        \node (check) [decision, below of=start, yshift=-0.5cm] {Decisione};
+
+        % Diramazioni
+        \node (fail) [process, below of=check, xshift=-3.5cm, yshift=-0.5cm] {Evento};
+        \node (success) [process, below of=check, xshift=3.5cm, yshift=-0.5cm] {Evento};
+
+        % End
+        \node (end) [startstop, below of=check, yshift=-3cm] {Evento Finale};
+
+        % Frecce
+        \draw [arrow] (start) -- (check);
+        \draw [arrow] (check) -| node[anchor=south east] {Condizione} (fail);
+        \draw [arrow] (check) -| node[anchor=south west] {Condizione} (success);
+        \draw [arrow] (fail) |- (end);
+        \draw [arrow] (success) |- (end);
+
+    \end{tikzpicture}
+    \caption{Nome del diagramma di flusso}
+    \label{fig:nome_diagramma}
+\end{figure}
+
+
+\subsection{Formule matematiche}
+
+\subsubsection{Definizione}
+% Definition === BEGIN
+\textbf{Definizione (\(NomeParametro\)):}
+Sia
+\[
+    Parametro = \dots
+\]
+\dots .
+% Definition === END
+
+\subsubsection{Algoritmo}
+% Algorithm === BEGIN
+\textbf{Algoritmo (\(NomeAlgoritmo\)):}
+Sia
+\[
+    Algoritmo = \dots
+\]
+la algoritmo che \dots . L'algoritmo prevede:
+\begin{enumerate}
+    \item Passo 1
+    \item Passo 2
+    \item Passo 3
+\end{enumerate}
+% Algorithm === END
+
+\subsubsection{Regola}
+% Rule === BEGIN
+\textbf{Regola:}
+\dots
+% Rule === END
+
+% ===========================================================================
+% BODY
+% ===========================================================================
+
+\section{Scopo e perimetro}
+
+Questo documento descrive l'implementazione e le scelte architetturali relative a \textbf{[Nome Feature]}.
+
+\begin{itemize}
+    \item Piattaforme coinvolte: \dots
+    \item Tecnologie: \dots
+\end{itemize}
+
+\subsection{Perimetro}
+Questo documento si concentra sui seguenti aspetti:
+\begin{itemize}
+    \item Punto 1
+    \item Punto 2
+\end{itemize}
+
+Sono esplicitamente esclusi:
+\begin{itemize}
+    \item Punto 1
+\end{itemize}
+
+\section{Panoramica architetturale}
+L'architettura del [Nome Feature] \dots
+
+\section{Principi di progettazione}
+Il [Nome feature] segue i seguenti principi di progettazione:
+
+\subsection{Principio 1}
+\dots
+
+\section{(Spiegazione della feature)}
+\dots
+
+% Keep everything below this line at the end of the document
+% ===========================================================================
+\section{Flusso \dots}
+\dots
+
+\section{Threat model e mitigazioni}
+\dots
+
+\section{Alternative considerate e modelli mitigati}
+\dots
+
+\section{Sintesi}
+\dots
+
+
+
+\end{document}
