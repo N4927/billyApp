@@ -205,7 +205,6 @@ class BillyApiClient(
         email: String,
         password: String,
     ): Result<NetworkDataSource.AuthResponse, AppError> {
-
         val registerResult =
             safeRequest<Unit> {
                 publicClient.post(ENDPOINT_REGISTER) {
@@ -220,7 +219,6 @@ class BillyApiClient(
 
         return login(email, password)
     }
-
 
     /**
      * Wraps Ktor calls in a Result Monad, mapping exceptions to Domain Errors.
