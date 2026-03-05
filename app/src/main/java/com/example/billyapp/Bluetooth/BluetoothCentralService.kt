@@ -1,12 +1,17 @@
 package com.example.billyapp.bluetooth
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
@@ -19,113 +24,90 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.example.billyapp.kmm.KmmEnvironment
-import com.billyapp.shared.core.BillyCore
-import kotlinx.coroutines.*
+import com.billyapp.shared.BillySDK  // ← NUOVO: dal KMM!
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 
 class BluetoothCentralService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val core: BillyCore
-        get() = KmmEnvironment.core
+    // ← NUOVO: Usa BillySDK invece di KmmEnvironment
+    private val core = BillySDK.core
 
-    private var scanner: BluetoothLeScanner? = null
-    private var scanCallback: ScanCallback? = null
+    private var bluetoothLeScanner: BluetoothLeScanner? = null
+    private val activeConnections = ConcurrentHashMap<String, BluetoothGatt>()
+    private val processedDevices = ConcurrentHashMap.newKeySet<String>()
 
     @Volatile
     private var isActive = false
 
+    // --- Permission Check ---
+
+    private fun hasScanPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
-        startForegroundNotification("Starting BLE scan...")
+        startForegroundNotification("Scanning for nearby Billy users...")
 
-        // Inizializza il core KMM (se non già inizializzato)
-        KmmEnvironment.init(applicationContext)
+        if (!hasScanPermission()) {
+            Log.e("BluetoothCentral", "Missing permissions. Stopping.")
+            stopSelf()
+            return
+        }
 
         val manager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
         val adapter = manager.adapter
 
         if (adapter == null || !adapter.isEnabled) {
-            Log.e("BluetoothCentral", "❌ Bluetooth disabled or unavailable")
+            Log.e("BluetoothCentral", "❌ Bluetooth disabled")
             stopSelf()
             return
         }
 
-        scanner = adapter.bluetoothLeScanner
-        isActive = true
-
-        scope.launch {
-            startScanning()
+        bluetoothLeScanner = adapter.bluetoothLeScanner
+        if (bluetoothLeScanner == null) {
+            Log.e("BluetoothCentral", "❌ Scanner unavailable")
+            stopSelf()
+            return
         }
+
+        isActive = true
+        scope.launch { startScanning() }
     }
 
+    @SuppressLint("MissingPermission")
     override fun onDestroy() {
         isActive = false
-        stopScanning()
+        try { bluetoothLeScanner?.stopScan(scanCallback) } catch (_: Exception) {}
+        activeConnections.values.forEach { gatt ->
+            try { gatt.disconnect(); gatt.close() } catch (_: Exception) {}
+        }
+        activeConnections.clear()
+        processedDevices.clear()
         scope.cancel()
         super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    // ---------------------------------------------------------
-    // Notifications
-    // ---------------------------------------------------------
+    // --- Scanning ---
 
-    private fun startForegroundNotification(msg: String) {
-        val nm = getSystemService(NotificationManager::class.java)
-
-        if (Build.VERSION.SDK_INT >= 26 &&
-            nm.getNotificationChannel(BleConstants.NOTI_CHANNEL_CENTRAL) == null
-        ) {
-            nm.createNotificationChannel(
-                NotificationChannel(
-                    BleConstants.NOTI_CHANNEL_CENTRAL,
-                    "BLE Central",
-                    NotificationManager.IMPORTANCE_LOW
-                )
-            )
-        }
-
-        val notification: Notification =
-            NotificationCompat.Builder(this, BleConstants.NOTI_CHANNEL_CENTRAL)
-                .setContentTitle("Billy – Scanning")
-                .setContentText(msg)
-                .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
-                .build()
-
-        startForeground(1001, notification)
-    }
-
-    private fun updateNotification(text: String) {
-        startForegroundNotification(text)
-    }
-
-    // ---------------------------------------------------------
-    // Scanner
-    // ---------------------------------------------------------
-
-    @SuppressLint("MissingPermission") // le permission vengono controllate prima
+    @SuppressLint("MissingPermission")
     private fun startScanning() {
-        if (!hasPermissions()) {
-            Log.w("BluetoothCentral", "⚠️ Missing permissions")
-            updateNotification("Missing permissions")
-            return
-        }
-
-        val adapter = BluetoothAdapter.getDefaultAdapter()
-        if (adapter == null || !adapter.isEnabled) {
-            Log.w("BluetoothCentral", "⚠️ Bluetooth disabled")
-            updateNotification("Bluetooth disabled")
-            return
-        }
-
-        val sc = scanner ?: run {
-            Log.e("BluetoothCentral", "❌ BluetoothLeScanner is null")
-            updateNotification("Scanner unavailable")
-            return
-        }
+        if (!hasScanPermission()) return
 
         val filter = ScanFilter.Builder()
             .setServiceUuid(BleConstants.SERVICE_UUID)
@@ -133,89 +115,144 @@ class BluetoothCentralService : Service() {
 
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
             .build()
 
-        scanCallback = object : ScanCallback() {
+        try {
+            bluetoothLeScanner?.startScan(listOf(filter), settings, scanCallback)
+            Log.i("BluetoothCentral", "🔍 Scanning for Billy devices")
+        } catch (e: Exception) {
+            Log.e("BluetoothCentral", "❌ Scan failed: ${e.message}")
+        }
+    }
 
-            override fun onScanResult(callbackType: Int, result: ScanResult) {
-                val record = result.scanRecord ?: return
-                val payload = record.getServiceData(BleConstants.SERVICE_UUID) ?: return
-                if (payload.size != 16) return // accettiamo solo BIDs di 16 byte
+    private val scanCallback = object : ScanCallback() {
+        @SuppressLint("MissingPermission")
+        override fun onScanResult(callbackType: Int, result: ScanResult?) {
+            val device = result?.device ?: return
+            val address = device.address ?: return
 
-                // 🔁 Convertiamo il ByteArray in esadecimale per BillyCore
-                val bidHex = payload.joinToString("") { "%02x".format(it) }
+            if (activeConnections.containsKey(address)) return
+            if (processedDevices.contains(address)) return
 
-                Log.d(
-                    "BluetoothCentral",
-                    "📡 BID received: ${bidHex.take(16)}... RSSI=${result.rssi}"
-                )
+            val uuids = result.scanRecord?.serviceUuids
+            if (uuids?.contains(BleConstants.SERVICE_UUID) != true) return
 
-                // Anche se ingestPacket non è suspend, lo lanciamo in background
+            Log.i("BluetoothCentral", "📱 Found: $address (RSSI: ${result.rssi}dBm)")
+            scope.launch { connectToDevice(device) }
+        }
+
+        override fun onScanFailed(errorCode: Int) {
+            Log.e("BluetoothCentral", "❌ Scan error: $errorCode")
+        }
+    }
+
+    // --- GATT Connection ---
+
+    @SuppressLint("MissingPermission")
+    private suspend fun connectToDevice(device: BluetoothDevice) {
+        val address = device.address ?: return
+        if (!hasScanPermission()) return
+
+        processedDevices.add(address)
+        Log.d("BluetoothCentral", "🔌 Connecting to $address")
+
+        try {
+            val gatt = device.connectGatt(this, false, gattCallback)
+            if (gatt != null) activeConnections[address] = gatt
+        } catch (e: Exception) {
+            Log.e("BluetoothCentral", "❌ Connect failed: ${e.message}")
+            activeConnections.remove(address)
+        }
+    }
+
+    private val gattCallback = object : BluetoothGattCallback() {
+        @SuppressLint("MissingPermission")
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            val address = gatt.device?.address ?: "unknown"
+            when (newState) {
+                BluetoothProfile.STATE_CONNECTED -> {
+                    Log.i("BluetoothCentral", "✅ Connected to $address")
+                    try { gatt.discoverServices() } catch (e: Exception) { cleanupConnection(gatt) }
+                }
+                BluetoothProfile.STATE_DISCONNECTED -> cleanupConnection(gatt)
+            }
+        }
+
+        @SuppressLint("MissingPermission")
+        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                cleanupConnection(gatt)
+                return
+            }
+
+            val service = gatt.getService(BleConstants.SERVICE_UUID.uuid)
+            val characteristic = service?.getCharacteristic(BleConstants.BID_CHARACTERISTIC_UUID.uuid)
+
+            if (characteristic == null) {
+                cleanupConnection(gatt)
+                return
+            }
+
+            try {
+                if (!gatt.readCharacteristic(characteristic)) {
+                    cleanupConnection(gatt)
+                }
+            } catch (e: Exception) {
+                cleanupConnection(gatt)
+            }
+        }
+
+        @Deprecated("Deprecated in Java")
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                val bid = characteristic.value ?: byteArrayOf()
+                val bidHex = bid.joinToString("") { "%02x".format(it) }
+                val address = gatt.device?.address ?: "unknown"
+
+                Log.d("BluetoothCentral", "📦 BID from $address: $bidHex")
+
+                // ← NUOVO: Usa BillySDK.core
                 scope.launch {
                     try {
                         core.ingestPacket(bidHex)
                         core.syncQueue()
+                        Log.i("BluetoothCentral", "✅ Encounter: $address")
                     } catch (e: Exception) {
-                        Log.e("BluetoothCentral", "❌ ingestPacket/syncQueue error: ${e.message}")
+                        Log.e("BluetoothCentral", "❌ ingestPacket: ${e.message}")
                     }
                 }
             }
-
-            override fun onScanFailed(errorCode: Int) {
-                Log.e("BluetoothCentral", "❌ Scan failed: $errorCode")
-                updateNotification("Scan error $errorCode")
-            }
-        }
-
-        try {
-            sc.startScan(listOf(filter), settings, scanCallback)
-            Log.d("BluetoothCentral", "🚀 Started BLE scanning")
-            updateNotification("Scanning for BID packets")
-        } catch (e: SecurityException) {
-            Log.e("BluetoothCentral", "❌ startScan SecurityException: ${e.message}")
-            updateNotification("Scan security error")
-        } catch (e: Exception) {
-            Log.e("BluetoothCentral", "❌ startScan exception: ${e.message}")
-            updateNotification("Scan failed")
+            cleanupConnection(gatt)
         }
     }
 
     @SuppressLint("MissingPermission")
-    private fun stopScanning() {
-        try {
-            scanner?.stopScan(scanCallback)
-            scanCallback = null
-            Log.d("BluetoothCentral", "🛑 Stopped BLE scanning")
-        } catch (e: SecurityException) {
-            Log.e("BluetoothCentral", "❌ stopScan SecurityException: ${e.message}")
-        } catch (e: Exception) {
-            Log.e("BluetoothCentral", "❌ stopScan exception: ${e.message}")
-        }
+    private fun cleanupConnection(gatt: BluetoothGatt?) {
+        val address = gatt?.device?.address ?: return
+        activeConnections.remove(address)
+        try { gatt.disconnect() } catch (_: Exception) {}
+        try { gatt.close() } catch (_: Exception) {}
     }
 
-    // ---------------------------------------------------------
-    // Permissions
-    // ---------------------------------------------------------
+    // --- Notification ---
 
-    private fun hasPermissions(): Boolean {
-        val pm = packageManager
-        if (!pm.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            Log.e("BluetoothCentral", "❌ Device does not support BLE")
-            return false
+    private fun startForegroundNotification(msg: String) {
+        val nm = getSystemService(NotificationManager::class.java)
+        if (Build.VERSION.SDK_INT >= 26 && nm.getNotificationChannel(BleConstants.NOTI_CHANNEL_CENTRAL) == null) {
+            nm.createNotificationChannel(
+                NotificationChannel(BleConstants.NOTI_CHANNEL_CENTRAL, "BLE Central", NotificationManager.IMPORTANCE_LOW)
+            )
         }
-
-        fun check(p: String) =
-            ContextCompat.checkSelfPermission(this, p) ==
-                    PackageManager.PERMISSION_GRANTED
-
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            check(android.Manifest.permission.BLUETOOTH_SCAN) &&
-                    check(android.Manifest.permission.BLUETOOTH_CONNECT) &&
-                    check(android.Manifest.permission.ACCESS_FINE_LOCATION)
-        } else {
-            check(android.Manifest.permission.BLUETOOTH) &&
-                    check(android.Manifest.permission.BLUETOOTH_ADMIN) &&
-                    check(android.Manifest.permission.ACCESS_FINE_LOCATION)
-        }
+        val notification = NotificationCompat.Builder(this, BleConstants.NOTI_CHANNEL_CENTRAL)
+            .setContentTitle("Billy – Scanning")
+            .setContentText(msg)
+            .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
+            .build()
+        startForeground(1001, notification)
     }
 }

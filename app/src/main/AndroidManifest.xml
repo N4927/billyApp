@@ -9,31 +9,25 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Permessi Bluetooth base -->
+    <!-- Permessi Bluetooth base (legacy, Android < 12) -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
     <!-- Permessi Bluetooth per Android 12+ -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="31" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-
-    <!-- Location (necessaria per lo scan BLE su Android < 12 e per FGS location) -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <!-- Notifiche Foreground (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Foreground service base (retrocompatibile Android 10–14) -->
+    <!-- Foreground service base -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-    <!-- Tipi specifici FGS (Android 14+) -->
-    <uses-permission
-        android:name="android.permission.FOREGROUND_SERVICE_LOCATION"
-        android:required="false"
-        tools:targetApi="34" />
+    <!-- Tipi specifici FGS (Android 14+) - REMOVED location -->
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"
         android:required="false"
@@ -55,8 +49,6 @@
         android:theme="@style/Theme.BillyApp"
         tools:targetApi="34">
 
-
-        <!-- 🌍 Activity principale -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -68,11 +60,16 @@
             </intent-filter>
         </activity>
 
-        <!-- 📡 Servizio BLE in foreground -->
+        <!-- REMOVED location from foregroundServiceType -->
         <service
-            android:name=".Bluetooth.BleService"
+            android:name=".bluetooth.BluetoothCentralService"
             android:exported="false"
-            android:foregroundServiceType="location|connectedDevice|dataSync"
+            android:foregroundServiceType="connectedDevice|dataSync"
+            android:stopWithTask="false" />
+        <service
+            android:name=".bluetooth.BluetoothPeripheralService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice|dataSync"
             android:stopWithTask="false" />
     </application>
 </manifest>

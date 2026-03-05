@@ -1,15 +1,21 @@
 package com.example.billyapp
 
 import android.app.Application
-import com.example.billyapp.kmm.KmmEnvironment
+import com.billyapp.shared.BillySDK  // ← Dal KMM!
+import com.example.billyapp.kmm.AndroidTokenStorage  // ← Tuoi
 
 class BillyAppApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
 
-        // Inizializza il core KMM una volta sola all’avvio dell’app.
-        // Se preferisci, puoi rimuoverla e lasciare init lazy sul primo accesso.
-        KmmEnvironment.init(this)
+        // 1. Crea storage (TUO)
+        val tokenStorage = AndroidTokenStorage(this)
+        
+        // 2. Inizializza SDK (KMM fa tutto!)
+        BillySDK.initialize(
+            context = this,
+            storage = tokenStorage
+        )
     }
 }

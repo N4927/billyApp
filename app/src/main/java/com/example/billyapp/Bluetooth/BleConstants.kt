@@ -9,6 +9,10 @@ object BleConstants {
     val SERVICE_UUID: ParcelUuid =
         ParcelUuid(UUID.fromString("0000FEAA-0000-1000-8000-00805F9B34FB"))
 
+    // Characteristic UUID for BID
+    val BID_CHARACTERISTIC_UUID: ParcelUuid =
+        ParcelUuid(UUID.fromString("00002A37-0000-1000-8000-00805F9B34FB"))
+
     // Rotate the advertised BID every N seconds
     const val ROTATION_SECONDS = 10L
 

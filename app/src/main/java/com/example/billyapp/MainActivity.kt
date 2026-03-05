@@ -1,5 +1,7 @@
 package com.example.billyapp
 
+
+
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -38,11 +40,16 @@ import com.example.billyapp.core.testBatchSystem
 import com.example.billyapp.proximity.ProximityViewModel
 import com.example.billyapp.ui.screens.*
 import com.example.billyapp.ui.theme.BillyAppTheme
+import com.example.billyapp.core.AuthViewModel
+import com.example.billyapp.kmm.AndroidTokenStorage
 
 class MainActivity : ComponentActivity() {
 
     private val proximityViewModel: ProximityViewModel by viewModels()
     private val chatViewModel: ChatViewModel by viewModels()
+
+    private val authViewModel: AuthViewModel by viewModels()
+
     private lateinit var userManager: UserManager
 
     private var appInitialized = false
@@ -52,10 +59,8 @@ class MainActivity : ComponentActivity() {
     ) { perms ->
         val allGranted = perms.entries.all { it.value }
         if (allGranted) {
-            // ✅ Permissions granted - now initialize the app
             initializeApp()
         } else {
-            // ❌ Permissions denied - show error and set basic content
             Toast.makeText(
                 this,
                 "BLE permissions required for app functionality!",
@@ -70,28 +75,48 @@ class MainActivity : ComponentActivity() {
 
         userManager = UserManager(this)
 
-        // ✅ Request permissions FIRST, before any app initialization
-        requestAllPermissions()
+        // ✅ NUOVO: Controlla login prima dei permessi
+        if (isLoggedIn()) {
+            // Già loggato, procedi con permessi
+            requestAllPermissions()
+        } else {
+            // Non loggato, mostra login
+            setLoginContent()
+        }
     }
 
-    private fun initializeApp() {
-        if (appInitialized) return // Prevent multiple initializations
+    // ✅ NUOVO: Funzione helper
+    private fun isLoggedIn(): Boolean {
+        return AndroidTokenStorage(this).getAccessToken() != null
+    }
 
+    // ✅ NUOVO: Mostra login screen
+    private fun setLoginContent() {
+        setContent {
+            BillyAppTheme {
+                LoginScreen(
+                    viewModel = authViewModel,
+                    onAuthSuccess = {
+                        // Dopo login OK, richiedi permessi
+                        requestAllPermissions()
+                    }
+                )
+            }
+        }
+    }
+
+    // Modifica initializeApp() - rimuovi doppia inizializzazione
+    private fun initializeApp() {
+        if (appInitialized) return
         appInitialized = true
 
-        // ✅ Initialize batch system (resta com’era – se UserManager lo gestisce ancora)
-        initializeBatchSystem()
+        // ✅ Rimuovi initializeBatchSystem() - lo fa KMM
 
-        // ✅ Start chat
         chatViewModel.startChat("Helena Hills")
-
-        // ✅ Set the main app content
         setMainContent()
-
-        // ✅ Auto-start BLE services (central + peripheral)
         startBleServices()
 
-        Log.d("MainActivity", "✅ App fully initialized with permissions")
+        Log.d("MainActivity", "✅ App initialized")
     }
 
     private fun setMainContent() {
@@ -105,7 +130,6 @@ class MainActivity : ComponentActivity() {
                     proximityViewModel = proximityViewModel,
                     chatViewModel = chatViewModel,
                     onStartService = {
-                        // Just start services - we already have permissions
                         startBleServices()
                     },
                     onStopService = { stopBleServices() },
@@ -113,9 +137,7 @@ class MainActivity : ComponentActivity() {
                     onClearAllData = {
                         stopBleServices()
                         UserManager(context).clearAllUserData()
-                        // se vuoi pulire anche il KMM, puoi aggiungere qui
                         Log.i("MainActivity", "🧹 Cleared all data")
-                        // Restart the app to refresh completely
                         restartActivity()
                     }
                 )
@@ -124,7 +146,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun setBasicContent() {
-        // ✅ Fallback content when permissions are denied
         setContent {
             BillyAppTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
@@ -168,8 +189,6 @@ class MainActivity : ComponentActivity() {
     private fun initializeBatchSystem() {
         val user = userManager.getUser()
         if (user != null) {
-            // Se UserManager ha ancora refreshBatch(), lo puoi mantenere,
-            // altrimenti puoi togliere questa riga.
             userManager.refreshBatch()
             Log.d("MainActivity", "🔄 Initialized batch system for user: ${user.name}")
         } else {
@@ -177,57 +196,97 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // ============================================================
+    // PERMESSI - VERSIONE SENZA LOCATION (NO GPS!)
+    // ============================================================
+
     private fun requestAllPermissions() {
         val permissions = mutableListOf<String>()
 
-        // ✅ Bluetooth permissions for Android 12+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Android 12+ (API 31+): SOLO permessi BLE specifici
+            // NEVER location grazie al flag neverForLocation nel manifest
             permissions += android.Manifest.permission.BLUETOOTH_ADVERTISE
             permissions += android.Manifest.permission.BLUETOOTH_SCAN
             permissions += android.Manifest.permission.BLUETOOTH_CONNECT
         } else {
-            // ✅ Location permissions for Android < 12
-            permissions += android.Manifest.permission.ACCESS_FINE_LOCATION
-            permissions += android.Manifest.permission.ACCESS_COARSE_LOCATION
+            // Android < 12: permessi legacy BLE
+            // NO BLUETOOTH_PRIVILEGED, NO LOCATION!
+            permissions += android.Manifest.permission.BLUETOOTH
+            permissions += android.Manifest.permission.BLUETOOTH_ADMIN
         }
 
-        // ✅ Notification permission for Android 13+
+        // Notifiche per foreground service (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions += android.Manifest.permission.POST_NOTIFICATIONS
         }
 
-        // ✅ Check if we already have all permissions
+        // Verifica se abbiamo già tutti i permessi
         val hasAllPermissions = permissions.all { permission ->
-            ContextCompat.checkSelfPermission(this, permission) ==
-                    PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
         }
 
         if (hasAllPermissions) {
             Log.d("MainActivity", "✅ All permissions already granted")
             initializeApp()
         } else {
-            Log.d("MainActivity", "🔵 Requesting permissions: ${permissions.size} permissions")
+            Log.d("MainActivity", "🔵 Requesting permissions: $permissions")
             reqPerms.launch(permissions.toTypedArray())
         }
     }
 
-    // ---------------- BLE SERVICES (NUOVI) ----------------
+    /**
+     * NUOVA VERSIONE: Senza nessun riferimento a location!
+     * Solo permessi BLE puri.
+     */
+    private fun hasBluetoothPermissions(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Android 12+: BLUETOOTH_SCAN con neverForLocation nel manifest
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.BLUETOOTH_SCAN
+            ) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(
+                        this,
+                        android.Manifest.permission.BLUETOOTH_ADVERTISE
+                    ) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(
+                        this,
+                        android.Manifest.permission.BLUETOOTH_CONNECT
+                    ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            // Android < 12: SOLO BLUETOOTH classico
+            // MAI ACCESS_FINE_LOCATION o ACCESS_COARSE_LOCATION!
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.BLUETOOTH
+            ) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(
+                        this,
+                        android.Manifest.permission.BLUETOOTH_ADMIN
+                    ) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    // ============================================================
+    // BLE SERVICES
+    // ============================================================
 
     private fun startBleServices() {
         if (hasBluetoothPermissions()) {
-            val centralIntent = Intent(this, BluetoothCentralService::class.java)
             val peripheralIntent = Intent(this, BluetoothPeripheralService::class.java)
+            val centralIntent = Intent(this, BluetoothCentralService::class.java)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                ContextCompat.startForegroundService(this, centralIntent)
                 ContextCompat.startForegroundService(this, peripheralIntent)
+                ContextCompat.startForegroundService(this, centralIntent)
             } else {
-                startService(centralIntent)
                 startService(peripheralIntent)
+                startService(centralIntent)
             }
 
             userManager.setBleOnline(true)
-            Log.d("MainActivity", "🚀 Started BLE Central & Peripheral Services")
+            Log.d("MainActivity", "🚀 Started BLE Peripheral & Central Services")
         } else {
             Log.w("MainActivity", "⚠️ Cannot start BLE services - permissions missing")
             requestAllPermissions()
@@ -235,37 +294,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun stopBleServices() {
-        stopService(Intent(this, BluetoothCentralService::class.java))
         stopService(Intent(this, BluetoothPeripheralService::class.java))
+        stopService(Intent(this, BluetoothCentralService::class.java))
 
         userManager.setBleOnline(false)
         Log.d("MainActivity", "🛑 Stopped BLE Services")
-    }
-
-    private fun hasBluetoothPermissions(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ContextCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.BLUETOOTH_ADVERTISE
-            ) == PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(
-                        this,
-                        android.Manifest.permission.BLUETOOTH_SCAN
-                    ) == PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(
-                        this,
-                        android.Manifest.permission.BLUETOOTH_CONNECT
-                    ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            ContextCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(
-                        this,
-                        android.Manifest.permission.ACCESS_COARSE_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED
-        }
     }
 
     private fun restartActivity() {
@@ -275,6 +308,10 @@ class MainActivity : ComponentActivity() {
         finish()
     }
 }
+
+// ============================================================
+// UI COMPOSE (invariata)
+// ============================================================
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -290,7 +327,6 @@ fun BillyApp(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // prendiamo lo stato dal nuovo ViewModel di prossimità
     val proximityUiState by proximityViewModel.uiState.collectAsState()
 
     Scaffold(
@@ -315,7 +351,6 @@ fun BillyApp(
                 val userManager = remember { UserManager(context) }
 
                 HomeScreen(
-                    // ⬇⬇ NUOVO: passiamo gli incontri dal ProximityViewModel
                     encounters = proximityUiState.encounters,
                     onSelectProfile = { user -> navController.navigate("profile/$user") },
                     onOpenChat = { userName ->
@@ -339,7 +374,6 @@ fun BillyApp(
                 )
             }
 
-
             composable("chat/{userName}") { backStackEntry ->
                 val userName = backStackEntry.arguments?.getString("userName") ?: return@composable
                 ChatScreen(
@@ -354,7 +388,6 @@ fun BillyApp(
                 ProfileScreen(
                     userName = userName,
                     chatViewModel = chatViewModel,
-                    // ⬇ se ProfileScreen usava BleViewModel, aggiorna la firma e passa ProximityViewModel
                     proximityViewModel = proximityViewModel,
                     onGoToChat = { navController.navigate("chat/$it") }
                 )

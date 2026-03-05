@@ -58,11 +58,21 @@ dependencies {
     implementation("io.ktor:ktor-client-core:2.3.12")
     implementation("io.ktor:ktor-client-android:2.3.12")
 
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.12")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
+    implementation("io.ktor:ktor-client-auth:2.3.12")
+
 // Kotlinx datetime (necessario per Clock usato nel KMM)
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
 
 
     implementation("app.cash.sqldelight:android-driver:2.0.2")
+
+
+    implementation("co.touchlab:kermit:2.0.3")
+    implementation("io.ktor:ktor-client-logging:2.3.12")
+
+
 
     // Compose dependencies
     implementation(platform(libs.androidx.compose.bom))
