@@ -221,6 +221,7 @@ class BillyApiClient(
         return login(email, password)
     }
 
+
     /**
      * Wraps Ktor calls in a Result Monad, mapping exceptions to Domain Errors.
      */
