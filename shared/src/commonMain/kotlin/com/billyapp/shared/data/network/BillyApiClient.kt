@@ -205,22 +205,19 @@ class BillyApiClient(
         email: String,
         password: String,
     ): Result<NetworkDataSource.AuthResponse, AppError> {
-        // 1. Register (Ignore response body as it's just user info)
+
         val registerResult =
             safeRequest<Unit> {
                 publicClient.post(ENDPOINT_REGISTER) {
-                    setBody(RegisterRequest(username = username, email = email, password = password))
+                    setBody(RegisterRequest(username, email, password))
                 }
-                // We don't call .body() because we don't care about the User object here,
-                // and we want to avoid serialization issues if the backend changes.
-                // Just ensuring 201 Created is enough.
+                Unit // ← Esplicito: ignora la risposta, ritorna Unit
             }
 
         if (registerResult is Result.Failure) {
             return Result.Failure(registerResult.error)
         }
 
-        // 2. Login to get tokens
         return login(email, password)
     }
 
