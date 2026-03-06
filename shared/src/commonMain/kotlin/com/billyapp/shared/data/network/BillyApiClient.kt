@@ -205,19 +205,17 @@ class BillyApiClient(
         email: String,
         password: String,
     ): Result<NetworkDataSource.AuthResponse, AppError> {
-        val registerResult =
-            safeRequest<Unit> {
-                publicClient.post(ENDPOINT_REGISTER) {
-                    setBody(RegisterRequest(username, email, password))
-                }
-                Unit // ← Esplicito: ignora la risposta, ritorna Unit
+        return try {
+            val response = publicClient.post(ENDPOINT_REGISTER) {
+                setBody(RegisterRequest(username, email, password))
             }
-
-        if (registerResult is Result.Failure) {
-            return Result.Failure(registerResult.error)
+            if (response.status.value !in 200..299) {
+                return Result.Failure(AppError.Network.ServerError(response.status.value, "Register failed"))
+            }
+            login(email, password)
+        } catch (e: Exception) {
+            Result.Failure(AppError.Network.NoInternet)
         }
-
-        return login(email, password)
     }
 
     /**
