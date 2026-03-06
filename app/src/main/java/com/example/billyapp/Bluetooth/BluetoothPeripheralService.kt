@@ -147,8 +147,8 @@ class BluetoothPeripheralService : Service() {
 
             val payload: ByteArray? = when (bid) {
                 null -> null
+                is com.billyapp.shared.domain.model.Bid -> bid.hex.hexToByteArray()
                 is ByteArray -> bid
-                is UByteArray -> bid.asByteArray()
                 is String -> bid.hexToByteArray()
                 else -> {
                     Log.e("BluetoothPeripheral", "Unsupported BID type: ${bid::class}")

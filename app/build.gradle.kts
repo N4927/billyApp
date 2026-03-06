@@ -75,6 +75,7 @@ dependencies {
 
 
     // Compose dependencies
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.25")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
