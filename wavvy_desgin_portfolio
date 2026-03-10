@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wavvy — Spectre Urbanist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Backgrounds — deep violet-black with forest undertone */
+    --void:      #05060F;
+    --deep:      #080A18;
+    --surface:   #0C0F22;
+    --card:      #0F122A;
+    --border:    #181D3A;
+    --border-l:  #242A50;
+
+    /* Signal — V1 violet, dominant */
+    --signal:    #7B6EF6;
+    --signal-d:  #5B47C8;
+    --signal-l:  #A89EFA;
+    --signal-xl: #C8C2FC;
+
+    /* Forest whisper — teal pushed toward blue-green, subordinate */
+    --grove:     #2A8A7A;
+    --grove-l:   #3DBFAA;
+    --grove-xl:  #6ED8C8;
+    --grove-d:   #1A5C50;
+
+    /* Amber — connection moment */
+    --amber:     #F5C842;
+    --amber-gl:  rgba(245,200,66,.1);
+
+    /* Text */
+    --text:      #DDE2F8;
+    --ghost:     #7A84B8;
+    --fog:       #3D4470;
+    --muted:     #1E2245;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--void);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ── GRAIN ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 999;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: .5; mix-blend-mode: overlay;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes float    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+  @keyframes breathe  { 0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.8} 50%{transform:translate(-50%,-50%) scale(1.05);opacity:1} }
+  @keyframes breathe2 { 0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.32} 50%{transform:translate(-50%,-50%) scale(1.08);opacity:.58} }
+  @keyframes breathe3 { 0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.1} 50%{transform:translate(-50%,-50%) scale(1.12);opacity:.2} }
+  @keyframes rotate-s { 0%{transform:translate(-50%,-50%) rotate(0deg)} 100%{transform:translate(-50%,-50%) rotate(360deg)} }
+  @keyframes rotate-r { 0%{transform:translate(-50%,-50%) rotate(0deg)} 100%{transform:translate(-50%,-50%) rotate(-360deg)} }
+  @keyframes pulse-v  { 0%,100%{box-shadow:0 0 0 0 rgba(123,110,246,0)} 50%{box-shadow:0 0 0 12px rgba(123,110,246,.14)} }
+  @keyframes pulse-g  { 0%,100%{box-shadow:0 0 0 0 rgba(42,138,122,0)} 50%{box-shadow:0 0 0 8px rgba(42,138,122,.14)} }
+  @keyframes pulse-a  { 0%,100%{box-shadow:0 0 0 0 rgba(245,200,66,0)} 50%{box-shadow:0 0 0 8px rgba(245,200,66,.1)} }
+  @keyframes drift    { 0%,100%{transform:translate(-50%,-50%)} 33%{transform:translate(-48%,-52%)} 66%{transform:translate(-53%,-48%)} }
+  @keyframes marquee  { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+  @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:0} }
+  @keyframes scan     { 0%{top:-1px} 100%{top:522px} }
+  @keyframes glow-v   { 0%,100%{text-shadow:0 0 40px rgba(123,110,246,0)} 50%{text-shadow:0 0 60px rgba(123,110,246,.45), 0 0 100px rgba(42,138,122,.15)} }
+  @keyframes aurora   { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:1.2;transform:scale(1.08)} }
+
+  /* ── LAYOUT ── */
+  .section { padding: 100px 64px; max-width: 1300px; margin: 0 auto; }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; letter-spacing: 4px; color: var(--grove-l);
+    text-transform: uppercase; margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-family: 'Urbanist', sans-serif;
+    font-size: clamp(42px, 5.8vw, 78px);
+    font-weight: 800; line-height: .95;
+    color: var(--text); margin-bottom: 56px;
+    letter-spacing: -.03em;
+  }
+  .section-title em {
+    font-style: normal;
+    background: linear-gradient(120deg, var(--signal-l) 60%, var(--grove-xl));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: glow-v 5s ease-in-out infinite;
+  }
+
+  .ch-divider {
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-l), transparent);
+  }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    background: var(--void);
+    display: flex; align-items: center;
+    position: relative; overflow: hidden;
+  }
+
+  /* V1 grid — dominant */
+  .hero-grid {
+    position: absolute; inset: 0; opacity: .03;
+    background-image:
+      linear-gradient(var(--signal) 1px, transparent 1px),
+      linear-gradient(90deg, var(--signal) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  /* aurora glows */
+  .aurora {
+    position: absolute; border-radius: 50%;
+    filter: blur(120px); pointer-events: none;
+  }
+
+  .hero-inner {
+    position: relative; z-index: 10;
+    padding: 0 64px;
+    display: grid; grid-template-columns: 1fr 1fr;
+    width: 100%; align-items: center; gap: 60px;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; letter-spacing: 5px;
+    color: var(--grove-l); text-transform: uppercase;
+    margin-bottom: 22px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .hero-eyebrow::before {
+    content: ''; width: 28px; height: 1px;
+    background: linear-gradient(90deg, var(--signal), var(--grove));
+  }
+
+  .hero-wordmark {
+    font-family: 'Urbanist', sans-serif;
+    font-size: clamp(90px, 14vw, 180px);
+    font-weight: 900; line-height: .88;
+    letter-spacing: -.03em;
+    background: linear-gradient(135deg, var(--text) 20%, var(--signal-l) 55%, var(--grove-xl) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: glow-v 7s ease-in-out infinite;
+  }
+
+  .hero-tagline {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(16px, 2vw, 22px);
+    font-style: italic; color: var(--ghost); font-weight: 300;
+    margin-top: 26px; line-height: 1.5;
+  }
+
+  .hero-meta {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; letter-spacing: 4px;
+    color: var(--fog); margin-top: 28px; text-transform: uppercase;
+  }
+
+  /* ── ORB — V1 dominant, forest whisper ── */
+  .hero-orb {
+    position: relative; width: 320px; height: 320px;
+    margin: 0 auto; animation: float 7s ease-in-out infinite;
+  }
+
+  .h-ring { position: absolute; top: 50%; left: 50%; border-radius: 50%; }
+
+  /* inner rings — pure violet like V1 */
+  .h-r1 { width: 76px; height: 76px; border: 1.5px solid var(--signal); animation: breathe 4s ease-in-out infinite; }
+  .h-r2 { width: 138px; height: 138px; border: 1px solid rgba(123,110,246,.45); animation: breathe2 4.8s ease-in-out infinite .6s; }
+  .h-r3 { width: 210px; height: 210px; border: 1px solid rgba(123,110,246,.18); animation: breathe3 5.4s ease-in-out infinite 1s; }
+  /* outermost ring — forest teal bleeds in very subtly */
+  .h-r4 { width: 300px; height: 300px; border: 1px solid rgba(42,138,122,.08); }
+  .h-r5 { width: 320px; height: 320px; border: 1px solid rgba(42,138,122,.04); }
+
+  /* slow rotating dashed rings */
+  .h-rot {
+    position: absolute; top: 50%; left: 50%;
+    width: 172px; height: 172px; border-radius: 50%;
+    border: 1px dashed rgba(123,110,246,.12);
+    animation: rotate-s 28s linear infinite;
+  }
+  .h-rot2 {
+    position: absolute; top: 50%; left: 50%;
+    width: 260px; height: 260px; border-radius: 50%;
+    border: 1px dashed rgba(42,138,122,.06);
+    animation: rotate-r 42s linear infinite;
+  }
+
+  /* core — violet glow, grove hint */
+  .h-core {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--signal);
+    box-shadow:
+      0 0 20px var(--signal),
+      0 0 45px rgba(123,110,246,.45),
+      0 0 80px rgba(123,110,246,.2),
+      0 0 120px rgba(42,138,122,.06);
+    animation: pulse-v 3.5s ease-in-out infinite;
+  }
+
+  .u-dot { position: absolute; border-radius: 50%; transform: translate(-50%,-50%); }
+
+  /* scan line from V1 */
+  .scan-line {
+    position: absolute; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(123,110,246,.3), rgba(42,138,122,.15), transparent);
+    animation: scan 4s linear infinite;
+    pointer-events: none; z-index: 5;
+  }
+
+  /* ── MARQUEE ── */
+  .marquee-wrap {
+    overflow: hidden; padding: 14px 0;
+    background: var(--deep);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .marquee-wrap::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, var(--void), transparent 8%, transparent 92%, var(--void));
+    z-index: 2; pointer-events: none;
+  }
+  .marquee-inner { display: flex; animation: marquee 20s linear infinite; white-space: nowrap; }
+  .m-v { font-family: 'Urbanist', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; padding: 0 20px; color: var(--signal-l); }
+  .m-g { font-family: 'Urbanist', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; padding: 0 20px; color: var(--grove-l); }
+  .m-sep { color: var(--border-l); font-size: 8px; align-self: center; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px; padding: 32px;
+  }
+  .card-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px; letter-spacing: 4px;
+    color: var(--grove-l); text-transform: uppercase; margin-bottom: 18px;
+  }
+
+  .val-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 0; border-bottom: 1px solid var(--border);
+  }
+  .val-row:last-child { border-bottom: none; }
+  .val-pip { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
+  .val-text { font-size: 14px; color: var(--ghost); }
+
+  /* ── PHONE ── */
+  .phone {
+    width: 240px; flex-shrink: 0;
+    border-radius: 38px;
+    background: var(--void);
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    box-shadow:
+      0 30px 70px rgba(0,0,0,.85),
+      0 0 0 1px rgba(123,110,246,.07),
+      inset 0 1px 0 rgba(255,255,255,.03);
+  }
+  .phone-notch {
+    position: absolute; top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 76px; height: 22px;
+    background: var(--void);
+    border-radius: 0 0 12px 12px;
+    border: 1.5px solid var(--border); border-top: none; z-index: 10;
+  }
+  .phone-screen { height: 520px; position: relative; overflow: hidden; }
+  .phone-status {
+    display: flex; justify-content: space-between;
+    align-items: center; padding: 30px 16px 6px;
+  }
+  .phone-time {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--ghost); letter-spacing: 1px;
+  }
+  .phone-ble {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--signal);
+    box-shadow: 0 0 8px var(--signal);
+    animation: pulse-v 3s ease-in-out infinite;
+  }
+
+  .tab-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(8,10,24,.96);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border);
+    padding: 10px 0 14px;
+    display: flex; justify-content: space-around;
+  }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .tab-icon { font-size: 14px; }
+  .tab-lbl  { font-size: 7px; letter-spacing: 2px; text-transform: uppercase; font-family: 'Space Mono', monospace; }
+
+  .log-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  .log-av {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter', sans-serif; font-style: italic;
+    font-size: 14px; font-weight: 600; flex-shrink: 0;
+  }
+  .log-place {
+    font-family: 'Inter', sans-serif; font-style: italic;
+    font-size: 13px; color: var(--text); line-height: 1.2;
+  }
+  .log-ts { font-size: 9px; color: var(--fog); margin-top: 1px; font-family: 'Space Mono', monospace; }
+
+  /* ── SWATCHES ── */
+  .swatch { flex: 1; min-width: 70px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+  .swatch-fill { height: 80px; position: relative; }
+  .swatch-fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,.07), transparent 60%); }
+  .swatch-info { background: var(--card); padding: 9px 12px; border-top: 1px solid var(--border); }
+  .swatch-name { font-size: 11px; font-weight: 500; color: var(--text); }
+  .swatch-hex  { font-size: 9px; color: var(--fog); margin-top: 2px; font-family: 'Space Mono', monospace; }
+
+  /* ── BUTTONS ── */
+  .btn-p {
+    padding: 14px 26px; border-radius: 30px;
+    background: linear-gradient(135deg, var(--signal-d), var(--signal));
+    color: white; font-family: 'Inter', sans-serif;
+    font-size: 13px; font-weight: 500; text-align: center;
+    box-shadow: 0 8px 28px rgba(123,110,246,.5);
+  }
+  .btn-s {
+    padding: 13px 26px; border-radius: 30px;
+    border: 1px solid var(--grove); color: var(--grove-l);
+    font-family: 'Inter', sans-serif; font-size: 13px; text-align: center;
+  }
+  .btn-hybrid {
+    padding: 13px 26px; border-radius: 30px;
+    background: linear-gradient(135deg, var(--signal) 70%, var(--grove) 100%);
+    color: white; font-family: 'Inter', sans-serif;
+    font-size: 13px; font-weight: 500; text-align: center;
+    box-shadow: 0 8px 28px rgba(123,110,246,.4);
+  }
+  .btn-a {
+    padding: 13px 26px; border-radius: 30px;
+    background: var(--amber); color: var(--void);
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+    text-align: center; box-shadow: 0 8px 28px rgba(245,200,66,.25);
+  }
+  .btn-wave {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--signal-d), var(--signal));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: white;
+    box-shadow: 0 8px 28px rgba(123,110,246,.55);
+    animation: pulse-v 3.5s ease-in-out infinite;
+  }
+  .btn-chip {
+    padding: 6px 14px; border-radius: 20px;
+    background: rgba(123,110,246,.1); border: 1px solid rgba(123,110,246,.3);
+    color: var(--signal-l); font-size: 11px;
+  }
+
+  /* ── COMP TABLE ── */
+  .comp-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr; }
+  .comp-row + .comp-row .comp-cell { border-top: 1px solid var(--border); }
+  .comp-cell {
+    padding: 13px 14px; font-size: 12px; color: var(--ghost);
+    border-right: 1px solid var(--border);
+    display: flex; align-items: center;
+    background: var(--card); font-family: 'Inter', sans-serif;
+  }
+  .comp-cell:last-child { border-right: none; }
+  .comp-row.hdr .comp-cell {
+    background: var(--surface); font-size: 9px; font-weight: 500;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--ghost);
+    font-family: 'Space Mono', monospace;
+  }
+  .comp-row.hdr .comp-cell:nth-child(2) {
+    background: rgba(123,110,246,.2); color: var(--signal-l);
+  }
+  .yes { color: var(--signal-l); font-weight: 600; }
+  .no  { color: var(--fog); }
+  .par { color: var(--amber); }
+
+  /* ── VIRAL ── */
+  .viral-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; position: relative; overflow: hidden;
+  }
+  .viral-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--signal), var(--signal-l), var(--grove-l));
+  }
+  .viral-num {
+    font-family: 'Urbanist', sans-serif; font-weight: 800;
+    font-size: 64px; line-height: 1;
+    background: linear-gradient(135deg, rgba(123,110,246,.25), rgba(42,138,122,.1));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .viral-title {
+    font-family: 'Urbanist', sans-serif; font-size: 16px; font-weight: 700;
+    color: var(--text); margin: 6px 0 8px;
+  }
+  .viral-desc { font-size: 13px; color: var(--ghost); line-height: 1.75; }
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-grid"></div>
+
+  <!-- violet dominant, grove whisper -->
+  <div class="aurora" style="width:800px;height:600px;top:0%;left:-20%;background:rgba(123,110,246,.09);animation:aurora 9s ease-in-out infinite;"></div>
+  <div class="aurora" style="width:600px;height:500px;top:30%;right:-15%;background:rgba(123,110,246,.06);animation:aurora 11s ease-in-out infinite 2s;"></div>
+  <div class="aurora" style="width:300px;height:300px;bottom:10%;left:35%;background:rgba(42,138,122,.04);animation:aurora 13s ease-in-out infinite 4s;"></div>
+
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow">V1 × Forest — Urbanist Cut</div>
+      <div class="hero-wordmark">Wavvy</div>
+      <div class="hero-tagline">"You were here.<br>So were they."</div>
+
+      <!-- gradient ratio bar showing V1 dominance -->
+      <div style="margin-top:28px;display:flex;align-items:center;gap:14px;">
+        <div style="height:4px;width:120px;background:linear-gradient(90deg,var(--signal-d),var(--signal),var(--signal-l));border-radius:2px;box-shadow:0 0 8px rgba(123,110,246,.4);"></div>
+        <div style="height:4px;width:36px;background:linear-gradient(90deg,var(--grove),var(--grove-l));border-radius:2px;opacity:.6;"></div>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--fog);">75% V1 · 25% Forest</div>
+      </div>
+
+      <div class="hero-meta" style="margin-top:20px;">Spectre · Urbanist × Inter · 2025</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:32px;">
+      <div class="hero-orb">
+        <div class="h-rot2"></div>
+        <div class="h-rot"></div>
+        <div class="h-ring h-r5"></div>
+        <div class="h-ring h-r4"></div>
+        <div class="h-ring h-r3"></div>
+        <div class="h-ring h-r2"></div>
+        <div class="h-ring h-r1"></div>
+        <div class="h-core"></div>
+
+        <!-- mostly violet users, one grove -->
+        <div class="u-dot" style="top:27%;left:68%;width:9px;height:9px;background:var(--signal-l);box-shadow:0 0 12px var(--signal);animation:pulse-v 3s ease-in-out infinite;"></div>
+        <div class="u-dot" style="top:43%;left:24%;width:7px;height:7px;background:var(--signal);box-shadow:0 0 8px var(--signal);animation:pulse-v 3.8s ease-in-out infinite .6s;"></div>
+        <!-- amber mutual -->
+        <div class="u-dot" style="top:70%;left:66%;width:9px;height:9px;background:var(--amber);box-shadow:0 0 12px var(--amber);animation:pulse-a 2.8s ease-in-out infinite 1s;"></div>
+        <!-- grove — one subtle dot, far out -->
+        <div class="u-dot" style="top:68%;left:26%;width:6px;height:6px;background:var(--grove-l);box-shadow:0 0 6px var(--grove);opacity:.7;animation:pulse-g 4.5s ease-in-out infinite .3s;"></div>
+        <!-- muted -->
+        <div class="u-dot" style="top:22%;left:50%;width:5px;height:5px;background:var(--ghost);opacity:.4;animation:drift 9s ease-in-out infinite;"></div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 24px;">
+        <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--fog);margin-bottom:10px;text-align:center;">COLOUR RATIO</div>
+        <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;width:200px;">
+          <div style="width:75%;background:linear-gradient(90deg,var(--signal-d),var(--signal),var(--signal-l));"></div>
+          <div style="width:25%;background:linear-gradient(90deg,var(--grove),var(--grove-l));opacity:.7;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;">
+          <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--signal-l);letter-spacing:1px;">Signal 75%</div>
+          <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--grove-l);letter-spacing:1px;">Grove 25%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ MARQUEE ══════════════════════════════════════════════════════ -->
+<div class="marquee-wrap">
+  <div class="marquee-inner">
+    <span class="m-v">Wavvy</span><span class="m-sep">·</span>
+    <span class="m-v">Signal</span><span class="m-sep">·</span>
+    <span class="m-g">Presence</span><span class="m-sep">·</span>
+    <span class="m-v">No Feed</span><span class="m-sep">·</span>
+    <span class="m-v">No Swipe</span><span class="m-sep">·</span>
+    <span class="m-g">BLE Only</span><span class="m-sep">·</span>
+    <span class="m-v">Spectre</span><span class="m-sep">·</span>
+    <span class="m-v">Proximity</span><span class="m-sep">·</span>
+    <span class="m-v">Wavvy</span><span class="m-sep">·</span>
+    <span class="m-v">Signal</span><span class="m-sep">·</span>
+    <span class="m-g">Presence</span><span class="m-sep">·</span>
+    <span class="m-v">No Feed</span><span class="m-sep">·</span>
+    <span class="m-v">No Swipe</span><span class="m-sep">·</span>
+    <span class="m-g">BLE Only</span><span class="m-sep">·</span>
+    <span class="m-v">Spectre</span><span class="m-sep">·</span>
+    <span class="m-v">Proximity</span><span class="m-sep">·</span>
+  </div>
+</div>
+
+<!-- ══ 01 · BRAND ════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">01 — Brand</div>
+  <div class="section-title">Identity & <em>Depth</em></div>
+
+  <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:24px;">
+    <div class="card">
+      <div class="card-label">Design Philosophy</div>
+      <div style="font-family:'Inter',sans-serif;font-style:italic;font-size:22px;color:var(--text);line-height:1.5;margin-bottom:18px;">
+        "Deep space, but alive. The violet of a city at night, with something quietly organic beneath."
+      </div>
+      <div style="font-size:14px;color:var(--ghost);line-height:1.85;">
+        Spectre takes the electric precision of V1 and grounds it with the faintest trace of the forest beneath. The grid, the glows, the violet rings — all V1. But at the outermost edge of the orb, the faintest teal-green bleeds in, like moss on stone. Technology rooted in something living.
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px;">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;">
+          <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--signal-l);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase;">Dominant</div>
+          <div style="font-size:13px;color:var(--ghost);line-height:1.6;">Electric violet. The city at night, neon on wet pavement, something vast and signal-rich.</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;">
+          <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--grove-l);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase;">Whisper</div>
+          <div style="font-size:13px;color:var(--ghost);line-height:1.6;">Forest teal at the periphery only. Roots beneath the signal. Barely visible, deeply felt.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card">
+        <div class="card-label">Personality</div>
+        <div class="val-row"><div class="val-pip" style="background:var(--signal);"></div><div class="val-text">Precise, not clinical</div></div>
+        <div class="val-row"><div class="val-pip" style="background:var(--signal-l);"></div><div class="val-text">Electric, not anxious</div></div>
+        <div class="val-row"><div class="val-pip" style="background:var(--grove-l);"></div><div class="val-text">Organic under the surface</div></div>
+        <div class="val-row"><div class="val-pip" style="background:var(--amber);"></div><div class="val-text">Gold for the rare moment only</div></div>
+        <div class="val-row"><div class="val-pip" style="background:var(--signal);"></div><div class="val-text">Urban, nocturnal, alive</div></div>
+      </div>
+      <div class="card">
+        <div class="card-label">The Grove Rule</div>
+        <div style="font-size:13px;color:var(--ghost);line-height:1.75;">Teal-green appears only at the outermost orb ring, in the Log section headers, and as one label accent. It is felt, not seen. If you notice it immediately, there's too much.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ch-divider"></div>
+
+<!-- ══ 02 · COLOR ════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">02 — Color</div>
+  <div class="section-title">The <em>Spectrum</em></div>
+
+  <div style="display:flex;gap:8px;margin-bottom:8px;">
+    <div class="swatch" style="flex:1.1;">
+      <div class="swatch-fill" style="background:#05060F;height:130px;border-bottom:1px solid var(--border);"></div>
+      <div class="swatch-info"><div class="swatch-name">Void</div><div class="swatch-hex">#05060F · Canvas</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-fill" style="background:#0C0F22;height:130px;"></div>
+      <div class="swatch-info"><div class="swatch-name">Surface</div><div class="swatch-hex">#0C0F22</div></div>
+    </div>
+    <div class="swatch" style="flex:1.4;">
+      <div class="swatch-fill" style="background:#5B47C8;height:130px;"></div>
+      <div class="swatch-info"><div class="swatch-name">Signal Deep</div><div class="swatch-hex">#5B47C8</div></div>
+    </div>
+    <div class="swatch" style="flex:1.6;">
+      <div class="swatch-fill" style="background:#7B6EF6;height:130px;"></div>
+      <div class="swatch-info"><div class="swatch-name">Signal</div><div class="swatch-hex">#7B6EF6 · Primary</div></div>
+    </div>
+    <div class="swatch" style="flex:1.4;">
+      <div class="swatch-fill" style="background:#A89EFA;height:130px;"></div>
+      <div class="swatch-info"><div class="swatch-name">Signal Light</div><div class="swatch-hex">#A89EFA</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-fill" style="background:#2A8A7A;height:130px;"></div>
+      <div class="swatch-info"><div class="swatch-name">Grove</div><div class="swatch-hex">#2A8A7A · Whisper</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-fill" style="background:#3DBFAA;height:130px;"></div>
+      <div class="swatch-info"><div class="swatch-name">Grove Light</div><div class="swatch-hex">#3DBFAA</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-fill" style="background:#F5C842;height:130px;"></div>
+      <div class="swatch-info"><div class="swatch-name">Amber</div><div class="swatch-hex">#F5C842 · Mutual</div></div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:36px;">
+    <div class="swatch"><div class="swatch-fill" style="background:#080A18;"></div><div class="swatch-info"><div class="swatch-name">Deep</div><div class="swatch-hex">#080A18</div></div></div>
+    <div class="swatch"><div class="swatch-fill" style="background:#0F122A;"></div><div class="swatch-info"><div class="swatch-name">Card</div><div class="swatch-hex">#0F122A</div></div></div>
+    <div class="swatch"><div class="swatch-fill" style="background:#181D3A;"></div><div class="swatch-info"><div class="swatch-name">Border</div><div class="swatch-hex">#181D3A</div></div></div>
+    <div class="swatch"><div class="swatch-fill" style="background:#3D4470;"></div><div class="swatch-info"><div class="swatch-name">Fog</div><div class="swatch-hex">#3D4470</div></div></div>
+    <div class="swatch"><div class="swatch-fill" style="background:#7A84B8;"></div><div class="swatch-info"><div class="swatch-name">Ghost</div><div class="swatch-hex">#7A84B8</div></div></div>
+    <div class="swatch"><div class="swatch-fill" style="background:#DDE2F8;"></div><div class="swatch-info"><div class="swatch-name">Text</div><div class="swatch-hex">#DDE2F8</div></div></div>
+    <div class="swatch"><div class="swatch-fill" style="background:#C8C2FC;"></div><div class="swatch-info"><div class="swatch-name">Signal XL</div><div class="swatch-hex">#C8C2FC</div></div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+    <div class="card">
+      <div class="card-label">Violet — 75%</div>
+      <div style="font-size:13px;color:var(--ghost);line-height:1.8;">Signal violet leads everything. Backgrounds, borders, glows, the orb's inner rings, all buttons, active states. The hue is pure V1 — electric without being aggressive, technological without being cold.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Grove — 25%</div>
+      <div style="font-size:13px;color:var(--ghost);line-height:1.8;">Grove teal appears only at the edges — the outermost orb ring, section labels, one Log header accent. It shifts the whole palette from pure electronic to something that breathes. Invisible unless you look for it.</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Amber — The Moment</div>
+      <div style="font-size:13px;color:var(--ghost);line-height:1.8;">Against deep violet-black, amber is devastating. The mutual wave dot glows gold and the entire dark screen responds. Maximum emotional impact. Used nowhere else — not in buttons, not in labels, not in nav.</div>
+    </div>
+  </div>
+</div>
+
+<div class="ch-divider"></div>
+
+<!-- ══ 03 · TYPOGRAPHY ═══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">03 — Typography</div>
+  <div class="section-title"><em>Type</em> System</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
+    <div class="card">
+      <div class="card-label">Display — Syne</div>
+      <div style="font-family:'Urbanist',sans-serif;font-size:54px;font-weight:800;line-height:.9;margin-bottom:8px;background:linear-gradient(135deg,var(--text),var(--signal-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Wavvy</div>
+      <div style="font-family:'Urbanist',sans-serif;font-size:24px;font-weight:600;color:var(--ghost);margin-bottom:14px;">Signal Active</div>
+      <div style="font-size:13px;color:var(--fog);line-height:1.7;">Variable weight geometric display — from V1 DNA. Tight tracking, heavy weight, modern technicality. The wordmark rendered in Syne 800 is immediately distinctive on the App Store.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card">
+        <div class="card-label">Body — DM Sans</div>
+        <div style="font-family:'Inter',sans-serif;font-size:22px;font-weight:300;color:var(--text);">DM Sans Light</div>
+        <div style="font-family:'Inter',sans-serif;font-size:17px;font-weight:500;color:var(--text);">DM Sans Medium</div>
+        <div style="font-size:12px;color:var(--fog);margin-top:8px;line-height:1.6;">Neutral, geometric, excellent legibility at small sizes. The DM family pairs naturally with Syne.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Accent — Cormorant Italic</div>
+        <div style="font-family:'Inter',sans-serif;font-style:italic;font-size:20px;color:var(--ghost);">Coffee shop on King St</div>
+        <div style="font-size:12px;color:var(--fog);margin-top:8px;line-height:1.6;">Place names and encounter copy only. The humanist serif against violet creates beautiful tension — nature inside the machine.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Type Scale</div>
+    <div>
+      <div style="display:flex;align-items:baseline;gap:20px;padding:14px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:9px;color:var(--fog);min-width:80px;letter-spacing:2px;font-family:'Space Mono',monospace;">DISPLAY</div>
+        <div style="font-family:'Urbanist',sans-serif;font-size:50px;font-weight:800;background:linear-gradient(135deg,var(--text),var(--signal-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;">Presence</div>
+        <div style="font-size:10px;color:var(--muted);margin-left:auto;font-family:'Space Mono',monospace;">Syne 800 · 50px</div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:20px;padding:14px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:9px;color:var(--fog);min-width:80px;letter-spacing:2px;font-family:'Space Mono',monospace;">H1</div>
+        <div style="font-family:'Urbanist',sans-serif;font-size:30px;font-weight:700;color:var(--text);">Encounters</div>
+        <div style="font-size:10px;color:var(--muted);margin-left:auto;font-family:'Space Mono',monospace;">Syne 700 · 30px</div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:20px;padding:14px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:9px;color:var(--fog);min-width:80px;letter-spacing:2px;font-family:'Space Mono',monospace;">ACCENT</div>
+        <div style="font-family:'Inter',sans-serif;font-style:italic;font-size:20px;color:var(--ghost);">Coffee shop on King St</div>
+        <div style="font-size:10px;color:var(--muted);margin-left:auto;font-family:'Space Mono',monospace;">Cormorant Italic · 20px</div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:20px;padding:14px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:9px;color:var(--fog);min-width:80px;letter-spacing:2px;font-family:'Space Mono',monospace;">BODY</div>
+        <div style="font-family:'Inter',sans-serif;font-size:15px;font-weight:300;color:var(--ghost);">Your signal reached 47 people today.</div>
+        <div style="font-size:10px;color:var(--muted);margin-left:auto;font-family:'Space Mono',monospace;">DM Sans 300 · 15px</div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:20px;padding:14px 0;">
+        <div style="font-size:9px;color:var(--fog);min-width:80px;letter-spacing:2px;font-family:'Space Mono',monospace;">DATA</div>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--grove-l);letter-spacing:2px;">~14M · 08:42 · BLE ACTIVE</div>
+        <div style="font-size:10px;color:var(--muted);margin-left:auto;font-family:'Space Mono',monospace;">Space Mono · 11px</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ch-divider"></div>
+
+<!-- ══ 04 · SCREENS ══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">04 — Screens</div>
+  <div class="section-title">App <em>Gallery</em></div>
+
+  <div style="display:flex;gap:32px;justify-content:center;flex-wrap:wrap;align-items:flex-start;">
+
+    <!-- NOW -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="background:var(--void);">
+          <div class="scan-line"></div>
+          <!-- violet glow -->
+          <div style="position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(123,110,246,.07),transparent 70%);pointer-events:none;"></div>
+          <!-- faint grid -->
+          <div style="position:absolute;inset:0;opacity:.02;background-image:linear-gradient(var(--signal) 1px,transparent 1px),linear-gradient(90deg,var(--signal) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;"></div>
+
+          <div class="phone-status"><div class="phone-time">09:41</div><div class="phone-ble"></div></div>
+          <div style="text-align:center;padding:0 0 4px;">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--fog);">NOW</div>
+          </div>
+
+          <div style="position:relative;height:346px;display:flex;align-items:center;justify-content:center;">
+            <!-- violet inner rings -->
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:84px;height:84px;border-radius:50%;border:1.5px solid var(--signal);animation:breathe 4s ease-in-out infinite;"></div>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:144px;height:144px;border-radius:50%;border:1px solid rgba(123,110,246,.4);animation:breathe2 4.8s ease-in-out infinite .6s;"></div>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:204px;height:204px;border-radius:50%;border:1px solid rgba(123,110,246,.15);animation:breathe2 5.4s ease-in-out infinite 1s;"></div>
+            <!-- grove outer ring — barely visible -->
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:260px;height:260px;border-radius:50%;border:1px solid rgba(42,138,122,.07);animation:breathe3 6s ease-in-out infinite 1.5s;"></div>
+            <!-- core -->
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:var(--signal);box-shadow:0 0 16px var(--signal),0 0 32px rgba(123,110,246,.4);z-index:5;animation:pulse-v 3.5s ease-in-out infinite;"></div>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,14px);font-family:'Space Mono',monospace;font-size:7px;color:var(--fog);letter-spacing:2px;white-space:nowrap;">YOU</div>
+
+            <!-- users -->
+            <div style="position:absolute;top:28%;left:65%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:var(--signal-l);box-shadow:0 0 10px var(--signal);animation:pulse-v 3s ease-in-out infinite;"></div>
+            <div style="position:absolute;top:43%;left:25%;transform:translate(-50%,-50%);width:7px;height:7px;border-radius:50%;background:var(--signal);box-shadow:0 0 8px var(--signal);animation:pulse-v 3.8s ease-in-out infinite .6s;"></div>
+            <div style="position:absolute;top:69%;left:67%;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 12px var(--amber);animation:pulse-a 2.8s ease-in-out infinite 1s;"></div>
+            <div style="position:absolute;top:69%;left:27%;transform:translate(-50%,-50%);width:6px;height:6px;border-radius:50%;background:var(--grove-l);box-shadow:0 0 6px var(--grove);opacity:.7;animation:pulse-g 4.5s ease-in-out infinite .3s;"></div>
+            <div style="position:absolute;top:22%;left:50%;transform:translate(-50%,-50%);width:5px;height:5px;border-radius:50%;background:var(--ghost);opacity:.4;animation:drift 9s ease-in-out infinite;"></div>
+          </div>
+
+          <div style="padding:0 14px 6px;text-align:center;">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--fog);letter-spacing:2px;">5 NEARBY</div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item"><div class="tab-icon" style="color:var(--signal);">◎</div><div class="tab-lbl" style="color:var(--signal);">Now</div></div>
+            <div class="tab-item"><div class="tab-icon" style="color:var(--fog);">◷</div><div class="tab-lbl" style="color:var(--fog);">Log</div></div>
+            <div class="tab-item"><div class="tab-icon" style="color:var(--fog);">◡</div><div class="tab-lbl" style="color:var(--fog);">You</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--fog);text-transform:uppercase;">Now — Live</div>
+    </div>
+
+    <!-- LOG -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="background:var(--void);">
+          <div class="phone-status"><div class="phone-time">09:41</div></div>
+          <div style="padding:2px 14px 12px;">
+            <div style="font-family:'Urbanist',sans-serif;font-weight:700;font-size:22px;color:var(--text);">Encounters</div>
+          </div>
+          <!-- grove label — subtle -->
+          <div style="background:var(--deep);padding:6px 14px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--grove-l);text-transform:uppercase;">Today</div>
+          </div>
+          <div class="log-row">
+            <div class="log-av" style="background:rgba(123,110,246,.15);border:1px solid rgba(123,110,246,.3);color:var(--signal-l);">A</div>
+            <div style="flex:1;"><div class="log-place">Coffee shop on King St</div><div class="log-ts">2 min ago · ~6m</div></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber);"></div>
+          </div>
+          <div class="log-row">
+            <div class="log-av" style="background:rgba(123,110,246,.1);border:1px solid rgba(123,110,246,.2);color:var(--ghost);">R</div>
+            <div style="flex:1;"><div class="log-place">Line 1 northbound</div><div class="log-ts">1 hr ago · ~14m</div></div>
+          </div>
+          <div class="log-row">
+            <div class="log-av" style="background:rgba(123,110,246,.12);border:1px solid rgba(123,110,246,.25);color:var(--signal-l);">M</div>
+            <div style="flex:1;"><div class="log-place">Kensington Market</div><div class="log-ts">3 hr ago · ~22m</div></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber);"></div>
+          </div>
+          <div style="background:var(--deep);padding:6px 14px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-top:2px;">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--grove-l);text-transform:uppercase;">Yesterday</div>
+          </div>
+          <div class="log-row">
+            <div class="log-av" style="background:rgba(168,158,250,.08);border:1px solid rgba(168,158,250,.18);color:var(--signal-l);">J</div>
+            <div style="flex:1;"><div class="log-place">Meridian Hall concert</div><div class="log-ts">Yesterday, 22:14</div></div>
+          </div>
+          <div class="log-row">
+            <div class="log-av" style="background:rgba(123,110,246,.07);border:1px solid rgba(123,110,246,.16);color:var(--fog);">S</div>
+            <div style="flex:1;"><div class="log-place">Trinity Bellwoods Park</div><div class="log-ts">Yesterday, 14:30</div></div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item"><div class="tab-icon" style="color:var(--fog);">◎</div><div class="tab-lbl" style="color:var(--fog);">Now</div></div>
+            <div class="tab-item"><div class="tab-icon" style="color:var(--signal);">◷</div><div class="tab-lbl" style="color:var(--signal);">Log</div></div>
+            <div class="tab-item"><div class="tab-icon" style="color:var(--fog);">◡</div><div class="tab-lbl" style="color:var(--fog);">You</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--fog);text-transform:uppercase;">Log — Encounters</div>
+    </div>
+
+    <!-- ONBOARDING -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="background:var(--void);">
+          <!-- grid bg -->
+          <div style="position:absolute;inset:0;opacity:.025;background-image:linear-gradient(var(--signal) 1px,transparent 1px),linear-gradient(90deg,var(--signal) 1px,transparent 1px);background-size:24px 24px;pointer-events:none;"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;padding:20px 18px 20px;height:100%;position:relative;z-index:2;">
+            <div style="height:12px;"></div>
+            <div style="position:relative;width:86px;height:86px;margin:10px 0 22px;animation:float 7s ease-in-out infinite;">
+              <!-- violet inner, grove outer -->
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:86px;height:86px;border-radius:50%;border:1px solid rgba(42,138,122,.08);"></div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:62px;height:62px;border-radius:50%;border:1px solid rgba(123,110,246,.3);animation:breathe2 5s ease-in-out infinite;"></div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;border:1.5px solid var(--signal);animation:breathe 4s ease-in-out infinite .5s;"></div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:var(--signal);box-shadow:0 0 20px var(--signal),0 0 40px rgba(123,110,246,.35);animation:pulse-v 3.5s ease-in-out infinite;"></div>
+            </div>
+            <div style="font-family:'Urbanist',sans-serif;font-weight:800;font-size:24px;background:linear-gradient(135deg,var(--text),var(--signal-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;margin-bottom:8px;letter-spacing:-.01em;">WAVVY</div>
+            <div style="font-family:'Inter',sans-serif;font-style:italic;font-size:15px;color:var(--ghost);text-align:center;line-height:1.5;margin-bottom:auto;">You were here.<br>So were they.</div>
+            <div style="font-size:11px;color:var(--fog);text-align:center;line-height:1.7;margin-bottom:18px;font-family:'Inter',sans-serif;font-weight:300;">Wavvy finds people near you — quietly, in the background. No feed.</div>
+            <div style="display:flex;justify-content:center;gap:5px;margin-bottom:18px;">
+              <div style="width:18px;height:2px;border-radius:2px;background:var(--signal);box-shadow:0 0 6px var(--signal);"></div>
+              <div style="width:4px;height:2px;border-radius:2px;background:var(--border);"></div>
+              <div style="width:4px;height:2px;border-radius:2px;background:var(--border);"></div>
+            </div>
+            <div style="width:100%;padding:13px;border-radius:28px;background:linear-gradient(135deg,var(--signal-d),var(--signal));color:white;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;text-align:center;box-shadow:0 8px 28px rgba(123,110,246,.5);">Enable Wavvy</div>
+            <div style="font-size:9px;color:var(--fog);text-align:center;margin-top:8px;letter-spacing:.5px;font-family:'Space Mono',monospace;">NO GPS · BLE · PAUSE ANYTIME</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--fog);text-transform:uppercase;">Onboarding</div>
+    </div>
+
+    <!-- PROFILE -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="background:var(--void);">
+          <div class="phone-status"><div class="phone-time">09:41</div></div>
+          <div style="padding:8px 14px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+            <div style="width:62px;height:62px;border-radius:50%;background:rgba(123,110,246,.15);border:1.5px solid var(--signal);display:flex;align-items:center;justify-content:center;font-family:'Urbanist',sans-serif;font-weight:800;font-size:22px;color:var(--signal-l);box-shadow:0 0 28px rgba(123,110,246,.3);">A</div>
+            <div style="font-family:'Urbanist',sans-serif;font-weight:700;font-size:20px;color:var(--text);">Alex</div>
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--signal);">● SIGNAL ACTIVE</div>
+            <div style="background:rgba(123,110,246,.08);border:1px solid rgba(123,110,246,.2);border-radius:10px;padding:9px 14px;width:100%;display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:12px;color:var(--ghost);font-family:'Inter',sans-serif;font-weight:300;">Sending signal</div>
+              <div style="width:30px;height:17px;border-radius:8px;background:var(--signal);position:relative;box-shadow:0 0 8px rgba(123,110,246,.4);">
+                <div style="position:absolute;right:2px;top:2px;width:13px;height:13px;border-radius:50%;background:var(--void);"></div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;">
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">
+                <div style="font-family:'Urbanist',sans-serif;font-weight:800;font-size:26px;color:var(--signal-l);">47</div>
+                <div style="font-size:8px;color:var(--fog);font-family:'Space Mono',monospace;letter-spacing:1px;">ENCOUNTERS</div>
+              </div>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">
+                <div style="font-family:'Urbanist',sans-serif;font-weight:800;font-size:26px;color:var(--signal);">12</div>
+                <div style="font-size:8px;color:var(--fog);font-family:'Space Mono',monospace;letter-spacing:1px;">WAVES</div>
+              </div>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">
+                <div style="font-family:'Urbanist',sans-serif;font-weight:800;font-size:26px;color:var(--amber);text-shadow:0 0 16px rgba(245,200,66,.4);">8</div>
+                <div style="font-size:8px;color:var(--fog);font-family:'Space Mono',monospace;letter-spacing:1px;">MUTUAL</div>
+              </div>
+              <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">
+                <div style="font-family:'Urbanist',sans-serif;font-weight:800;font-size:26px;color:var(--ghost);">23</div>
+                <div style="font-size:8px;color:var(--fog);font-family:'Space Mono',monospace;letter-spacing:1px;">DAYS</div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item"><div class="tab-icon" style="color:var(--fog);">◎</div><div class="tab-lbl" style="color:var(--fog);">Now</div></div>
+            <div class="tab-item"><div class="tab-icon" style="color:var(--fog);">◷</div><div class="tab-lbl" style="color:var(--fog);">Log</div></div>
+            <div class="tab-item"><div class="tab-icon" style="color:var(--signal);">◡</div><div class="tab-lbl" style="color:var(--signal);">You</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--fog);text-transform:uppercase;">Profile</div>
+    </div>
+
+    <!-- WAVE MOMENT -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="background:var(--void);">
+          <div class="scan-line"></div>
+          <div style="position:absolute;inset:0;opacity:.02;background-image:linear-gradient(var(--signal) 1px,transparent 1px),linear-gradient(90deg,var(--signal) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;"></div>
+          <div class="phone-status"><div class="phone-time">09:41</div></div>
+          <div style="text-align:center;padding:0 0 4px;">
+            <div style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:4px;color:var(--fog);">TAP TO WAVE</div>
+          </div>
+          <div style="position:relative;height:340px;display:flex;align-items:center;justify-content:center;">
+            <div style="position:absolute;top:50%;left:50%;">
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:170px;height:170px;border-radius:50%;border:1px solid rgba(123,110,246,.08);"></div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:112px;height:112px;border-radius:50%;border:1px solid rgba(123,110,246,.18);animation:breathe2 4.8s ease-in-out infinite;"></div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;border:1.5px solid var(--signal);animation:breathe 4s ease-in-out infinite;"></div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:var(--signal);box-shadow:0 0 14px var(--signal),0 0 28px rgba(123,110,246,.35);animation:pulse-v 3.5s ease-in-out infinite;"></div>
+            </div>
+            <!-- selected — amber -->
+            <div style="position:absolute;top:29%;left:63%;transform:translate(-50%,-50%);">
+              <div style="width:34px;height:34px;border-radius:50%;background:rgba(245,200,66,.1);border:2px solid var(--amber);display:flex;align-items:center;justify-content:center;font-family:'Urbanist',sans-serif;font-weight:800;font-size:13px;color:var(--amber);box-shadow:0 0 20px rgba(245,200,66,.3);">R</div>
+              <div style="position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:3px 8px;white-space:nowrap;font-size:9px;color:var(--ghost);font-family:'Inter',sans-serif;">2nd time near you</div>
+            </div>
+          </div>
+          <div style="position:absolute;bottom:60px;left:0;right:0;padding:0 14px;">
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;text-align:center;box-shadow:0 0 24px rgba(123,110,246,.1);">
+              <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--fog);margin-bottom:8px;letter-spacing:2px;">R · ~8M AWAY</div>
+              <div style="display:flex;justify-content:center;align-items:center;gap:14px;">
+                <div style="font-size:10px;color:var(--fog);font-family:'Space Mono',monospace;">2ND</div>
+                <div class="btn-wave" style="width:42px;height:42px;font-size:18px;">〜</div>
+                <div style="font-size:10px;color:var(--fog);font-family:'Space Mono',monospace;">WAVE</div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item"><div class="tab-icon" style="color:var(--signal);">◎</div><div class="tab-lbl" style="color:var(--signal);">Now</div></div>
+            <div class="tab-item"><div class="tab-icon" style="color:var(--fog);">◷</div><div class="tab-lbl" style="color:var(--fog);">Log</div></div>
+            <div class="tab-item"><div class="tab-icon" style="color:var(--fog);">◡</div><div class="tab-lbl" style="color:var(--fog);">You</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--fog);text-transform:uppercase;">Wave Moment</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="ch-divider"></div>
+
+<!-- ══ 05 · COMPONENTS ═══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">05 — Design System</div>
+  <div class="section-title"><em>Components</em></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="card">
+      <div class="card-label">Buttons</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="btn-p">Enable Wavvy</div>
+        <div class="btn-hybrid">Signal × Grove</div>
+        <div class="btn-s">View Encounters</div>
+        <div class="btn-a">Mutual Wave ✦</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="btn-wave">〜</div>
+          <div style="font-size:13px;color:var(--fog);font-family:'Inter',sans-serif;font-weight:300;">Wave CTA — violet dominant</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <div class="btn-chip">Today</div>
+          <div class="btn-chip">Mutual</div>
+          <div class="btn-chip">Nearby</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Cards & Components</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:10px;box-shadow:0 0 16px rgba(123,110,246,.08);">
+          <div style="width:34px;height:34px;border-radius:50%;background:rgba(123,110,246,.15);border:1px solid rgba(123,110,246,.35);display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-style:italic;font-size:15px;color:var(--signal-l);flex-shrink:0;">A</div>
+          <div>
+            <div style="font-family:'Inter',sans-serif;font-style:italic;font-size:14px;color:var(--text);">Coffee shop on King St</div>
+            <div style="font-size:9px;color:var(--fog);margin-top:2px;font-family:'Space Mono',monospace;">2 min ago · ~6m</div>
+          </div>
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber);margin-left:auto;"></div>
+        </div>
+        <div style="background:rgba(245,200,66,.05);border:1px solid rgba(245,200,66,.2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+          <div style="width:7px;height:7px;border-radius:50%;background:var(--amber);animation:pulse-a 2s ease-in-out infinite;"></div>
+          <div style="font-size:13px;color:var(--amber);font-family:'Inter',sans-serif;">M. sent you a wave</div>
+          <div style="font-size:9px;color:var(--fog);margin-left:auto;font-family:'Space Mono',monospace;">NOW</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;">
+          <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--grove-l);margin-bottom:4px;">DISPLAY NAME</div>
+          <div style="font-size:15px;color:var(--ghost);font-family:'Inter',sans-serif;font-weight:300;">Alex<span style="display:inline-block;width:1.5px;height:15px;background:var(--signal);vertical-align:middle;margin-left:1px;animation:blink 1s ease-in-out infinite;box-shadow:0 0 4px var(--signal);"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Glows — V1 Dominant</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:var(--card);border:1px solid rgba(123,110,246,.3);border-radius:10px;padding:14px;text-align:center;box-shadow:0 0 24px rgba(123,110,246,.18);">
+          <div style="font-size:11px;color:var(--signal-l);font-weight:600;font-family:'Urbanist',sans-serif;">Signal</div>
+          <div style="font-size:9px;color:var(--fog);margin-top:3px;font-family:'Space Mono',monospace;">ACTIVE</div>
+        </div>
+        <div style="background:var(--card);border:1px solid rgba(42,138,122,.2);border-radius:10px;padding:14px;text-align:center;box-shadow:0 0 20px rgba(42,138,122,.08);">
+          <div style="font-size:11px;color:var(--grove-l);font-weight:600;font-family:'Urbanist',sans-serif;">Grove</div>
+          <div style="font-size:9px;color:var(--fog);margin-top:3px;font-family:'Space Mono',monospace;">WHISPER</div>
+        </div>
+        <div style="background:var(--card);border:1px solid rgba(245,200,66,.25);border-radius:10px;padding:14px;text-align:center;box-shadow:0 0 20px rgba(245,200,66,.1);">
+          <div style="font-size:11px;color:var(--amber);font-weight:600;font-family:'Urbanist',sans-serif;">Amber</div>
+          <div style="font-size:9px;color:var(--fog);margin-top:3px;font-family:'Space Mono',monospace;">MUTUAL</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;box-shadow:0 16px 40px rgba(0,0,0,.6);">
+          <div style="font-size:11px;color:var(--text);font-weight:600;font-family:'Urbanist',sans-serif;">Elevated</div>
+          <div style="font-size:9px;color:var(--fog);margin-top:3px;font-family:'Space Mono',monospace;">CARD</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">What Changed from V1</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:4px;height:4px;border-radius:50%;background:var(--grove-l);flex-shrink:0;margin-top:5px;"></div>
+          <div style="font-size:13px;color:var(--ghost);line-height:1.6;">Backgrounds shifted from pure space-black to violet-black — warmer, with more depth.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:4px;height:4px;border-radius:50%;background:var(--grove-l);flex-shrink:0;margin-top:5px;"></div>
+          <div style="font-size:13px;color:var(--ghost);line-height:1.6;">Outermost orb ring is grove teal — invisible at a glance, adds life on closer look.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:4px;height:4px;border-radius:50%;background:var(--grove-l);flex-shrink:0;margin-top:5px;"></div>
+          <div style="font-size:13px;color:var(--ghost);line-height:1.6;">Section labels and data use grove — a second color without competing with signal violet.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:4px;height:4px;border-radius:50%;background:var(--signal);flex-shrink:0;margin-top:5px;"></div>
+          <div style="font-size:13px;color:var(--ghost);line-height:1.6;">Everything else stays pure V1: violet glows, grid, scan line, Syne display type, amber for mutual.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ch-divider"></div>
+
+<!-- ══ 06 · MARKET ═══════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">06 — Market</div>
+  <div class="section-title"><em>Edge</em></div>
+  <div style="border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+    <div class="comp-row hdr">
+      <div class="comp-cell">Feature</div><div class="comp-cell">Wavvy</div>
+      <div class="comp-cell">Tinder</div><div class="comp-cell">Snap Map</div>
+      <div class="comp-cell">BeReal</div><div class="comp-cell">Meta</div>
+    </div>
+    <div class="comp-row"><div class="comp-cell">BLE proximity core</div><div class="comp-cell"><span class="yes">✓ Yes</span></div><div class="comp-cell"><span class="par">Partial</span></div><div class="comp-cell"><span class="par">Partial</span></div><div class="comp-cell"><span class="no">No</span></div><div class="comp-cell"><span class="par">Partial</span></div></div>
+    <div class="comp-row"><div class="comp-cell">Passive operation</div><div class="comp-cell"><span class="yes">✓ Yes</span></div><div class="comp-cell"><span class="no">No</span></div><div class="comp-cell"><span class="no">No</span></div><div class="comp-cell"><span class="no">No</span></div><div class="comp-cell"><span class="no">No</span></div></div>
+    <div class="comp-row"><div class="comp-cell">No follower graph</div><div class="comp-cell"><span class="yes">✓ Yes</span></div><div class="comp-cell"><span class="no">No</span></div><div class="comp-cell"><span class="no">No</span></div><div class="comp-cell"><span class="yes">✓ Yes</span></div><div class="comp-cell"><span class="no">No</span></div></div>
+    <div class="comp-row"><div class="comp-cell">Works indoors</div><div class="comp-cell"><span class="yes">✓ BLE</span></div><div class="comp-cell"><span class="no">No</span></div><div class="comp-cell"><span class="no">No</span></div><div class="comp-cell">N/A</div><div class="comp-cell"><span class="no">No</span></div></div>
+    <div class="comp-row"><div class="comp-cell">No GPS stored</div><div class="comp-cell"><span class="yes">✓ Yes</span></div><div class="comp-cell"><span class="no">No</span></div><div class="comp-cell"><span class="no">No</span></div><div class="comp-cell">N/A</div><div class="comp-cell"><span class="no">No</span></div></div>
+  </div>
+</div>
+
+<div class="ch-divider"></div>
+
+<!-- ══ 07 · VIRALITY ════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">07 — Growth</div>
+  <div class="section-title"><em>Virality</em></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="viral-card">
+      <div class="viral-num">01</div>
+      <div class="viral-title">Passive Trigger Loop</div>
+      <div class="viral-desc">Physical movement is the trigger. No app open required. The loop runs silently. Users return to discover who was near them — the city as a log.</div>
+    </div>
+    <div class="viral-card">
+      <div class="viral-num">02</div>
+      <div class="viral-title">48h Text Window</div>
+      <div class="viral-desc">After a mutual Wave, a text channel opens for 48 hours only. Urgency without permanence. Forces quality over accumulation. The amber glow fades.</div>
+    </div>
+    <div class="viral-card">
+      <div class="viral-num">03</div>
+      <div class="viral-title">Encounter Card Share</div>
+      <div class="viral-desc">"My signal reached 31 people." Deep violet-black. One amber number. One grove accent line. The app markets itself through the beauty of its own moments.</div>
+    </div>
+    <div class="viral-card">
+      <div class="viral-num">04</div>
+      <div class="viral-title">Physical QR</div>
+      <div class="viral-desc">No referral codes. A violet-on-void QR card for stickers and posters. Leave a signal everywhere you go. The city is the medium.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FOOTER ════════════════════════════════════════════════════════ -->
+<div style="background:var(--deep);border-top:1px solid var(--border);padding:80px 64px;display:grid;grid-template-columns:1fr 1fr;align-items:end;gap:40px;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:50%;left:30%;transform:translate(-50%,-50%);width:400px;height:250px;background:radial-gradient(ellipse,rgba(123,110,246,.06),transparent 70%);pointer-events:none;"></div>
+  <div>
+    <div style="font-family:'Urbanist',sans-serif;font-weight:800;font-size:clamp(52px,9vw,110px);background:linear-gradient(135deg,rgba(221,226,248,.05),rgba(123,110,246,.08));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:.88;letter-spacing:-.04em;">Wavvy</div>
+    <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:5px;color:var(--fog);margin-top:16px;text-transform:uppercase;">Spectre Urbanist · V1×Forest · 2025</div>
+  </div>
+  <div style="text-align:right;">
+    <div style="display:flex;justify-content:flex-end;gap:3px;margin-bottom:16px;align-items:center;">
+      <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--fog);letter-spacing:2px;margin-right:8px;">V1</div>
+      <div style="height:10px;width:80px;border-radius:5px;background:linear-gradient(90deg,var(--signal-d),var(--signal),var(--signal-l));box-shadow:0 0 10px rgba(123,110,246,.3);"></div>
+      <div style="height:10px;width:26px;border-radius:5px;background:linear-gradient(90deg,var(--grove),var(--grove-l));opacity:.7;"></div>
+      <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--fog);letter-spacing:2px;margin-left:8px;">Forest</div>
+    </div>
+    <div style="font-family:'Inter',sans-serif;font-style:italic;font-size:16px;color:var(--ghost);">"You were here. So were they."</div>
+    <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--fog);margin-top:8px;letter-spacing:4px;text-transform:uppercase;">Proximity · Presence · Signal</div>
+  </div>
+</div>
+
+</body>
+</html>
