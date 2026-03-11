@@ -1,0 +1,601 @@
+% ===========================================================================
+% WAVVY REPORT TEMPLATE - v.1.0.0
+% ===========================================================================
+
+\documentclass[a4paper, 11pt, table, dvipsnames]{article}
+
+% ===========================================================================
+% PACKAGES
+% ===========================================================================
+
+% Fonts and symbols
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{inconsolata}
+\usepackage{wasysym}
+\usepackage{microtype}
+
+% Layout, page setup
+\usepackage[margin=2.5cm, a4paper]{geometry}
+\usepackage{titlesec}
+\usepackage{appendix}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{parskip}
+\usepackage{tabto}
+\usepackage{pdflscape}
+\usepackage{enumitem}
+\usepackage{adjustbox}
+\usepackage[super]{nth}
+
+% Science and language typesetting
+\usepackage{bm}
+\usepackage[
+	arc-separator=\,,
+	retain-explicit-plus,
+	inter-unit-product=\cdot,
+	detect-weight=true,
+	detect-family=true,
+	range-phrase=--,
+	range-units=single
+]{siunitx}
+\usepackage[version=4]{mhchem}
+\usepackage{nicematrix}
+\usepackage[makeroom]{cancel}
+\usepackage{circledsteps}
+\usepackage[italian]{babel}
+\usepackage{csquotes}
+
+% Graphics, captions, tables
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{tikz, tikz-3dplot}
+\usepackage{pgfplots}
+\usepackage{pdfpages}
+\usepackage[
+	justification=centering,
+	labelfont={small,bf},
+	font={small}
+]{caption}
+\usepackage{subcaption}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage[outline]{contour}
+
+% TikZ options setup
+\usetikzlibrary{
+	calc,
+	arrows,
+	arrows.meta,
+	positioning,
+	decorations.pathreplacing,
+	decorations.markings,
+	decorations.text,
+	calligraphy,
+	pgfplots.dateplot,
+	shapes.geometric
+}
+
+% References and links
+\usepackage{hyperref}
+\usepackage[noabbrev]{cleveref}
+\usepackage[nottoc, numbib]{tocbibind}
+
+% Miscellaneous
+\usepackage{datetime2}
+\usepackage{iftex, etoolbox, expl3, xparse}
+
+\pgfplotsset{compat=1.18}
+\AtBeginDocument{\RenewCommandCopy\qty\SI}
+
+% ===========================================================================
+% METADATA
+% ===========================================================================
+
+\title{\textbf{Archetipo del brand}}
+\author{\textbf{Andrea Zorzi} -- Wavvy}
+\date{Versione 1.0.0 \\ \today}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+% ===========================================================================
+% BODY
+% ===========================================================================
+
+\section{Scopo e perimetro}
+
+Questo documento descrive l'infrastruttura psicologia e l'archetipo
+di brand dell'applicazione. Serve a definire le linee
+guida strategiche inconfutabili per le future scelte di UI/UX
+design, marketing e comunicazione, al fine di garantire
+coerenza e riconoscibilità del brand.
+
+\begin{itemize}
+    \item Piattaforme coinvolte: Applicazione Mobile
+\end{itemize}
+
+\subsection{Perimetro}
+Questo documento si concentra sui seguenti aspetti:
+\begin{itemize}
+    \item Identificazione e giustificazione dell'architettura
+          archetipica
+\end{itemize}
+
+Sono esplicitamente esclusi:
+\begin{itemize}
+    \item La generazione di codici colore definitivi e la UI
+          palette
+
+    \item La definizione di linee guida di comunicazione e tone
+          of voice
+
+    \item L'implementazione dell'app
+
+    \item La definizione di linee guida per il marketing e la
+          comunicazione
+\end{itemize}
+
+\section{Panoramica architetturale}
+L'architettura dell'archetipo viene definita in modo ibrido,
+con un blend strategico tra più archetipi, per massimizzare
+l'acquisizione utente e la ritenzione emotiva. Sulla base
+dell'analisi di mercato (DACH Region), l'identità è strutturata
+tra due modelli psicologici junghiani:
+\begin{itemize}
+    \item The Everyman (L'Uomo Comune)
+
+    \item The Lover (L'Amante)
+\end{itemize}
+L'app si presenta al mondo come il grande unificatore
+democratico, ma trattiene nel suo nucleo l'energia sensoriale,
+l'intimità e la privacy.
+
+\section{Principi di progettazione}
+Wavy segue i seguenti principi di progettazione:
+
+\subsection{Inclusione ed assenza di attrito}
+L'app democratizza l'approccio eliminando il timore del
+rifiuto faccia a faccia.
+
+\paragraph{Direttiva UI/UX}
+L'intefaccia utente non deve creare elitarismo. A
+differenza delle piattaforme tradizionali, non devono esserci
+metriche di popolarità aggressive (es. contatori di follower
+in primo piano) o \textit{paywall} visibili che dividono gli
+utenti in classi.
+
+\paragraph{Obiettivo}
+L'esperienza d'uso deve comunicare un senso di uguaglianza
+e appartenenza al medesimo spazio fisico, rendendo l'interazione
+naturale e priva di pressione sociale.
+
+\subsection{Validazione della presenza reale}
+L'app è progettata come infrastruttura digitale al servizio
+del mondo tangibile.
+
+\paragraph{Obiettivo}
+Convertire l'incontro sull'app in una conferma istantanea
+di riconoscibilità nel mondo fisico.
+
+\subsection{Privacy}
+La privacy è il prerequisito fondamentale per creare un
+ambiente sicuro e confortevole per tutti gli utenti.
+\paragraph{Direttiva UI/UX}
+Il design deve enfatizzare attivamente l'assenza di
+tracciamento GPS. L'interfaccia non deve mai presentare radar
+o mappe che mostrino la posizione esatta degli utenti.
+\paragraph{Obiettivo}
+La tecnologia BLE deve essere percepita come una zona \textit{judgment-free},
+assicurando costantemente all'utente che la sua posizione è
+invisibile e che il controllo dell'interazione rimane totalmente
+nelle sue mani.
+
+\section{Archetipo Primario}
+L'archetipo principale che definisce l'identità del brand è:
+\[
+    \textbf{The Everyman (L'Uomo Comune)}
+\]
+La sua missione è l'appartenenza. L'app è lo strumento quotidiano
+e normale per connettersi con l'ambiente circostante, che
+tu voglia salutare il tuo gruppo di amici al tavolo
+accanto o rompere il ghiaccio con uno sconosciuto al
+bancone Agisce come scudo di normalizzazione sociale, abbassando
+le barriere all'ingresso e ponendo l'app come uno strumento
+democratico di comunità. In questo modo, trasforma l'interazione
+da evento eccezionale o potenzialmente imbarazzante in un gesto
+semplice, leggero e accessibile, restituendo spontaneità all'incontro
+e rendendo più facile partecipare a ciò che accade intorno.
+L'app non forza la connessione, la rende soltanto possibile,
+più fluida e più umana, creando un ecosistema in cui amici,
+conoscenti e sconosciuti possono coesistere nello stesso
+spazio fisico come parte di una medesima energia
+collettiva. Così, l'app non si presenta come un mezzo per
+"rimorchiare", ma come un'infrastruttura sociale discreta che
+facilita la vicinanza, rafforza il senso di presenza ed
+aiuta le persone a sentirsi parte di un momento condiviso.
+
+\section{Archetipo Secondario}
+L'archetipo secondario che definisce l'identità del brand
+è:
+\[
+    \textbf{The Lover (L'Amante)}
+\]
+La sua missione è il soddisfare il bisogno profondo di validazione
+emotiva, vicinanza umana ed esperienza sensoriale. Il suo ruolo
+emerge nel momento in cui la connessione smette di essere soltanto
+una possibilità sociale astratta e assume un valore più personale,
+immediato e percepito. Se l'Everyman normalizza l'incontro
+e lo rende accessibile, il Lover ne definisce invece la
+qualità emotiva: trasforma la prossimità in presenza significativa,
+la disponibilità in attenzione reciproca e l'interazione
+in un'esperienza vissuta nel mondo reale. In questo modo,
+l'app non si limita a facilitare il contatto tra persone
+nello stesso spazio fisico, ma attribuisce a quel contatto
+una densità relazionale maggiore, che può tradursi in
+amicizia, networking, attrazione o semplice riconoscimento
+umano. Il Lover interviene quindi come archetipo secondario
+incaricato di dare profondità, intimità e memorabilità all'esperienza,
+senza mai alterare il posizionamento pubblico del brand come
+strumento inclusivo, quotidiano e orientato alla community.
+
+\section{The Safe Space}
+La tecnologia BLE e la politica di "Zero GPS / Zero Tracking"
+rappresentano il punti di sintesi più chiaro tra i due
+archetipi che strutturano l'identità del brand.
+
+\paragraph{Dal lato dell'Everyman}
+l'assenza di mappe e di tracciamento continuo definisce una
+\textit{judgment-free zone}, riduce il rischio percepito di
+esposizione e contribuisce a creare un amibente più neutro,
+paritario e socialmente confortevole per tutti gli utenti.
+\paragraph{Dal lato del Lover}
+la privacy assoluta costruisce invece uno spazio protetto
+di intimità relazionale, necessario affinchè le persone possano
+abbassare le difese, mostrarsi più disponibili e compiere
+il primo gesto di apertura sociale. In questo modello, la
+tecnologia non si impone come elemento visibile dell'esperienza,
+ma agisce come infrastruttura silenziosa che rende possibile
+la connessione, lasciando emergere in primo piano soltanto
+la presenza reciproca e la qualità del contatto umano.
+
+% Keep everything below this line at the end of the document
+% ===========================================================================
+\section{Flusso \dots}
+\dots
+
+\section{Threat model e mitigazioni}
+
+Questa sezione identifica i principali rischi strategici
+connessi all'architettura archetipica del brand e le
+relative mitigazioni. I threat model qui elencati non riguardano
+vulnerabilità tecniche dell'applicazione, ma possibili
+derive percettive, narrative o progettuali che potrebbero compromettere
+la coerenza dell'identità definita nel presente documento.
+
+\subsection{Percezione di dating app}
+
+\textbf{Descrizione del rischio:} Un'eccessiva enfasi sull'archetipo
+\textit{The Lover} può spingere il brand verso una lettura
+prevalentemente romantica o seduttiva, facendo percepire Wavvy
+come una dating app anziché come una piattaforma sociale di
+prossimità orientata alla community.
+
+\textbf{Impatto:} Riduzione del mercato indirizzabile, aumento
+dello stigma sociale nell'utilizzo pubblico dell'app,
+ambiguità nel posizionamento e perdita di credibilità come
+infrastruttura relazionale generalista.
+
+\textbf{Mitigazioni:}
+\begin{itemize}
+    \item Mantenere \textit{The Everyman} come archetipo
+          primario esplicito in tutte le superfici pubbliche del
+          brand.
+
+    \item Evitare nella comunicazione e nel design riferimenti
+          visivi o verbali troppo legati a seduzione, flirt o
+          romanticismo.
+
+    \item Descrivere sistematicamente l'app come strumento di
+          community, prossimità sociale e connessione quotidiana.
+
+    \item Validare ogni scelta di copy, UI e visual identity
+          rispetto alla domanda: \enquote{Questa scelta fa sembrare Wavvy una dating app?}
+\end{itemize}
+
+\subsection{Percezione di utility fredda e
+    priva di emozione}
+
+\textbf{Descrizione del rischio:} Un'eccessiva enfasi sull'archetipo
+\textit{The Everyman} può rendere il brand troppo neutro,
+funzionale o descrittivo, facendo percepire Wavvy come una
+semplice utility di rilevamento persone nelle vicinanze.
+
+\textbf{Impatto:} Bassa memorabilità, debole coinvolgimento
+emotivo, riduzione della ritenzione e impoverimento del
+valore percepito dell'esperienza.
+
+\textbf{Mitigazioni:}
+\begin{itemize}
+    \item Preservare il ruolo del \textit{Lover} come
+          archetipo secondario incaricato di dare profondità
+          emotiva all'interazione.
+
+    \item Tradurre il concetto di prossimità in presenza significativa,
+          non in semplice informazione funzionale.
+
+    \item Favorire una narrazione del prodotto centrata su esperienza,
+          riconoscimento umano e qualità del contatto.
+
+    \item Verificare che il brand non venga ridotto a lessico
+          esclusivamente tecnico, logistico o utility-driven.
+\end{itemize}
+
+\subsection{Ambiguità archetipica}
+
+\textbf{Descrizione del rischio:} La compresenza di due
+archetipi può generare un'identità confusa se il confine
+tra ruolo primario e ruolo secondario non viene mantenuto
+in modo disciplinato.
+
+\textbf{Impatto:} Incoerenza tra prodotto, marketing e
+design; difficoltà decisionali interne; perdita di
+leggibilità del brand verso utenti, stakeholder e partner.
+
+\textbf{Mitigazioni:}
+\begin{itemize}
+    \item Formalizzare che \textit{The Everyman} rappresenta
+          il volto pubblico del brand, mentre \textit{The Lover}
+          ne definisce la profondità esperienziale.
+
+    \item Stabilire criteri di utilizzo dei due archetipi nei
+          diversi contesti: comunicazione pubblica, onboarding,
+          UX, meccaniche relazionali, visual design.
+
+    \item Utilizzare il presente documento come riferimento vincolante
+          per approvare scelte narrative e creative.
+
+    \item Introdurre una regola di governance secondo cui ogni
+          decisione di brand deve poter essere ricondotta chiaramente
+          a uno dei due ruoli archetipici.
+\end{itemize}
+
+\subsection{Contraddizione tra promessa di
+    privacy e percezione del prodotto}
+
+\textbf{Descrizione del rischio:} Se la promessa di \enquote{Safe Space}
+non viene percepita come credibile, l'intero impianto archetipico
+perde stabilità, poiché sia \textit{The Everyman} sia \textit{The
+    Lover} dipendono dalla riduzione del rischio sociale.
+
+\textbf{Impatto:} Calo di fiducia, aumento della
+resistenza all'adozione, riduzione della propensione a compiere
+il primo gesto di apertura sociale e indebolimento del posizionamento
+differenziante.
+
+\textbf{Mitigazioni:}
+\begin{itemize}
+    \item Rendere la privacy un principio strutturale e visibile
+          del prodotto, non una semplice promessa di marketing.
+
+    \item Comunicare in modo chiaro l'assenza di GPS, mappe
+          e tracking continuo.
+
+    \item Assicurare che il tono visivo e verbale non evochi
+          sorveglianza, esposizione o geolocalizzazione
+          aggressiva.
+
+    \item Verificare che tutte le interazioni chiave dell'app
+          trasmettano controllo, discrezione e assenza di
+          pressione.
+\end{itemize}
+
+\subsection{Traduzione visiva incoerente con
+    il blend archetipico}
+
+\textbf{Descrizione del rischio:} Una direzione cromatica o
+visiva troppo spostata verso un solo polo del blend può alterare
+la percezione del brand. Colori troppo aggressivi, troppo romantici
+o troppo istituzionali possono compromettere l'equilibrio tra
+accessibilità e intensità emotiva.
+
+\textbf{Impatto:} Distorsione percettiva del
+posizionamento, perdita di coerenza tra identità strategica
+e interfaccia, associazione involontaria con dating app o
+utility corporate.
+
+\textbf{Mitigazioni:}
+\begin{itemize}
+    \item Utilizzare la direzione cromatica come conseguenza
+          del blend, non come scelta autonoma o puramente
+          estetica.
+
+    \item Escludere famiglie cromatiche già identificate come
+          incoerenti con il nucleo archetipico.
+
+    \item Validare ogni proposta visuale rispetto ai due assi
+          strategici: inclusione sociale e magnetismo
+          relazionale.
+
+    \item Mantenere una distinzione chiara tra colore principale,
+          colori di supporto e accenti funzionali.
+\end{itemize}
+
+\subsection{Sbilanciamento sul contesto romantico
+    a discapito della community}
+
+\textbf{Descrizione del rischio:} L'archetipo \textit{The
+    Lover}, se applicato in modo non controllato, può spingere
+l'esperienza a privilegiare scenari di attrazione romantica
+rispetto a scenari di amicizia, community e networking.
+
+\textbf{Impatto:} Riduzione della pluralità d'uso dell'app,
+restringimento del pubblico, perdita della promessa di piattaforma
+inclusiva e quotidiana.
+
+\textbf{Mitigazioni:}
+\begin{itemize}
+    \item Descrivere il valore relazionale di Wavvy in termini
+          ampi: amicizia, community, networking, presenza,
+          scoperta sociale.
+
+    \item Evitare che il lessico del brand si concentri esclusivamente
+          su desiderio, attrazione o scelta romantica.
+
+    \item Garantire che il brand racconti sempre una gamma estesa
+          di connessioni umane possibili.
+
+    \item Mantenere la community come tela pubblica del brand
+          e l'intimità come qualità secondaria dell'esperienza.
+\end{itemize}
+
+\subsection{Mancanza di trasferibilità interna
+    del framework archetipico}
+
+\textbf{Descrizione del rischio:} Se il modello archetipico
+resta troppo astratto o teorico, i team di design, prodotto
+e comunicazione potrebbero interpretarlo in modi divergenti,
+riducendone il valore operativo.
+
+\textbf{Impatto:} Disallineamento tra team, incoerenza
+esecutiva, decisioni estetiche o narrative arbitrarie,
+perdita di efficacia del framework.
+
+\textbf{Mitigazioni:}
+\begin{itemize}
+    \item Tradurre il modello archetipico in principi operativi,
+          criteri decisionali e regole di esclusione.
+
+    \item Collegare esplicitamente ogni archetipo a implicazioni
+          di prodotto, UX, visual design e messaging.
+
+    \item Usare esempi concreti di \enquote{coerente} e
+          \enquote{incoerente} nel brand book e nei documenti di
+          handoff.
+
+    \item Prevedere una fase di allineamento interfunzionale
+          prima dell'implementazione esecutiva.
+\end{itemize}
+
+\section{Alternative considerate e modelli mitigati}
+
+Questa sezione documenta il razionale strategico alla base
+della scelta di un'architettura archetipica ibrida per il brand.
+L'obiettivo è motivare, in termini di business, perché l'utilizzo
+di un singolo archetipo risulterebbe subottimale rispetto
+a una configurazione mista, più adatta a sostenere scalabilità,
+acquisizione utente, ritenzione emotiva e posizionamento di
+lungo periodo.
+
+\subsection{\textit{The Lover} come archetipo unico}
+
+L'adozione esclusiva dell'archetipo \textit{The Lover} porterebbe
+il brand verso un posizionamento eccessivamente orientato al
+dating, assimilabile alla formula \enquote{app per incontrare persone attraenti nelle vicinanze}.
+Tale configurazione presenta tre criticità principali.
+
+In primo luogo, determinerebbe una contrazione del \textit{Total
+    Addressable Market (TAM)}. Il mercato delle applicazioni di
+dating puro è già saturo e si rivolge prevalentemente a un
+segmento specifico di utenti, ossia single in cerca di
+incontri. Un prodotto che ambite a diventare una piattaforma
+sociale di ampia adozione deve invece poter includere utenti
+single, persone già in relazione, gruppi di amici,
+colleghi, community locali e contesti ibridi di socialità.
+Un posizionamento esclusivamente \textit{Lover} ridurrebbe
+quindi in modo significativo l'ampiezza del mercato potenziale.
+
+In secondo luogo, un'impostazione puramente \textit{Lover}
+aumenterebbe l'attrito sociale legato all'utilizzo del prodotto.
+Le applicazioni percepite come strumenti per \enquote{rimorchiare}
+tendono a essere usate in modo nascosto o con imbarazzo,
+soprattutto in contesti pubblici, professionali o familiari.
+Poiché Wavvy si basa sulla prossimità fisica in tempo
+reale, la percezione di ambiguità o di esposizione sociale
+costituirebbe un ostacolo strutturale all'adozione e all'utilizzo
+spontaneo dell'applicazione nello spazio pubblico.
+
+In terzo luogo, un modello esclusivamente \textit{Lover} comprometterebbe
+la capacità dell'app di fungere da infrastruttura relazionale
+generalista. In una simile cornice, anche un gesto neutro come
+inviare un \textit{Wave} a un conoscente, a un vecchio amico
+o a una persona con cui si desidera semplicemente aprire un
+contatto non romantico rischierebbe di essere interpretato
+come ambiguo o inappropriato. Ciò limiterebbe fortemente
+la funzione di unificazione sociale che il prodotto
+intende svolgere.
+
+\subsection{\textit{The Everyman} come archetipo unico}
+
+L'adozione esclusiva dell'archetipo \textit{The Everyman}
+porterebbe invece il brand verso un posizionamento
+puramente funzionale, assimilabile a una \enquote{utility radar per vedere chi c'è nei dintorni}.
+Anche questa configurazione presenta limiti rilevanti.
+
+Il primo limite riguarda la ritenzione emotiva. Le
+piattaforme costruite unicamente sull'archetipo \textit{Everyman}
+tendono a essere percepite come strumenti utilitari, più
+che come esperienze memorabili. In assenza di una componente
+emotiva distintiva, l'interesse iniziale dell'utente
+rischia di esaurirsi rapidamente, con conseguente aumento del
+\textit{churn rate}. Un'applicazione sociale basata solo sull'utilità
+informativa fatica a costruire un'abitudine d'uso ricorrente.
+
+Il secondo limite è l'assenza di intensità emotiva. Un
+social network scala non soltanto quando informa, ma quando
+attiva curiosità, aspettativa, riconoscimento e gratificazione.
+Un approccio \textit{Everyman} puro descrive la presenza di
+persone nello spazio, ma non attribuisce a tale presenza
+un valore relazionale sufficiente a generare
+coinvolgimento, memoria o desiderio di ritorno.
+
+Il terzo limite riguarda il rischio di sterilizzazione delle
+interazioni. Se il prodotto si posiziona in modo
+eccessivamente neutro, amichevole e comunitario, finisce
+per neutralizzare proprio quella tensione umana che rende
+significative molte connessioni nel mondo reale. In tale scenario,
+l'app rischia di trasformarsi in una piattaforma corretta
+ma piatta, incapace di abilitare relazioni più dense,
+spontanee e memorabili, siano esse amicali, professionali
+o romantiche.
+
+\section{Sintesi}
+
+L'identità di Wavvy si fonda su un'architettura archetipica ibrida
+costruita attorno a due poli complementari: \textit{The Everyman}
+come archetipo primario e \textit{The Lover} come archetipo
+secondario. Il primo definisce il volto pubblico del brand,
+posizionando l'app come uno strumento inclusivo, quotidiano e
+socialmente accessibile; il secondo conferisce profondità
+emotiva, intensità relazionale e memorabilità all'esperienza,
+senza spostare il brand verso una percezione esclusivamente
+romantica o seduttiva.
+
+Questo equilibrio permette a Wavvy di presentarsi come
+infrastruttura sociale di prossimità, capace di facilitare
+connessioni umane reali in modo naturale, discreto e privo
+di attrito. La promessa di \enquote{Safe Space}, resa credibile
+dall'assenza di GPS, mappe e tracking continuo e dal ricorso
+alla tecnologia BLE, costituisce il punto di sintesi più forte
+tra i due archetipi: da un lato crea una zona neutra,
+paritaria e \textit{judgment-free}; dall'altro rende possibile
+un'apertura relazionale più autentica, protetta e significativa.
+
+Dal punto di vista strategico, il framework scelto consente
+di evitare due derive opposte ma ugualmente dannose: quella
+di una dating app percepita come ambigua o stigmatizzante,
+e quella di una utility fredda, funzionale e priva di valore
+emotivo. Ne consegue che tutte le future decisioni di brand,
+UX, visual design e comunicazione dovranno preservare questo
+bilanciamento, mantenendo la community come cornice pubblica
+dell'identità e l'intimità relazionale come qualità distintiva
+dell'esperienza.
+
+\end{document}
