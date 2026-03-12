@@ -115,60 +115,60 @@
 \subsubsection{Tabella}
 % Table === BEGIN
 \begin{table}[H]
-    \centering
-    \renewcommand{\arraystretch}{1.2}
-    \begin{tabular}{@{} l l c @{}}
-        \toprule
-        \textbf{Titolo 1} & \textbf{Titolo 2} & \textbf{Titolo 3} \\
-        \midrule
-        Riga 1            & Riga 1            & Riga 1            \\
-        Riga 2            & Riga 2            & Riga 2            \\
-        Riga 3            & Riga 3            & Riga 3            \\
-        \midrule
-        \textbf{Titolo 1} &                   & Riga 4            \\
-        Riga 5            &                   & Riga 5            \\
-        \bottomrule
-    \end{tabular}
-    \caption{Descrizione della tabella}
-    \label{tab:nome_tabella}
+      \centering
+      \renewcommand{\arraystretch}{1.2}
+      \begin{tabular}{@{} l l c @{}}
+            \toprule
+            \textbf{Titolo 1} & \textbf{Titolo 2} & \textbf{Titolo 3} \\
+            \midrule
+            Riga 1            & Riga 1            & Riga 1            \\
+            Riga 2            & Riga 2            & Riga 2            \\
+            Riga 3            & Riga 3            & Riga 3            \\
+            \midrule
+            \textbf{Titolo 1} &                   & Riga 4            \\
+            Riga 5            &                   & Riga 5            \\
+            \bottomrule
+      \end{tabular}
+      \caption{Descrizione della tabella}
+      \label{tab:nome_tabella}
 \end{table}
 % Table === END
 
 \subsubsection{Diagramma}
 \begin{figure}[H]
-    \centering
-    \begin{tikzpicture}[
-            node distance=2cm,
-            auto,
-            font=\small\sffamily,
-            % Stili dei nodi
-            startstop/.style={rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=gray!10},
-            process/.style={rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=white},
-            decision/.style={diamond, aspect=2, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=gray!5},
-            arrow/.style={thick,->,>=stealth}
-        ]
+      \centering
+      \begin{tikzpicture}[
+                  node distance=2cm,
+                  auto,
+                  font=\small\sffamily,
+                  % Stili dei nodi
+                  startstop/.style={rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=gray!10},
+                  process/.style={rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=white},
+                  decision/.style={diamond, aspect=2, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=gray!5},
+                  arrow/.style={thick,->,>=stealth}
+            ]
 
-        % Nodi
-        \node (start) [startstop] {Evento Iniziale};
-        \node (check) [decision, below of=start, yshift=-0.5cm] {Decisione};
+            % Nodi
+            \node (start) [startstop] {Evento Iniziale};
+            \node (check) [decision, below of=start, yshift=-0.5cm] {Decisione};
 
-        % Diramazioni
-        \node (fail) [process, below of=check, xshift=-3.5cm, yshift=-0.5cm] {Evento};
-        \node (success) [process, below of=check, xshift=3.5cm, yshift=-0.5cm] {Evento};
+            % Diramazioni
+            \node (fail) [process, below of=check, xshift=-3.5cm, yshift=-0.5cm] {Evento};
+            \node (success) [process, below of=check, xshift=3.5cm, yshift=-0.5cm] {Evento};
 
-        % End
-        \node (end) [startstop, below of=check, yshift=-3cm] {Evento Finale};
+            % End
+            \node (end) [startstop, below of=check, yshift=-3cm] {Evento Finale};
 
-        % Frecce
-        \draw [arrow] (start) -- (check);
-        \draw [arrow] (check) -| node[anchor=south east] {Condizione} (fail);
-        \draw [arrow] (check) -| node[anchor=south west] {Condizione} (success);
-        \draw [arrow] (fail) |- (end);
-        \draw [arrow] (success) |- (end);
+            % Frecce
+            \draw [arrow] (start) -- (check);
+            \draw [arrow] (check) -| node[anchor=south east] {Condizione} (fail);
+            \draw [arrow] (check) -| node[anchor=south west] {Condizione} (success);
+            \draw [arrow] (fail) |- (end);
+            \draw [arrow] (success) |- (end);
 
-    \end{tikzpicture}
-    \caption{Nome del diagramma di flusso}
-    \label{fig:nome_diagramma}
+      \end{tikzpicture}
+      \caption{Nome del diagramma di flusso}
+      \label{fig:nome_diagramma}
 \end{figure}
 
 
@@ -179,7 +179,7 @@
 \textbf{Definizione (\(NomeParametro\)):}
 Sia
 \[
-    Parametro = \dots
+      Parametro = \dots
 \]
 \dots .
 % Definition === END
@@ -189,13 +189,13 @@ Sia
 \textbf{Algoritmo (\(NomeAlgoritmo\)):}
 Sia
 \[
-    Algoritmo = \dots
+      Algoritmo = \dots
 \]
 la algoritmo che \dots . L'algoritmo prevede:
 \begin{enumerate}
-    \item Passo 1
-    \item Passo 2
-    \item Passo 3
+      \item Passo 1
+      \item Passo 2
+      \item Passo 3
 \end{enumerate}
 % Algorithm === END
 
@@ -214,20 +214,20 @@ la algoritmo che \dots . L'algoritmo prevede:
 Questo documento descrive l'implementazione e le scelte architetturali relative a \textbf{[Nome Feature]}.
 
 \begin{itemize}
-    \item Piattaforme coinvolte: \dots
-    \item Tecnologie: \dots
+      \item Piattaforme coinvolte: \dots
+      \item Tecnologie: \dots
 \end{itemize}
 
 \subsection{Perimetro}
 Questo documento si concentra sui seguenti aspetti:
 \begin{itemize}
-    \item Punto 1
-    \item Punto 2
+      \item Punto 1
+      \item Punto 2
 \end{itemize}
 
 Sono esplicitamente esclusi:
 \begin{itemize}
-    \item Punto 1
+      \item Punto 1
 \end{itemize}
 
 \section{Panoramica architetturale}
